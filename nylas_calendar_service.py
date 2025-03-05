@@ -16,7 +16,8 @@ def get_calendar_events(access_token, selected_date):
         nylas = APIClient(
             os.environ.get('NYLAS_CLIENT_ID'),
             os.environ.get('NYLAS_CLIENT_SECRET'),
-            access_token
+            access_token,
+            api_server="https://api.us.nylas.com"  # Updated API endpoint
         )
 
         # Convert date to timestamp range
@@ -26,7 +27,7 @@ def get_calendar_events(access_token, selected_date):
         end_of_day = start_of_day + timedelta(days=1)
 
         logger.info(f"Fetching Nylas calendar events for date: {selected_date}")
-        
+
         # Fetch events for the day
         events = nylas.events.where(
             starts_after=start_of_day.timestamp(),

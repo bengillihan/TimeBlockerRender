@@ -23,7 +23,7 @@ def get_nylas_oauth_url():
         'scope': 'calendar.read_only',
         'redirect_uri': redirect_uri
     }
-    auth_url = f"https://api.nylas.com/oauth/authorize?{urlencode(params)}"
+    auth_url = f"https://api.us.nylas.com/oauth/authorize?{urlencode(params)}"
     logger.info(f"Generated Nylas auth URL (client_id masked): {auth_url.replace(params['client_id'], 'MASKED')}")
     return auth_url
 
@@ -38,13 +38,17 @@ def auth():
 def callback():
     """Handle OAuth callback from Nylas."""
     code = request.args.get('code')
-    if not code:
-        flash('Authorization failed. Please try again.', 'error')
+    error = request.args.get('error')
+    error_description = request.args.get('error_description')
+
+    if error or not code:
+        logger.error(f"OAuth error: {error} - {error_description}")
+        flash(f'Authorization failed: {error_description or "Please try again."}', 'error')
         return redirect(url_for('index'))
 
     try:
-        # Exchange code for access token
-        response = requests.post('https://api.nylas.com/oauth/token', data={
+        logger.info("Attempting to exchange code for access token")
+        response = requests.post('https://api.us.nylas.com/oauth/token', data={
             'client_id': os.environ.get('NYLAS_CLIENT_ID'),
             'client_secret': os.environ.get('NYLAS_CLIENT_SECRET'),
             'grant_type': 'authorization_code',
@@ -57,14 +61,16 @@ def callback():
             return redirect(url_for('index'))
 
         token_data = response.json()
+        logger.info("Successfully obtained access token")
 
         # Update the user's model with the token
         from app import db
         current_user.nylas_access_token = token_data['access_token']
         db.session.commit()
+        logger.info(f"Saved access token for user {current_user.id}")
 
         flash('Successfully connected to Nylas!', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('calendar_settings'))
 
     except Exception as e:
         logger.error(f"Error in Nylas callback: {str(e)}")
