@@ -100,32 +100,67 @@
             </div>
             <div class="card-body">
                 <div id="timeBlocks" class="time-blocks">
-                    {% for hour in range(6, 18) %}
-                        {% for minute in [0, 15, 30, 45] %}
-                            {% set current_time = '%02d:%02d'|format(hour, minute) %}
-                            {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
-                            <div class="time-block" data-time="{{ current_time }}">
-                                <div class="time-label">{{ current_time }}</div>
-                                <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
-                                    <select class="form-select form-select-sm task-select">
-                                        <option value="">Select a task</option>
-                                        <option value="new">+ Add New Task</option>
-                                        {% for category in categories %}
-                                            <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
-                                                {% for task in category.tasks %}
-                                                    <option value="{{ task.id }}" 
-                                                            data-category-color="{{ category.color }}"
-                                                            {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                        {{ task.title }}
-                                                    </option>
-                                                {% endfor %}
-                                            </optgroup>
-                                        {% endfor %}
-                                    </select>
+                    <!-- Morning Hours (6 AM - 11:45 AM) -->
+                    <div class="time-block-column">
+                        <h6 class="text-muted mb-2">Morning</h6>
+                        {% for hour in range(6, 12) %}
+                            {% for minute in [0, 15, 30, 45] %}
+                                {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                                {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                                <div class="time-block" data-time="{{ current_time }}">
+                                    <div class="time-label">{{ current_time }}</div>
+                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
+                                        <select class="form-select form-select-sm task-select">
+                                            <option value="">Select a task</option>
+                                            <option value="new">+ Add New Task</option>
+                                            {% for category in categories %}
+                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
+                                                    {% for task in category.tasks %}
+                                                        <option value="{{ task.id }}" 
+                                                                data-category-color="{{ category.color }}"
+                                                                {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                            {{ task.title }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </optgroup>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
+                    </div>
+
+                    <!-- Afternoon Hours (12 PM - 5:45 PM) -->
+                    <div class="time-block-column">
+                        <h6 class="text-muted mb-2">Afternoon</h6>
+                        {% for hour in range(12, 18) %}
+                            {% for minute in [0, 15, 30, 45] %}
+                                {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                                {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                                <div class="time-block" data-time="{{ current_time }}">
+                                    <div class="time-label">{{ current_time }}</div>
+                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
+                                        <select class="form-select form-select-sm task-select">
+                                            <option value="">Select a task</option>
+                                            <option value="new">+ Add New Task</option>
+                                            {% for category in categories %}
+                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
+                                                    {% for task in category.tasks %}
+                                                        <option value="{{ task.id }}" 
+                                                                data-category-color="{{ category.color }}"
+                                                                {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                            {{ task.title }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </optgroup>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -179,10 +214,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="taskColor" class="form-label">Task Color</label>
-                        <input type="color" class="form-control form-control-color" id="taskColor" value="#6c757d">
-                    </div>
+                    
                 </form>
             </div>
             <div class="modal-footer">

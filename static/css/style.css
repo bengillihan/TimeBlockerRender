@@ -1,33 +1,41 @@
 .time-blocks {
+    display: flex;
+    gap: 20px;
+}
+
+.time-block-column {
+    flex: 1;
     display: grid;
-    gap: 5px;
+    gap: 2px;
 }
 
 .time-block {
     display: flex;
     align-items: center;
     border: 1px solid var(--bs-border-color);
-    padding: 5px;
-    min-height: 40px;
+    padding: 2px;
+    min-height: 32px;
 }
 
 .time-label {
-    width: 70px;
-    font-size: 0.9em;
+    width: 60px;
+    font-size: 0.8em;
     color: var(--bs-secondary);
 }
 
 .time-content {
     flex-grow: 1;
-    min-height: 30px;
+    min-height: 24px;
     border-radius: 4px;
-    padding: 5px;
+    padding: 2px;
 }
 
 .task-select {
     border: none;
     background: transparent;
     width: 100%;
+    font-size: 0.9em;
+    padding: 0 4px;
 }
 
 .time-content.has-task {
