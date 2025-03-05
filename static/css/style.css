@@ -15,6 +15,7 @@
     border: 1px solid var(--bs-border-color);
     padding: 2px;
     min-height: 32px;
+    cursor: move;
 }
 
 .time-label {
@@ -94,4 +95,20 @@
 .priority-input.completed {
     text-decoration: line-through;
     opacity: 0.7;
+}
+
+.drag-handle {
+    cursor: move;
+    padding: 0 4px;
+    color: var(--bs-secondary);
+    opacity: 0.5;
+}
+
+.time-block:hover .drag-handle {
+    opacity: 1;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: var(--bs-secondary-bg);
 }

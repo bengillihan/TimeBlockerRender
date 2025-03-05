@@ -51,6 +51,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Initialize Sortable for morning and afternoon columns
+    const columns = document.querySelectorAll('.time-block-column');
+    columns.forEach(column => {
+        new Sortable(column, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const timeBlocks = evt.to.querySelectorAll('.time-block');
+
+                // Get the task that was moved
+                const movedTask = evt.item.querySelector('.task-select').value;
+                const movedTaskColor = evt.item.querySelector('option:checked')?.dataset?.categoryColor;
+
+                if (movedTask) {
+                    // Update visual styles
+                    evt.item.querySelector('.time-content').classList.add('has-task');
+                    evt.item.querySelector('.time-content').style.borderLeftColor = movedTaskColor;
+                }
+
+                // Save the updated order
+                saveData();
+            }
+        });
+    });
+
     // Add copy up/down functionality
     document.addEventListener('click', function(e) {
         const copyUpBtn = e.target.closest('.copy-up');
@@ -62,8 +88,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const direction = copyUpBtn ? 'up' : 'down';
 
             if (select.value) {
-                const targetBlock = direction === 'up' 
-                    ? timeBlock.previousElementSibling 
+                const targetBlock = direction === 'up'
+                    ? timeBlock.previousElementSibling
                     : timeBlock.nextElementSibling;
 
                 if (targetBlock) {
@@ -152,39 +178,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 category_id: taskCategory.value
             })
         })
-        .then(response => response.json())
-        .then(task => {
-            // Add the new task to all task select dropdowns
-            document.querySelectorAll('.task-select').forEach(select => {
-                const categoryName = taskCategory.options[taskCategory.selectedIndex].text;
-                const optgroup = select.querySelector(`optgroup[label="${categoryName}"]`);
-                const categoryColor = optgroup.dataset.color;
+            .then(response => response.json())
+            .then(task => {
+                // Add the new task to all task select dropdowns
+                document.querySelectorAll('.task-select').forEach(select => {
+                    const categoryName = taskCategory.options[taskCategory.selectedIndex].text;
+                    const optgroup = select.querySelector(`optgroup[label="${categoryName}"]`);
+                    const categoryColor = optgroup.dataset.color;
 
-                if (optgroup) {
-                    const option = document.createElement('option');
-                    option.value = task.id;
-                    option.textContent = task.title;
-                    option.dataset.categoryColor = categoryColor;
-                    optgroup.appendChild(option);
+                    if (optgroup) {
+                        const option = document.createElement('option');
+                        option.value = task.id;
+                        option.textContent = task.title;
+                        option.dataset.categoryColor = categoryColor;
+                        optgroup.appendChild(option);
+                    }
+                });
+
+                // Set the newly created task as the selected option
+                if (window.activeTimeBlockSelect) {
+                    const timeContent = window.activeTimeBlockSelect.closest('.time-content');
+                    window.activeTimeBlockSelect.value = task.id;
+                    const categoryColor = taskCategory.options[taskCategory.selectedIndex].parentElement.dataset.color;
+                    timeContent.classList.add('has-task');
+                    timeContent.style.borderLeftColor = categoryColor;
+                    window.activeTimeBlockSelect = null;
                 }
+
+                // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+
+                // Save the updated time block data
+                saveData();
             });
-
-            // Set the newly created task as the selected option
-            if (window.activeTimeBlockSelect) {
-                const timeContent = window.activeTimeBlockSelect.closest('.time-content');
-                window.activeTimeBlockSelect.value = task.id;
-                const categoryColor = taskCategory.options[taskCategory.selectedIndex].parentElement.dataset.color;
-                timeContent.classList.add('has-task');
-                timeContent.style.borderLeftColor = categoryColor;
-                window.activeTimeBlockSelect = null;
-            }
-
-            // Hide modal
-            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
-
-            // Save the updated time block data
-            saveData();
-        });
     });
 
     // Save functionality

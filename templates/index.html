@@ -101,6 +101,9 @@
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
+                                    <div class="drag-handle">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
                                     <div class="time-label">{{ current_time }}</div>
                                     <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
                                         <select class="form-select form-select-sm task-select">
@@ -140,6 +143,9 @@
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
+                                    <div class="drag-handle">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
                                     <div class="time-label">{{ current_time }}</div>
                                     <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
                                         <select class="form-select form-select-sm task-select">
