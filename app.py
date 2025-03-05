@@ -374,8 +374,12 @@ def summary():
 def calendar_settings():
     if request.method == 'POST':
         selected_ids = request.json.get('calendar_ids', [])
+        logger.debug(f"Received calendar IDs to save: {selected_ids}")
+
+        # Store the selected calendars
         current_user.selected_calendars = selected_ids
         db.session.commit()
+        logger.info(f"Saved selected calendars for user {current_user.id}: {selected_ids}")
         return jsonify({'status': 'success'})
 
     try:
@@ -397,6 +401,7 @@ def calendar_settings():
                                 selected_calendars=[])
 
         logger.debug(f"Found {len(calendars)} calendars")
+        logger.debug(f"Currently selected calendars: {current_user.selected_calendars}")
         return render_template('calendar_settings.html', 
                             calendars=calendars,
                             selected_calendars=current_user.selected_calendars or [])

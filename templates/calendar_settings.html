@@ -43,9 +43,11 @@
 <script>
 document.getElementById('calendarSettingsForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const selectedCalendars = [...document.querySelectorAll('input[name="calendars[]"]:checked')]
         .map(input => input.value);
+
+    console.log('Saving calendar selections:', selectedCalendars);
 
     fetch('/calendar/settings', {
         method: 'POST',
@@ -61,6 +63,10 @@ document.getElementById('calendarSettingsForm').addEventListener('submit', funct
         if (data.status === 'success') {
             window.location.href = '/';
         }
+    })
+    .catch(error => {
+        console.error('Error saving calendar settings:', error);
+        alert('Failed to save calendar settings. Please try again.');
     });
 });
 </script>
