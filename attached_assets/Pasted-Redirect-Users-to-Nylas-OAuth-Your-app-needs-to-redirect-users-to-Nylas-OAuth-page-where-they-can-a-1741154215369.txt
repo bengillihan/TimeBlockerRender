@@ -1,0 +1,79 @@
+Redirect Users to Nylas OAuth
+Your app needs to redirect users to Nylas' OAuth page where they can authenticate with Google Calendar.
+
+Example: Generate Nylas OAuth URL
+python
+Copy
+Edit
+import os
+from urllib.parse import urlencode
+
+def get_nylas_oauth_url():
+    params = {
+        'client_id': os.environ.get('NYLAS_CLIENT_ID'),
+        'response_type': 'code',
+        'scope': 'calendar.read_only',
+        'redirect_uri': os.environ.get('NYLAS_REDIRECT_URI'),
+    }
+    return f"https://login.nylas.com/oauth/authorize?{urlencode(params)}"
+When a user clicks "Connect to Google Calendar", redirect them to this URL.
+4️⃣ Handle Nylas OAuth Callback
+Once the user approves access, Nylas redirects them to your callback URL with a one-time authorization code.
+
+Example: Flask Route to Capture Code
+python
+Copy
+Edit
+from flask import request, redirect, flash
+import requests
+import os
+
+@nylas_auth.route('/nylas/callback')
+def nylas_callback():
+    code = request.args.get('code')
+    
+    if not code:
+        flash("No authorization code received!", "error")
+        return redirect('/')
+
+    # Exchange the authorization code for an access token
+    response = requests.post('https://api.nylas.com/oauth/token', data={
+        'client_id': os.environ.get('NYLAS_CLIENT_ID'),
+        'client_secret': os.environ.get('NYLAS_CLIENT_SECRET'),
+        'grant_type': 'authorization_code',
+        'code': code,
+    })
+
+    if response.status_code != 200:
+        flash(f"Failed to exchange code: {response.text}", "error")
+        return redirect('/')
+
+    token_data = response.json()
+    access_token = token_data['access_token']
+
+    # Save this access token for future API requests
+    # Store it in your database linked to the user
+    print(f"✅ Nylas Access Token: {access_token}")
+
+    flash("Connected to Google Calendar successfully!", "success")
+    return redirect('/dashboard')
+5️⃣ Use the Access Token
+Once you have the access token, you can use it to fetch Google Calendar events.
+
+Example: Fetch Events from Google Calendar via Nylas
+python
+Copy
+Edit
+def get_calendar_events(nylas_access_token):
+    headers = {
+        'Authorization': f'Bearer {nylas_access_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.get('https://api.nylas.com/events', headers=headers)
+
+    if response.status_code != 200:
+        print(f"Error fetching events: {response.text}")
+        return []
+
+    return response.json()

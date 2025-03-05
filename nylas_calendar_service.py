@@ -17,7 +17,7 @@ def get_calendar_events(access_token, selected_date):
             os.environ.get('NYLAS_CLIENT_ID'),
             os.environ.get('NYLAS_CLIENT_SECRET'),
             access_token,
-            api_server="https://cloud.nylas.com"  # Updated API endpoint
+            api_server="https://api.nylas.com"  # Updated API endpoint
         )
 
         # Convert date to timestamp range
