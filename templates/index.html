@@ -40,15 +40,9 @@
                         {{ stats.name }}
                     </h6>
                     <div class="ps-3">
-                        {% for task_id, task in stats.tasks.items() %}
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small>{{ task.title }}</small>
-                            <small>{{ (task.minutes / 60)|round(1) }} hrs</small>
-                        </div>
-                        {% endfor %}
-                        <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
-                            <small><strong>Category Total</strong></small>
-                            <small><strong>{{ (stats.minutes / 60)|round(1) }} hrs</strong></small>
+                            <small>Total Time</small>
+                            <small>{{ (stats.minutes / 60)|round(1) }} hrs</small>
                         </div>
                     </div>
                 </div>
