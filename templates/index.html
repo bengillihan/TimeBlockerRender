@@ -14,6 +14,18 @@
                 </button>
                 <button id="todayBtn" class="btn btn-outline-primary ms-2">Today</button>
             </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="rating">
+                    {% for i in range(1, 6) %}
+                    <input type="radio" name="rating" id="rating{{ i }}" value="{{ i }}"
+                           {% if i == productivity_rating %}checked{% endif %}>
+                    <label for="rating{{ i }}"><i class="fas fa-star"></i></label>
+                    {% endfor %}
+                </div>
+                <button id="closeDay" class="btn btn-outline-success">
+                    <i class="fas fa-check-circle me-1"></i>Close Day
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -230,28 +242,6 @@
                                     </div>
                                 </div>
                             {% endfor %}
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Daily Review</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Productivity Rating</label>
-                    <div class="rating">
-                        {% for i in range(1, 6) %}
-                        <input type="radio" name="rating" id="rating{{ i }}" value="{{ i }}"
-                               {% if i == productivity_rating %}checked{% endif %}>
-                        <label for="rating{{ i }}"><i class="fas fa-star"></i></label>
                         {% endfor %}
                     </div>
                 </div>

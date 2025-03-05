@@ -295,15 +295,16 @@ def save_daily_plan():
     # Update priorities
     Priority.query.filter_by(daily_plan_id=daily_plan.id).delete()
     for i, priority in enumerate(data.get('priorities', [])):
-        p = Priority(
-            daily_plan_id=daily_plan.id,
-            content=priority['content'],
-            order=i,
-            completed=priority.get('completed', False)
-        )
-        db.session.add(p)
+        if priority.get('content', '').strip():  # Only add non-empty priorities
+            p = Priority(
+                daily_plan_id=daily_plan.id,
+                content=priority['content'],
+                order=i,
+                completed=priority.get('completed', False)
+            )
+            db.session.add(p)
 
-    # Update time blocks with Pacific time and notes
+    # Update time blocks
     TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
     for block in data.get('time_blocks', []):
         time_str = block['start_time']
@@ -317,12 +318,17 @@ def save_daily_plan():
             end_time=end_time,
             task_id=block.get('task_id'),
             completed=block.get('completed', False),
-            notes=block.get('notes', '')  # Remove the [:15] truncation to allow full notes
+            notes=block.get('notes', '')
         )
         db.session.add(tb)
 
-    db.session.commit()
-    return jsonify({'status': 'success'})
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error saving daily plan: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/summary')
 @login_required

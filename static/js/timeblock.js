@@ -238,8 +238,58 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
+    // Handle close day functionality
+    document.getElementById('closeDay')?.addEventListener('click', async function() {
+        const currentDate = document.getElementById('datePicker').value;
+        const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
+            content: input.value,
+            completed: input.classList.contains('completed')
+        }));
+
+        // Get the next day's date
+        const nextDate = new Date(currentDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDateStr = nextDate.toISOString().split('T')[0];
+
+        try {
+            // First, save current day's data
+            await saveData();
+
+            // Then create next day's plan with carried over priorities
+            const incompletePriorities = priorities.filter(p => !p.completed && p.content.trim());
+
+            // Prepare data for the next day
+            const nextDayData = {
+                date: nextDateStr,
+                priorities: incompletePriorities,
+                time_blocks: [],
+                productivity_rating: 0,
+                brain_dump: ''
+            };
+
+            // Save the next day's data
+            const response = await fetch('/api/daily-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(nextDayData)
+            });
+
+            if (response.ok) {
+                // Navigate to the next day
+                window.location.href = `/?date=${nextDateStr}`;
+            } else {
+                throw new Error('Failed to create next day\'s plan');
+            }
+        } catch (error) {
+            console.error('Error closing day:', error);
+            alert('Failed to close day and create next day\'s plan. Please try again.');
+        }
+    });
+
     // Save functionality
-    function saveData() {
+    async function saveData() {
         const date = document.getElementById('datePicker').value;
         const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
             content: input.value,
@@ -250,14 +300,14 @@ document.addEventListener('DOMContentLoaded', function() {
             start_time: block.dataset.time,
             end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
-            notes: block.querySelector('.task-notes')?.value || '',  // Ensure notes are included
+            notes: block.querySelector('.task-notes')?.value || '',
             completed: false
         }));
 
         const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
         const brainDump = document.getElementById('brainDump')?.value || '';
 
-        fetch('/api/daily-plan', {
+        return fetch('/api/daily-plan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -269,7 +319,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 productivity_rating: rating,
                 brain_dump: brainDump
             })
-        }).catch(error => console.error('Error saving data:', error));
+        }).catch(error => {
+            console.error('Error saving data:', error);
+            throw error;
+        });
     }
 
     // Initialize auto-save
