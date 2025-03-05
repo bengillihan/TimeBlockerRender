@@ -23,7 +23,7 @@ def get_nylas_oauth_url():
         'scope': 'calendar.read_only',
         'redirect_uri': redirect_uri
     }
-    auth_url = f"https://api.us.nylas.com/oauth/authorize?{urlencode(params)}"
+    auth_url = f"https://login.nylas.com/oauth/authorize?{urlencode(params)}"
     logger.info(f"Generated Nylas auth URL (client_id masked): {auth_url.replace(params['client_id'], 'MASKED')}")
     return auth_url
 
@@ -48,7 +48,7 @@ def callback():
 
     try:
         logger.info("Attempting to exchange code for access token")
-        response = requests.post('https://api.us.nylas.com/oauth/token', data={
+        response = requests.post('https://api.nylas.com/oauth/token', data={
             'client_id': os.environ.get('NYLAS_CLIENT_ID'),
             'client_secret': os.environ.get('NYLAS_CLIENT_SECRET'),
             'grant_type': 'authorization_code',
