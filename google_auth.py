@@ -1,18 +1,23 @@
 import json
 import os
 import requests
+import logging
 from app import db
 from flask import Blueprint, redirect, request, url_for, flash
 from flask_login import login_required, login_user, logout_user
 from models import User
 from oauthlib.oauth2 import WebApplicationClient
 
+logger = logging.getLogger(__name__)
+
 # Make credentials optional during development
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
-DEV_REDIRECT_URL = f'https://{os.environ["REPLIT_DEV_DOMAIN"]}/google_login/callback' if "REPLIT_DEV_DOMAIN" in os.environ else None
+# Handle both development and production domains
+REPLIT_DOMAIN = os.environ.get("REPL_SLUG") + "." + os.environ.get("REPL_OWNER") + ".repl.co" if "REPL_SLUG" in os.environ else None
+REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN")
 
 client = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
 google_auth = Blueprint("google_auth", __name__)
@@ -26,9 +31,15 @@ def login():
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
+    # Use the appropriate domain for the callback
+    callback_domain = f"https://{REPLIT_DOMAIN}" if REPLIT_DOMAIN else request.base_url.replace("http://", "https://")
+    callback_uri = f"{callback_domain}/google_login/callback"
+    
+    logger.debug(f"OAuth callback URI: {callback_uri}")
+
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri=request.base_url.replace("http://", "https://") + "/callback",
+        redirect_uri=callback_uri,
         scope=["openid", "email", "profile"],
     )
     return redirect(request_uri)
@@ -42,10 +53,16 @@ def callback():
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     token_endpoint = google_provider_cfg["token_endpoint"]
 
+    # Use the appropriate domain for the callback
+    callback_domain = f"https://{REPLIT_DOMAIN}" if REPLIT_DOMAIN else request.base_url.replace("http://", "https://")
+    callback_uri = callback_domain.rstrip('/') + '/google_login/callback'
+    
+    logger.debug(f"OAuth callback verification URI: {callback_uri}")
+
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
         authorization_response=request.url.replace("http://", "https://"),
-        redirect_url=request.base_url.replace("http://", "https://"),
+        redirect_url=callback_uri,
         code=code,
     )
     token_response = requests.post(
