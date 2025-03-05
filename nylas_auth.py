@@ -31,7 +31,14 @@ def get_nylas_oauth_url():
 @login_required
 def auth():
     """Redirect user to Nylas OAuth."""
-    return redirect(get_nylas_oauth_url())
+    try:
+        auth_url = get_nylas_oauth_url()
+        logger.info("Redirecting to Nylas auth URL")
+        return redirect(auth_url)
+    except Exception as e:
+        logger.error(f"Error initiating Nylas auth: {str(e)}")
+        flash("Failed to start authentication process. Please try again.", "error")
+        return redirect(url_for('index'))
 
 @nylas_auth.route('/nylas/callback')
 @login_required
