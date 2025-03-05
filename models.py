@@ -50,4 +50,3 @@ class Task(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     time_blocks = db.relationship('TimeBlock', backref='task', lazy=True)
-    color = db.Column(db.String(7), default='#6c757d')  # Default to a neutral color

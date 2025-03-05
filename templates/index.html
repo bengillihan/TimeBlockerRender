@@ -62,10 +62,10 @@
                                         <option value="">Select a task</option>
                                         <option value="new">+ Add New Task</option>
                                         {% for category in categories %}
-                                            <optgroup label="{{ category.name }}">
+                                            <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
                                                 {% for task in category.tasks %}
                                                     <option value="{{ task.id }}" 
-                                                            data-color="{{ task.color }}"
+                                                            data-category-color="{{ category.color }}"
                                                             {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
                                                         {{ task.title }}
                                                     </option>

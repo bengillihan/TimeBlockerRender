@@ -16,11 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.task-select').forEach(select => {
         if (select.value) {
             const selectedOption = select.options[select.selectedIndex];
-            const taskColor = selectedOption.dataset.color;
+            const categoryColor = selectedOption.dataset.categoryColor;
             const timeContent = select.closest('.time-content');
-            if (taskColor) {
+            if (categoryColor) {
                 timeContent.classList.add('has-task');
-                timeContent.style.borderLeftColor = taskColor;
+                timeContent.style.borderLeftColor = categoryColor;
             }
         }
     });
@@ -50,9 +50,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const timeContent = this.closest('.time-content');
             if (this.value) {
                 const selectedOption = this.options[this.selectedIndex];
-                const taskColor = selectedOption.dataset.color;
+                const categoryColor = selectedOption.dataset.categoryColor;
                 timeContent.classList.add('has-task');
-                timeContent.style.borderLeftColor = taskColor;
+                timeContent.style.borderLeftColor = categoryColor;
             } else {
                 timeContent.classList.remove('has-task');
                 timeContent.style.borderLeftColor = '';
@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const taskTitle = document.getElementById('taskTitle');
         const taskDescription = document.getElementById('taskDescription');
         const taskCategory = document.getElementById('taskCategory');
-        const taskColor = document.getElementById('taskColor');
 
         if (!taskTitle || !taskTitle.value || !taskCategory || !taskCategory.value) return;
 
@@ -79,23 +78,22 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 title: taskTitle.value,
                 description: taskDescription?.value || '',
-                category_id: taskCategory.value,
-                color: taskColor?.value || '#6c757d'
+                category_id: taskCategory.value
             })
         })
         .then(response => response.json())
         .then(task => {
             // Add the new task to all task select dropdowns
             document.querySelectorAll('.task-select').forEach(select => {
-                const optgroup = select.querySelector(`optgroup[label="${
-                    taskCategory.options[taskCategory.selectedIndex].text
-                }"]`);
+                const categoryName = taskCategory.options[taskCategory.selectedIndex].text;
+                const optgroup = select.querySelector(`optgroup[label="${categoryName}"]`);
+                const categoryColor = optgroup.dataset.color;
 
                 if (optgroup) {
                     const option = document.createElement('option');
                     option.value = task.id;
                     option.textContent = task.title;
-                    option.dataset.color = task.color;
+                    option.dataset.categoryColor = categoryColor;
                     optgroup.appendChild(option);
                 }
             });
@@ -104,8 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.activeTimeBlockSelect) {
                 const timeContent = window.activeTimeBlockSelect.closest('.time-content');
                 window.activeTimeBlockSelect.value = task.id;
+                const categoryColor = taskCategory.options[taskCategory.selectedIndex].parentElement.dataset.color;
                 timeContent.classList.add('has-task');
-                timeContent.style.borderLeftColor = task.color;
+                timeContent.style.borderLeftColor = categoryColor;
                 window.activeTimeBlockSelect = null;
             }
 

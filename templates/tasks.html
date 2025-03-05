@@ -20,7 +20,7 @@
         {% for category in categories %}
         <div class="col-md-4 mb-4">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center" style="border-left: 4px solid {{ category.color }}">
                     <h5 class="card-title mb-0">{{ category.name }}</h5>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-primary edit-category" title="Edit" data-id="{{ category.id }}" data-name="{{ category.name }}" data-color="{{ category.color }}">
@@ -34,15 +34,14 @@
                 <div class="card-body">
                     <ul class="list-group task-list" data-category-id="{{ category.id }}">
                         {% for task in category.tasks %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="{{ task.id }}" style="border-left: 4px solid {{ task.color }}">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="{{ task.id }}" style="border-left: 4px solid {{ category.color }}">
                             <span class="task-title">{{ task.title }}</span>
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-outline-primary edit-task" title="Edit"
                                     data-id="{{ task.id }}"
                                     data-title="{{ task.title }}"
                                     data-description="{{ task.description }}"
-                                    data-category="{{ task.category_id }}"
-                                    data-color="{{ task.color }}">
+                                    data-category="{{ task.category_id }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger delete-task" title="Delete">
@@ -114,10 +113,6 @@
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="taskColor" class="form-label">Task Color</label>
-                        <input type="color" class="form-control form-control-color" id="taskColor" value="#6c757d">
                     </div>
                 </form>
             </div>
@@ -191,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const title = document.getElementById('taskTitle').value;
         const description = document.getElementById('taskDescription').value;
         const categoryId = document.getElementById('taskCategory').value;
-        const color = document.getElementById('taskColor').value;
 
         if (!title || !categoryId) return;
 
@@ -206,8 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 title,
                 description,
-                category_id: categoryId,
-                color
+                category_id: categoryId
             })
         })
         .then(response => response.json())
@@ -223,13 +216,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = this.dataset.title;
             const description = this.dataset.description;
             const categoryId = this.dataset.category;
-            const color = this.dataset.color;
 
             document.getElementById('taskId').value = id;
             document.getElementById('taskTitle').value = title;
             document.getElementById('taskDescription').value = description;
             document.getElementById('taskCategory').value = categoryId;
-            document.getElementById('taskColor').value = color;
 
             new bootstrap.Modal(document.getElementById('addTaskModal')).show();
         });
