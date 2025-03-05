@@ -11,17 +11,40 @@
 
     <div class="row">
         <div class="col-md-8">
-            {% if not current_user.nylas_access_token %}
+            <!-- Connection Status Cards -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Connect Your Calendar</h5>
-                    <p class="card-text">Connect your Google Calendar using Nylas to see your events.</p>
-                    <a href="{{ url_for('nylas_auth.auth') }}" class="btn btn-primary">
-                        <i class="fas fa-calendar-alt me-2"></i> Connect Calendar
-                    </a>
+                    <h5 class="card-title">Connection Status</h5>
+
+                    <!-- Google Calendar Status -->
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fab fa-google me-2"></i>
+                        <span>Google Calendar:</span>
+                        {% if current_user.credentials_info %}
+                            <span class="badge bg-success ms-2">Connected</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-2">Not Connected</span>
+                            <a href="{{ url_for('google_auth.login') }}" class="btn btn-sm btn-outline-primary ms-2">
+                                Connect Google Calendar
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Nylas Status -->
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <span>Nylas Integration:</span>
+                        {% if current_user.nylas_access_token %}
+                            <span class="badge bg-success ms-2">Connected</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-2">Not Connected</span>
+                            <a href="{{ url_for('nylas_auth.auth') }}" class="btn btn-sm btn-outline-primary ms-2">
+                                Connect via Nylas
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-            {% endif %}
 
             {% if calendars %}
             <div class="card">

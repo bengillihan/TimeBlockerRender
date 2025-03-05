@@ -392,32 +392,37 @@ def calendar_settings():
         return jsonify({'status': 'success'})
 
     try:
-        # Check if user has Google credentials
-        if not hasattr(current_user, 'credentials_info'):
-            logger.warning(f"User {current_user.id} missing Google credentials")
-            flash("Please connect your Google account first", "warning")
-            return redirect(url_for('google_auth.login'))
+        calendars = []
+        has_google_auth = hasattr(current_user, 'credentials_info') and current_user.credentials_info
+        has_nylas_auth = bool(current_user.nylas_access_token)
 
-        logger.debug(f"Fetching calendar list for user {current_user.id}")
-        from calendar_service import get_calendar_list
-        calendars = get_calendar_list(current_user.credentials_info)
+        logger.info(f"User {current_user.id} auth status - Google: {has_google_auth}, Nylas: {has_nylas_auth}")
 
-        if not calendars:
-            logger.warning("No calendars found in response")
-            flash("No calendars found. Please ensure you've granted calendar access.", "warning")
-            return render_template('calendar_settings.html', 
-                                calendars=[],
-                                selected_calendars=[])
+        # If Google Calendar is connected, fetch calendars
+        if has_google_auth:
+            logger.debug(f"Fetching calendar list for user {current_user.id}")
+            from calendar_service import get_calendar_list
+            calendars = get_calendar_list(current_user.credentials_info)
+
+            if not calendars:
+                logger.warning("No calendars found in response")
+                flash("No calendars found. Please ensure you've granted calendar access.", "warning")
+
+        # If neither service is connected, show appropriate message
+        if not has_google_auth and not has_nylas_auth:
+            flash("Please connect at least one calendar service to continue.", "info")
 
         logger.debug(f"Found {len(calendars)} calendars")
         logger.debug(f"Currently selected calendars: {current_user.selected_calendars}")
+
         return render_template('calendar_settings.html', 
                             calendars=calendars,
                             selected_calendars=current_user.selected_calendars or [])
+
     except Exception as e:
-        logger.error(f"Error fetching calendar list: {str(e)}")
-        flash("Could not fetch calendars. Please try logging in again.", "warning")
-        return redirect(url_for('google_auth.login'))
+        logger.error(f"Error in calendar settings: {str(e)}")
+        flash("An error occurred while loading calendar settings. Please try again.", "error")
+        return redirect(url_for('index'))
 
 @app.route('/health')
 def health_check():
