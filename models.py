@@ -7,6 +7,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
+    tasks = db.relationship('Task', backref='user', lazy=True)
 
 class DailyPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,5 +32,20 @@ class TimeBlock(db.Model):
     daily_plan_id = db.Column(db.Integer, db.ForeignKey('daily_plan.id'), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
-    content = db.Column(db.String(200))
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     completed = db.Column(db.Boolean, default=False)
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    tasks = db.relationship('Task', backref='category', lazy=True)
+
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    time_blocks = db.relationship('TimeBlock', backref='task', lazy=True)
