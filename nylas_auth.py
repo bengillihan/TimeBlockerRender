@@ -11,13 +11,21 @@ nylas_auth = Blueprint('nylas_auth', __name__)
 
 def get_nylas_oauth_url():
     """Generate Nylas OAuth URL."""
+    # Get the external HTTPS URL from Replit environment
+    replit_domain = os.environ.get('REPLIT_DOMAIN', '')
+    redirect_uri = f"https://{replit_domain}/nylas/callback" if replit_domain else url_for('nylas_auth.callback', _external=True)
+
+    logger.info(f"Configured Nylas redirect URI: {redirect_uri}")
+
     params = {
         'client_id': os.environ.get('NYLAS_CLIENT_ID'),
         'response_type': 'code',
         'scope': 'calendar.read_only',
-        'redirect_uri': url_for('nylas_auth.callback', _external=True)
+        'redirect_uri': redirect_uri
     }
-    return f"https://login.nylas.com/oauth/authorize?{urlencode(params)}"
+    auth_url = f"https://api.nylas.com/oauth/authorize?{urlencode(params)}"
+    logger.info(f"Generated Nylas auth URL (client_id masked): {auth_url.replace(params['client_id'], 'MASKED')}")
+    return auth_url
 
 @nylas_auth.route('/nylas/auth')
 @login_required
