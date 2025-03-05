@@ -15,9 +15,21 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
-# Handle both development and production domains
-REPLIT_DOMAIN = os.environ.get("REPL_SLUG") + "." + os.environ.get("REPL_OWNER") + ".repl.co" if "REPL_SLUG" in os.environ else None
-REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN")
+# Get the Replit domain for OAuth callback
+REPL_SLUG = os.environ.get("REPL_SLUG")
+REPL_OWNER = os.environ.get("REPL_OWNER")
+REPLIT_URL = f"https://{REPL_SLUG}.{REPL_OWNER}.repl.co" if REPL_SLUG and REPL_OWNER else None
+
+print(f"""
+To make Google authentication work:
+1. Go to https://console.cloud.google.com/apis/credentials
+2. Create a new OAuth 2.0 Client ID or edit existing one
+3. Add this exact URL to Authorized redirect URIs:
+   {REPLIT_URL}/google_login/callback
+
+For detailed instructions, see:
+https://docs.replit.com/tutorials/python/authentication-with-flask
+""")
 
 client = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
 google_auth = Blueprint("google_auth", __name__)
@@ -28,14 +40,15 @@ def login():
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
+    if not REPLIT_URL:
+        flash("Could not determine Replit URL. Please ensure you're running on Replit.", "warning")
+        return redirect(url_for("index"))
+
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
-    # Use the appropriate domain for the callback
-    callback_domain = f"https://{REPLIT_DOMAIN}" if REPLIT_DOMAIN else request.base_url.replace("http://", "https://")
-    callback_uri = f"{callback_domain}/google_login/callback"
-    
-    logger.debug(f"OAuth callback URI: {callback_uri}")
+    callback_uri = f"{REPLIT_URL}/google_login/callback"
+    logger.info(f"OAuth login callback URI: {callback_uri}")
 
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
@@ -46,18 +59,15 @@ def login():
 
 @google_auth.route("/google_login/callback")
 def callback():
-    if not GOOGLE_CLIENT_ID:
+    if not GOOGLE_CLIENT_ID or not REPLIT_URL:
         return redirect(url_for("index"))
 
     code = request.args.get("code")
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     token_endpoint = google_provider_cfg["token_endpoint"]
 
-    # Use the appropriate domain for the callback
-    callback_domain = f"https://{REPLIT_DOMAIN}" if REPLIT_DOMAIN else request.base_url.replace("http://", "https://")
-    callback_uri = callback_domain.rstrip('/') + '/google_login/callback'
-    
-    logger.debug(f"OAuth callback verification URI: {callback_uri}")
+    callback_uri = f"{REPLIT_URL}/google_login/callback"
+    logger.info(f"OAuth callback verification URI: {callback_uri}")
 
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
