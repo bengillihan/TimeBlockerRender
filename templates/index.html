@@ -206,7 +206,16 @@
                         {% else %}
                             <div class="text-muted text-center p-3">
                                 <i class="fas fa-calendar-alt mb-2"></i>
-                                <p class="mb-0">No calendar events found for today</p>
+                                {% if has_google_calendar %}
+                                    <p class="mb-0">No calendar events found for today</p>
+                                {% else %}
+                                    <p class="mb-0">
+                                        No calendar connected
+                                        <a href="{{ url_for('calendar_settings') }}" class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="fas fa-plus"></i> Connect Calendar
+                                        </a>
+                                    </p>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </div>

@@ -81,6 +81,7 @@ def index():
 
     # Get calendar events for the selected date
     calendar_events = []
+    has_google_calendar = False
     if hasattr(current_user, 'credentials_info') and current_user.credentials_info:
         try:
             from calendar_service import get_calendar_events
@@ -93,6 +94,7 @@ def index():
                 date,
                 calendar_ids=selected_calendars
             )
+            has_google_calendar = True
             logger.info(f"Retrieved {len(calendar_events)} calendar events")
             for event in calendar_events:
                 logger.debug(f"Event: {event['summary']} at {event['start_time']}")
@@ -101,7 +103,7 @@ def index():
             flash("Could not fetch calendar events. Please try reconnecting your Google Calendar.", "warning")
     else:
         logger.warning(f"User {current_user.id} is missing Google credentials")
-        flash("Please connect your Google Calendar to see events", "info")
+        has_google_calendar = False
 
     # Initialize empty lists/dicts for data
     time_blocks = []
@@ -160,7 +162,8 @@ def index():
                          priorities=priorities,
                          brain_dump=brain_dump,
                          productivity_rating=productivity_rating,
-                         calendar_events=calendar_events)
+                         calendar_events=calendar_events,
+                         has_google_calendar=has_google_calendar)
 
 @app.route('/login')
 def login():
