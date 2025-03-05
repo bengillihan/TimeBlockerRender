@@ -60,9 +60,13 @@
                     <li class="list-group-item">
                         <div class="input-group">
                             <div class="input-group-text">
-                                <input type="checkbox" class="priority-checkbox">
+                                <input type="checkbox" class="priority-checkbox" 
+                                       {% if priorities[i].completed if i < priorities|length else False %}checked{% endif %}>
                             </div>
-                            <input type="text" class="form-control priority-input" placeholder="Priority {{ i + 1 }}">
+                            <input type="text" class="form-control priority-input" 
+                                   placeholder="Priority {{ i + 1 }}"
+                                   value="{{ priorities[i].content if i < priorities|length else '' }}"
+                                   {% if priorities[i].completed if i < priorities|length else False %}class="completed"{% endif %}>
                         </div>
                     </li>
                     {% endfor %}
@@ -75,7 +79,8 @@
                 <h5 class="card-title mb-0">Notes</h5>
             </div>
             <div class="card-body">
-                <textarea id="brainDump" class="form-control" rows="5" placeholder="Write your thoughts here..."></textarea>
+                <textarea id="brainDump" class="form-control" rows="5" 
+                          placeholder="Write your thoughts here...">{{ brain_dump }}</textarea>
             </div>
         </div>
     </div>
@@ -224,7 +229,8 @@
                     <label class="form-label">Productivity Rating</label>
                     <div class="rating">
                         {% for i in range(1, 6) %}
-                        <input type="radio" name="rating" id="rating{{ i }}" value="{{ i }}">
+                        <input type="radio" name="rating" id="rating{{ i }}" value="{{ i }}"
+                               {% if i == productivity_rating %}checked{% endif %}>
                         <label for="rating{{ i }}"><i class="fas fa-star"></i></label>
                         {% endfor %}
                     </div>

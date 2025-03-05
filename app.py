@@ -76,30 +76,25 @@ def index():
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
 
-    # Get calendar events for the selected date
-    calendar_events = []
-    if hasattr(current_user, 'credentials_info'):
-        try:
-            from calendar_service import get_calendar_events
-            # Use selected calendars if available, otherwise default to primary
-            selected_calendars = current_user.selected_calendars or ['primary']
-            logger.debug(f"Fetching calendar events for user {current_user.id} with selected calendars: {selected_calendars}")
-            calendar_events = get_calendar_events(
-                current_user.credentials_info, 
-                date,
-                calendar_ids=selected_calendars
-            )
-            logger.debug(f"Retrieved {len(calendar_events)} calendar events")
-        except Exception as e:
-            logger.error(f"Error fetching calendar events: {str(e)}")
-            flash("Could not fetch calendar events. Please try logging in again.", "warning")
-
-    # If there's a daily plan, get its time blocks with task information
+    # Initialize empty lists/dicts for data
     time_blocks = []
     category_stats = {}
     total_minutes = 0
+    priorities = []
+    brain_dump = ''
+    productivity_rating = 0
 
     if daily_plan:
+        # Load priorities
+        priorities = [{
+            'content': p.content,
+            'completed': p.completed
+        } for p in daily_plan.priorities]
+
+        # Load brain dump and rating
+        brain_dump = daily_plan.brain_dump or ''
+        productivity_rating = daily_plan.productivity_rating or 0
+
         # Process time blocks and calculate statistics
         for block in daily_plan.time_blocks:
             time_blocks.append({
@@ -135,7 +130,9 @@ def index():
                          time_blocks=time_blocks,
                          category_stats=category_stats,
                          total_minutes=total_minutes,
-                         calendar_events=calendar_events)
+                         priorities=priorities,
+                         brain_dump=brain_dump,
+                         productivity_rating=productivity_rating)
 
 @app.route('/login')
 def login():
