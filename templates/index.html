@@ -90,11 +90,11 @@
             </div>
             <div class="card-body">
                 <div id="timeBlocks" class="time-blocks">
-                    <!-- Morning Hours (6 AM - 11:45 AM) -->
+                    <!-- Morning Hours (6:30 AM - 11:45 AM) -->
                     <div class="time-block-column">
                         <h6 class="text-muted mb-2">Morning</h6>
                         {% for hour in range(6, 12) %}
-                            {% for minute in [0, 15, 30, 45] %}
+                            {% for minute in [30, 45] if hour == 6 else [0, 15, 30, 45] %}
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
