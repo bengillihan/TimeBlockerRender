@@ -1,0 +1,59 @@
+.time-blocks {
+    display: grid;
+    gap: 5px;
+}
+
+.time-block {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--bs-border-color);
+    padding: 5px;
+    min-height: 40px;
+}
+
+.time-label {
+    width: 70px;
+    font-size: 0.9em;
+    color: var(--bs-secondary);
+}
+
+.time-content {
+    flex-grow: 1;
+    min-height: 30px;
+    background-color: var(--bs-dark);
+    border-radius: 4px;
+    padding: 5px;
+    cursor: move;
+}
+
+.time-content.dragging {
+    opacity: 0.5;
+}
+
+.rating {
+    display: flex;
+    gap: 10px;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    cursor: pointer;
+    color: var(--bs-secondary);
+}
+
+.rating input:checked ~ label {
+    color: var(--bs-warning);
+}
+
+.rating label:hover,
+.rating label:hover ~ label {
+    color: var(--bs-warning);
+}
+
+.priority-input.completed {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
