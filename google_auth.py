@@ -20,6 +20,7 @@ REPLIT_URL = "https://TimeBlocker-bdgillihan.replit.app"
 
 logger.info(f"Configured Replit URL: {REPLIT_URL}")
 
+# OAuth Setup Instructions
 print(f"""
 To make Google authentication work:
 1. Go to https://console.cloud.google.com/apis/credentials
@@ -46,8 +47,10 @@ def login():
 
         # Log OAuth request details
         logger.info("Initiating Google OAuth login")
+        logger.debug("Requested scopes: openid, email, profile, calendar.readonly")
         logger.info(f"Redirect URI: {REPLIT_URL}/google_login/callback")
 
+        # Prepare OAuth request with required scopes
         request_uri = client.prepare_request_uri(
             authorization_endpoint,
             redirect_uri=f"{REPLIT_URL}/google_login/callback",
@@ -55,9 +58,10 @@ def login():
                 "openid",
                 "email",
                 "profile",
-                "https://www.googleapis.com/auth/calendar.readonly"
+                "https://www.googleapis.com/auth/calendar.readonly"  # Full URL for Calendar scope
             ],
         )
+        logger.debug(f"Generated OAuth request URI: {request_uri}")
         return redirect(request_uri)
     except Exception as e:
         logger.error(f"Error during OAuth login: {str(e)}")
@@ -71,12 +75,18 @@ def callback():
 
     try:
         code = request.args.get("code")
+        if not code:
+            logger.error("No OAuth code received in callback")
+            flash("Authentication failed - no code received.", "error")
+            return redirect(url_for("index"))
+
         google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
         token_endpoint = google_provider_cfg["token_endpoint"]
 
         callback_uri = f"{REPLIT_URL}/google_login/callback"
         logger.info(f"Processing OAuth callback at: {callback_uri}")
 
+        # Exchange code for token
         token_url, headers, body = client.prepare_token_request(
             token_endpoint,
             authorization_response=request.url.replace("http://", "https://"),
@@ -90,17 +100,30 @@ def callback():
             auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
         )
 
+        # Check token response
+        if not token_response.ok:
+            logger.error(f"Token exchange failed: {token_response.text}")
+            flash("Failed to complete authentication. Please try again.", "error")
+            return redirect(url_for("index"))
+
         # Parse the tokens
         client.parse_request_body_response(json.dumps(token_response.json()))
 
+        # Get user info
         userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
         uri, headers, body = client.add_token(userinfo_endpoint)
         userinfo_response = requests.get(uri, headers=headers, data=body)
+
+        if not userinfo_response.ok:
+            logger.error(f"Failed to get user info: {userinfo_response.text}")
+            flash("Could not get user information. Please try again.", "error")
+            return redirect(url_for("index"))
 
         userinfo = userinfo_response.json()
         if userinfo.get("email_verified"):
             users_email = userinfo["email"]
             users_name = userinfo["given_name"]
+            logger.info(f"Successfully authenticated user: {users_email}")
         else:
             logger.error("User email not verified by Google")
             return "User email not available or not verified by Google.", 400
@@ -110,12 +133,14 @@ def callback():
         if not user:
             user = User(username=users_name, email=users_email)
             db.session.add(user)
+            logger.info(f"Created new user account for: {users_email}")
 
         # Store the credentials info for Calendar API access
         user.credentials_info = {
             'token': token_response.json().get('access_token'),
             'refresh_token': token_response.json().get('refresh_token'),
         }
+        logger.info("Stored OAuth credentials for calendar access")
 
         db.session.commit()
         login_user(user)

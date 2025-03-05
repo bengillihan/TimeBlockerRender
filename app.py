@@ -295,7 +295,7 @@ def save_daily_plan():
             end_time=end_time,
             task_id=block.get('task_id'),
             completed=block.get('completed', False),
-            notes=block.get('notes', '')[:15]  # Limit notes to 15 characters
+            notes=block.get('notes', '')  # Remove the [:15] truncation to allow full notes
         )
         db.session.add(tb)
 

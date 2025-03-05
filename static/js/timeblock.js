@@ -180,16 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add real-time notes update handling
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('task-notes')) {
-            const notesInput = e.target;
-            const timeBlock = notesInput.closest('.time-block');
-
-            // Ensure notes don't exceed max length
-            if (notesInput.value.length > 15) {
-                notesInput.value = notesInput.value.substring(0, 15);
-            }
-
-            // Save data without page reload
-            saveData();
+            saveData();  // Save immediately when notes are updated
         }
     });
 
@@ -259,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
             start_time: block.dataset.time,
             end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
-            notes: block.querySelector('.task-notes')?.value || '',
+            notes: block.querySelector('.task-notes')?.value || '',  // Ensure notes are included
             completed: false
         }));
 
@@ -282,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize auto-save
-    setInterval(saveData, 30000);
+    setInterval(saveData, 30000);  // Save every 30 seconds
     document.querySelectorAll('input, textarea, select').forEach(el => {
         el.addEventListener('change', saveData);
     });
