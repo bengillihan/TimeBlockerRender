@@ -71,6 +71,10 @@
                                 <input type="checkbox" class="form-check-input" id="showInNav" name="show_in_nav" checked>
                                 <label class="form-check-label" for="showInNav">Show in navigation bar</label>
                             </div>
+                            <div class="mt-2" id="iframeHeightGroup" style="display: none;">
+                                <label for="iframeHeight" class="form-label">Iframe Height (pixels)</label>
+                                <input type="number" class="form-control" id="iframeHeight" name="iframe_height" value="600" min="200" max="2000">
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Link</button>
                     </form>
@@ -98,7 +102,12 @@
                                        {% if link.show_in_nav %}checked{% endif %}>
                                 <label class="form-check-label">Show in Nav</label>
                             </div>
-                            <div class="btn-group">
+                            <input type="number" class="form-control form-control-sm iframe-height" 
+                                   style="width: 100px; {% if not link.embed %}display: none;{% endif %}"
+                                   value="{{ link.iframe_height }}"
+                                   min="200" max="2000"
+                                   data-link-id="{{ link.id }}">
+                            <div class="btn-group ms-2">
                                 <button class="btn btn-sm btn-outline-danger delete-link">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -115,6 +124,10 @@
 
 {% block scripts %}
 <script>
+document.getElementById('embedLink').addEventListener('change', function() {
+    document.getElementById('iframeHeightGroup').style.display = this.checked ? 'block' : 'none';
+});
+
 document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -123,7 +136,8 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         url: document.getElementById('linkUrl').value,
         icon_class: document.getElementById('iconClass').value,
         embed: document.getElementById('embedLink').checked,
-        show_in_nav: document.getElementById('showInNav').checked
+        show_in_nav: document.getElementById('showInNav').checked,
+        iframe_height: parseInt(document.getElementById('iframeHeight').value)
     };
 
     try {
@@ -144,6 +158,13 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
     }
+});
+
+document.querySelectorAll('.embed-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const heightInput = this.closest('.d-flex').querySelector('.iframe-height');
+        heightInput.style.display = this.checked ? 'inline-block' : 'none';
+    });
 });
 
 document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
@@ -169,6 +190,32 @@ document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
             this.checked = !this.checked; // Revert the checkbox
+        }
+    });
+});
+
+document.querySelectorAll('.iframe-height').forEach(input => {
+    input.addEventListener('change', async function() {
+        const linkId = this.dataset.linkId;
+        try {
+            const response = await fetch(`/api/nav_links/${linkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    iframe_height: parseInt(this.value)
+                })
+            });
+
+            if (!response.ok) {
+                alert('Failed to update iframe height. Please try again.');
+                this.value = this.defaultValue; // Revert to previous value
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            this.value = this.defaultValue; // Revert to previous value
         }
     });
 });

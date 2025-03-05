@@ -21,6 +21,7 @@ class NavLink(db.Model):
     order = db.Column(db.Integer, default=0)
     embed = db.Column(db.Boolean, default=False)  # Add embed field
     show_in_nav = db.Column(db.Boolean, default=True)  # Add show_in_nav field
+    iframe_height = db.Column(db.Integer, default=600)  # Add iframe height field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):

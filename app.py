@@ -477,7 +477,8 @@ def add_nav_link():
         user_id=current_user.id,
         order=new_order,
         embed=data.get('embed', False),
-        show_in_nav=data.get('show_in_nav', True)
+        show_in_nav=data.get('show_in_nav', True),
+        iframe_height=data.get('iframe_height', 600)
     )
     db.session.add(link)
     db.session.commit()
@@ -488,7 +489,8 @@ def add_nav_link():
         'url': link.url,
         'icon_class': link.icon_class,
         'embed': link.embed,
-        'show_in_nav': link.show_in_nav
+        'show_in_nav': link.show_in_nav,
+        'iframe_height': link.iframe_height
     })
 
 @app.route('/api/nav_links/<int:link_id>', methods=['PUT', 'DELETE'])
@@ -513,6 +515,8 @@ def nav_link_operations(link_id):
         link.url = data['url']
     if 'icon_class' in data:
         link.icon_class = data['icon_class']
+    if 'iframe_height' in data:
+        link.iframe_height = data['iframe_height']
 
     db.session.commit()
     return jsonify({
@@ -521,7 +525,8 @@ def nav_link_operations(link_id):
         'url': link.url,
         'icon_class': link.icon_class,
         'embed': link.embed,
-        'show_in_nav': link.show_in_nav
+        'show_in_nav': link.show_in_nav,
+        'iframe_height': link.iframe_height
     })
 
 with app.app_context():
