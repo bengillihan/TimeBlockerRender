@@ -28,6 +28,8 @@
     min-height: 24px;
     border-radius: 4px;
     padding: 2px;
+    display: flex;
+    align-items: center;
 }
 
 .task-select {
@@ -45,6 +47,25 @@
 
 .time-content.dragging {
     opacity: 0.5;
+}
+
+.task-controls {
+    display: none;
+    margin-left: 4px;
+}
+
+.time-content.has-task .task-controls {
+    display: flex;
+    gap: 2px;
+}
+
+.task-control-btn {
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 2px;
 }
 
 .rating {

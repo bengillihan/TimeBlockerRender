@@ -23,6 +23,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Add copy up/down functionality
+    document.addEventListener('click', function(e) {
+        const copyUpBtn = e.target.closest('.copy-up');
+        const copyDownBtn = e.target.closest('.copy-down');
+
+        if (copyUpBtn || copyDownBtn) {
+            const timeBlock = e.target.closest('.time-block');
+            const select = timeBlock.querySelector('.task-select');
+            const direction = copyUpBtn ? 'up' : 'down';
+
+            if (select.value) {
+                const targetBlock = direction === 'up' 
+                    ? timeBlock.previousElementSibling 
+                    : timeBlock.nextElementSibling;
+
+                if (targetBlock) {
+                    const targetSelect = targetBlock.querySelector('.task-select');
+                    const selectedOption = select.options[select.selectedIndex];
+                    targetSelect.value = select.value;
+
+                    // Update visual style
+                    const timeContent = targetSelect.closest('.time-content');
+                    timeContent.classList.add('has-task');
+                    timeContent.style.borderLeftColor = selectedOption.dataset.categoryColor;
+
+                    // Save changes
+                    saveData();
+                }
+            }
+        }
+    });
+
     // Initialize task colors for existing selections
     document.querySelectorAll('.task-select').forEach(select => {
         if (select.value) {
@@ -45,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize task selects
+    // Handle task selection changes
     document.querySelectorAll('.task-select').forEach(select => {
         select.addEventListener('change', function() {
             if (this.value === 'new') {
