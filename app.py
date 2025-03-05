@@ -1,5 +1,6 @@
 import os
 import logging
+import pytz
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +9,9 @@ from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+# Configure timezone
+pacific_tz = pytz.timezone('America/Los_Angeles')
 
 class Base(DeclarativeBase):
     pass
@@ -47,15 +51,24 @@ def create_default_categories(user):
             db.session.add(category)
     db.session.commit()
 
+def get_current_pacific_date():
+    return datetime.now(pacific_tz).date()
+
 @app.route('/')
 def index():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    # Convert date parameter to Pacific time if provided, otherwise use current Pacific time
+    date_param = request.args.get('date')
+    if date_param:
+        date = datetime.strptime(date_param, '%Y-%m-%d').date()
+    else:
+        date = get_current_pacific_date()
+
     daily_plan = DailyPlan.query.filter_by(
         user_id=current_user.id,
-        date=datetime.strptime(date, '%Y-%m-%d').date()
+        date=date
     ).first()
 
     # Get categories and their tasks for the time block selector
@@ -70,9 +83,12 @@ def index():
             'completed': block.completed
         } for block in daily_plan.time_blocks]
 
+    # Format date for display in Pacific time
+    formatted_date = date.strftime('%Y-%m-%d')
+
     return render_template('index.html', 
                          daily_plan=daily_plan, 
-                         date=date, 
+                         date=formatted_date, 
                          categories=categories,
                          time_blocks=time_blocks)
 
@@ -131,7 +147,7 @@ def manage_tasks():
             'title': task.title,
             'description': task.description,
             'category_id': task.category_id,
-            'color': task.color
+            'color': task.category.color
         } for task in tasks])
 
     data = request.json
@@ -139,7 +155,6 @@ def manage_tasks():
         title=data['title'],
         description=data.get('description', ''),
         category_id=data['category_id'],
-        color=data.get('color', '#6c757d'),
         user_id=current_user.id
     )
     db.session.add(task)
@@ -149,7 +164,7 @@ def manage_tasks():
         'title': task.title,
         'description': task.description,
         'category_id': task.category_id,
-        'color': task.color
+        'color': task.category.color
     })
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT', 'DELETE'])
@@ -166,20 +181,20 @@ def task_operations(task_id):
     task.title = data.get('title', task.title)
     task.description = data.get('description', task.description)
     task.category_id = data.get('category_id', task.category_id)
-    task.color = data.get('color', task.color)
     db.session.commit()
     return jsonify({
         'id': task.id,
         'title': task.title,
         'description': task.description,
         'category_id': task.category_id,
-        'color': task.color
+        'color': task.category.color
     })
 
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
 def save_daily_plan():
     data = request.json
+    # Convert date to Pacific time
     date = datetime.strptime(data['date'], '%Y-%m-%d').date()
 
     daily_plan = DailyPlan.query.filter_by(
@@ -205,13 +220,18 @@ def save_daily_plan():
         )
         db.session.add(p)
 
-    # Update time blocks
+    # Update time blocks with Pacific time
     TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
     for block in data.get('time_blocks', []):
+        time_str = block['start_time']
+        # Create time object in Pacific timezone
+        time_obj = datetime.strptime(time_str, '%H:%M').time()
+        end_time = datetime.strptime(block['end_time'], '%H:%M').time()
+
         tb = TimeBlock(
             daily_plan_id=daily_plan.id,
-            start_time=datetime.strptime(block['start_time'], '%H:%M').time(),
-            end_time=datetime.strptime(block['end_time'], '%H:%M').time(),
+            start_time=time_obj,
+            end_time=end_time,
             task_id=block.get('task_id'),
             completed=block.get('completed', False)
         )

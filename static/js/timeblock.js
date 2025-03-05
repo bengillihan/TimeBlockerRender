@@ -1,16 +1,27 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date picker
+    // Initialize date picker with Pacific time
     const datePicker = document.getElementById('datePicker');
-    datePicker.addEventListener('change', function() {
-        window.location.href = `/?date=${this.value}`;
-    });
+    if (datePicker) {
+        // Set the timezone for the date picker
+        const today = new Date();
+        const pacificDate = new Date(today.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+        if (!datePicker.value) {
+            datePicker.value = pacificDate.toISOString().split('T')[0];
+        }
+
+        datePicker.addEventListener('change', function() {
+            window.location.href = `/?date=${this.value}`;
+        });
+    }
 
     // Initialize priorities
     const prioritiesList = document.getElementById('prioritiesList');
-    new Sortable(prioritiesList, {
-        animation: 150,
-        handle: '.priority-input'
-    });
+    if (prioritiesList) {
+        new Sortable(prioritiesList, {
+            animation: 150,
+            handle: '.priority-input'
+        });
+    }
 
     // Initialize task colors for existing selections
     document.querySelectorAll('.task-select').forEach(select => {
@@ -132,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }));
 
         const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
-        const brainDump = document.getElementById('brainDump').value;
+        const brainDump = document.getElementById('brainDump')?.value || '';
 
         fetch('/api/daily-plan', {
             method: 'POST',
