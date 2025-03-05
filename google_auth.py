@@ -16,9 +16,9 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 # Get the Replit domain for OAuth callback
-REPL_SLUG = os.environ.get("REPL_SLUG")
-REPL_OWNER = os.environ.get("REPL_OWNER")
-REPLIT_URL = f"https://{REPL_SLUG}.{REPL_OWNER}.repl.co" if REPL_SLUG and REPL_OWNER else None
+REPLIT_URL = "https://TimeBlocker-bdgillihan.replit.app"
+
+logger.info(f"Configured Replit URL: {REPLIT_URL}")
 
 print(f"""
 To make Google authentication work:
@@ -40,15 +40,13 @@ def login():
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
-    if not REPLIT_URL:
-        flash("Could not determine Replit URL. Please ensure you're running on Replit.", "warning")
-        return redirect(url_for("index"))
-
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
     callback_uri = f"{REPLIT_URL}/google_login/callback"
     logger.info(f"OAuth login callback URI: {callback_uri}")
+    logger.info(f"Current request base URL: {request.base_url}")
+    logger.info(f"Current request URL: {request.url}")
 
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
@@ -59,7 +57,7 @@ def login():
 
 @google_auth.route("/google_login/callback")
 def callback():
-    if not GOOGLE_CLIENT_ID or not REPLIT_URL:
+    if not GOOGLE_CLIENT_ID:
         return redirect(url_for("index"))
 
     code = request.args.get("code")
@@ -68,6 +66,7 @@ def callback():
 
     callback_uri = f"{REPLIT_URL}/google_login/callback"
     logger.info(f"OAuth callback verification URI: {callback_uri}")
+    logger.info(f"Actual callback request URL: {request.url}")
 
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
