@@ -6,6 +6,14 @@
         <div class="col">
             <h2>Navigation Links</h2>
             <p class="text-muted">Customize your navigation bar links.</p>
+            <div class="alert alert-info">
+                <h6>🗓️ Calendar Embedding Tips:</h6>
+                <ul class="mb-0">
+                    <li><strong>Google Calendar:</strong> Use the calendar embed URL from "Settings > Integrate calendar > Embed code"</li>
+                    <li><strong>Office 365:</strong> Open calendar > Share > "Publish this calendar" > Copy the embed URL</li>
+                    <li><strong>Notion:</strong> Share > "Copy link" and ensure the page is set to public</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -23,6 +31,7 @@
                         <div class="mb-3">
                             <label for="linkUrl" class="form-label">URL</label>
                             <input type="url" class="form-control" id="linkUrl" name="url" required>
+                            <small class="text-muted">For calendars, use the embed URL from your calendar settings</small>
                         </div>
                         <div class="mb-3">
                             <label for="iconClass" class="form-label">Icon (Optional)</label>
