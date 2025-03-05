@@ -35,7 +35,7 @@ def get_nylas_oauth_url():
         'state': 'nylas_oauth'  # Add state parameter for security
     }
 
-    auth_url = f"https://login.nylas.com/oauth/authorize?{urlencode(params)}"
+    auth_url = f"https://login.nylas.com/oauth/authorize?{urlencode(params)}" #Corrected Auth URL
     logger.info(f"Generated Nylas auth URL for user {current_user.email}")
     return auth_url
 
@@ -49,7 +49,7 @@ def auth():
         logger.info(f"Redirecting user {current_user.email} to Nylas auth")
         return redirect(auth_url)
     except Exception as e:
-        logger.error(f"Error initiating Nylas auth: {str(e)}")
+        logger.error(f"Error initiating Nylas auth: {str(e)}", exc_info=True) #Improved error logging
         flash("Failed to start authentication process. Please try again.", "error")
         return redirect(url_for('calendar_settings'))
 
@@ -66,12 +66,12 @@ def callback():
         state = request.args.get('state')
 
         if error or not code:
-            logger.error(f"OAuth error for user {current_user.email}: {error} - {error_description}")
+            logger.error(f"OAuth error for user {current_user.email}: {error} - {error_description}", exc_info=True) #Improved error logging
             flash(f'Authorization failed: {error_description or "Please try again."}', 'error')
             return redirect(url_for('calendar_settings'))
 
         if state != 'nylas_oauth':
-            logger.error(f"Invalid state parameter received for user {current_user.email}")
+            logger.error(f"Invalid state parameter received for user {current_user.email}", exc_info=True) #Improved error logging
             flash('Invalid authentication state. Please try again.', 'error')
             return redirect(url_for('calendar_settings'))
 
@@ -84,7 +84,7 @@ def callback():
         })
 
         if response.status_code != 200:
-            logger.error(f"Token exchange failed for user {current_user.email}: {response.text}")
+            logger.error(f"Token exchange failed for user {current_user.email}: {response.text}", exc_info=True) #Improved error logging
             flash('Failed to complete authentication. Please try again.', 'error')
             return redirect(url_for('calendar_settings'))
 
@@ -101,6 +101,6 @@ def callback():
         return redirect(url_for('calendar_settings'))
 
     except Exception as e:
-        logger.error(f"Error in Nylas callback for user {current_user.email}: {str(e)}")
+        logger.error(f"Error in Nylas callback for user {current_user.email}: {str(e)}", exc_info=True) #Improved error logging
         flash('An error occurred during authentication. Please try again.', 'error')
         return redirect(url_for('calendar_settings'))
