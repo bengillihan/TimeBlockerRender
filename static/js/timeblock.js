@@ -1,3 +1,12 @@
+// Date navigation functions
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+function navigateToDate(dateStr) {
+    window.location.href = `/?date=${dateStr}`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize date picker with Pacific time
     const datePicker = document.getElementById('datePicker');
@@ -9,8 +18,27 @@ document.addEventListener('DOMContentLoaded', function() {
             datePicker.value = pacificDate.toISOString().split('T')[0];
         }
 
+        // Date navigation handlers
+        document.getElementById('prevDay')?.addEventListener('click', function() {
+            const currentDate = new Date(datePicker.value);
+            currentDate.setDate(currentDate.getDate() - 1);
+            navigateToDate(formatDate(currentDate));
+        });
+
+        document.getElementById('nextDay')?.addEventListener('click', function() {
+            const currentDate = new Date(datePicker.value);
+            currentDate.setDate(currentDate.getDate() + 1);
+            navigateToDate(formatDate(currentDate));
+        });
+
+        document.getElementById('todayBtn')?.addEventListener('click', function() {
+            const today = new Date();
+            const pacificToday = new Date(today.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
+            navigateToDate(formatDate(pacificToday));
+        });
+
         datePicker.addEventListener('change', function() {
-            window.location.href = `/?date=${this.value}`;
+            navigateToDate(this.value);
         });
     }
 

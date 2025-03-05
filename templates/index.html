@@ -5,8 +5,15 @@
     <div class="col">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Daily Plan</h2>
-            <div>
+            <div class="d-flex align-items-center gap-2">
+                <button id="prevDay" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
                 <input type="date" id="datePicker" class="form-control" value="{{ date }}">
+                <button id="nextDay" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button id="todayBtn" class="btn btn-outline-primary ms-2">Today</button>
             </div>
         </div>
     </div>
