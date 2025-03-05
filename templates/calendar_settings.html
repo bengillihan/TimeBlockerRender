@@ -5,12 +5,25 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Calendar Settings</h2>
-            <p class="text-muted">Select which calendars you want to display in your daily plan.</p>
+            <p class="text-muted">Connect and manage your calendars.</p>
         </div>
     </div>
 
     <div class="row">
         <div class="col-md-8">
+            {% if not current_user.nylas_access_token %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Connect Your Calendar</h5>
+                    <p class="card-text">Connect your Google Calendar using Nylas to see your events.</p>
+                    <a href="{{ url_for('nylas_auth.auth') }}" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt me-2"></i> Connect Calendar
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if calendars %}
             <div class="card">
                 <div class="card-body">
                     <form id="calendarSettingsForm">
@@ -33,15 +46,15 @@
                     </form>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById('calendarSettingsForm').addEventListener('submit', function(e) {
+document.getElementById('calendarSettingsForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
 
     const selectedCalendars = [...document.querySelectorAll('input[name="calendars[]"]:checked')]

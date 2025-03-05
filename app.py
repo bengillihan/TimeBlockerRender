@@ -7,6 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
+from nylas_auth import nylas_auth # Added import for Nylas auth blueprint
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -40,6 +42,7 @@ from models import User, DailyPlan, Priority, TimeBlock, Category, Task
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
+app.register_blueprint(nylas_auth) # Added Nylas blueprint registration
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -415,6 +418,26 @@ def calendar_settings():
         logger.error(f"Error fetching calendar list: {str(e)}")
         flash("Could not fetch calendars. Please try logging in again.", "warning")
         return redirect(url_for('google_auth.login'))
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint to verify server status."""
+    try:
+        # Check if we can access the database
+        db.session.execute('SELECT 1')
+        # Check if environment variables are set
+        nylas_configured = bool(os.environ.get('NYLAS_CLIENT_ID') and os.environ.get('NYLAS_CLIENT_SECRET'))
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'nylas_configured': nylas_configured
+        })
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 with app.app_context():
     db.create_all()

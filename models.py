@@ -9,6 +9,7 @@ class User(UserMixin, db.Model):
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
     selected_calendars = db.Column(db.JSON)  # Store selected calendar IDs
+    nylas_access_token = db.Column(db.String(512))  # Add Nylas access token field
 
 class DailyPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
