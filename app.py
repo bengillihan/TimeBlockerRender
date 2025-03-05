@@ -76,6 +76,24 @@ def index():
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
 
+    # Get calendar events for the selected date
+    calendar_events = []
+    if hasattr(current_user, 'credentials_info'):
+        try:
+            from calendar_service import get_calendar_events
+            # Use selected calendars if available, otherwise default to primary
+            selected_calendars = current_user.selected_calendars or ['primary']
+            logger.debug(f"Fetching calendar events for user {current_user.id} with selected calendars: {selected_calendars}")
+            calendar_events = get_calendar_events(
+                current_user.credentials_info, 
+                date,
+                calendar_ids=selected_calendars
+            )
+            logger.debug(f"Retrieved {len(calendar_events)} calendar events")
+        except Exception as e:
+            logger.error(f"Error fetching calendar events: {str(e)}")
+            flash("Could not fetch calendar events. Please try logging in again.", "warning")
+
     # Initialize empty lists/dicts for data
     time_blocks = []
     category_stats = {}
@@ -132,7 +150,8 @@ def index():
                          total_minutes=total_minutes,
                          priorities=priorities,
                          brain_dump=brain_dump,
-                         productivity_rating=productivity_rating)
+                         productivity_rating=productivity_rating,
+                         calendar_events=calendar_events)
 
 @app.route('/login')
 def login():
