@@ -162,14 +162,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const timeContent = this.closest('.time-content');
+            const notesInput = timeContent.querySelector('.task-notes');
+
             if (this.value) {
                 const selectedOption = this.options[this.selectedIndex];
                 const categoryColor = selectedOption.dataset.categoryColor;
                 timeContent.classList.add('has-task');
                 timeContent.style.borderLeftColor = categoryColor;
+                notesInput.style.display = 'inline-block';
             } else {
                 timeContent.classList.remove('has-task');
                 timeContent.style.borderLeftColor = '';
+                notesInput.style.display = 'none';
+                notesInput.value = '';
             }
 
             saveData();
@@ -242,6 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
             start_time: block.dataset.time,
             end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
+            notes: block.querySelector('.task-notes')?.value || '',
             completed: false
         }));
 
@@ -267,6 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(saveData, 30000);
     document.querySelectorAll('input, textarea, select').forEach(el => {
         el.addEventListener('change', saveData);
+    });
+
+    // Add auto-save for notes input
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('task-notes')) {
+            saveData();
+        }
     });
 });
 

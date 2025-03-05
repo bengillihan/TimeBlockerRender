@@ -72,8 +72,23 @@
     border: none;
     background: transparent;
     width: 100%;
+    min-width: 120px;
     font-size: 0.9em;
     padding: 0 4px;
+}
+
+.task-notes {
+    font-size: 0.85em;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    width: 100px;
+}
+
+.task-notes:focus {
+    outline: none;
+    border-color: var(--bs-primary);
 }
 
 .time-content.has-task {

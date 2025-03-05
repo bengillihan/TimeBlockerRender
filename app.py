@@ -97,7 +97,8 @@ def index():
             time_blocks.append({
                 'start_time': block.start_time.strftime('%H:%M'),
                 'task_id': block.task_id,
-                'completed': block.completed
+                'completed': block.completed,
+                'notes': block.notes
             })
 
             if block.task_id:
@@ -256,7 +257,7 @@ def save_daily_plan():
         )
         db.session.add(p)
 
-    # Update time blocks with Pacific time
+    # Update time blocks with Pacific time and notes
     TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
     for block in data.get('time_blocks', []):
         time_str = block['start_time']
@@ -269,7 +270,8 @@ def save_daily_plan():
             start_time=time_obj,
             end_time=end_time,
             task_id=block.get('task_id'),
-            completed=block.get('completed', False)
+            completed=block.get('completed', False),
+            notes=block.get('notes', '')[:15]  # Limit notes to 15 characters
         )
         db.session.add(tb)
 

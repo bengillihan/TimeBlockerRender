@@ -115,6 +115,13 @@
                                                 </optgroup>
                                             {% endfor %}
                                         </select>
+                                        <input type="text" class="form-control form-control-sm task-notes" 
+                                               placeholder="Add notes..." 
+                                               maxlength="15"
+                                               value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
+                                               style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %}; 
+                                                      width: 100px; 
+                                                      margin-left: 4px;">
                                         <div class="task-controls">
                                             <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
                                                 <i class="fas fa-arrow-up"></i>
@@ -157,6 +164,13 @@
                                                 </optgroup>
                                             {% endfor %}
                                         </select>
+                                        <input type="text" class="form-control form-control-sm task-notes" 
+                                               placeholder="Add notes..." 
+                                               maxlength="15"
+                                               value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
+                                               style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %}; 
+                                                      width: 100px; 
+                                                      margin-left: 4px;">
                                         <div class="task-controls">
                                             <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
                                                 <i class="fas fa-arrow-up"></i>

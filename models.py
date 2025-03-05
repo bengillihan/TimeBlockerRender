@@ -34,6 +34,7 @@ class TimeBlock(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     completed = db.Column(db.Boolean, default=False)
+    notes = db.Column(db.String(15))  # Add notes field with max 15 characters
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
