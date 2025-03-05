@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', function() {
             const input = this.closest('.input-group').querySelector('.priority-input');
             input.classList.toggle('completed', this.checked);
+            saveData();
         });
     });
 
@@ -50,12 +51,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle quick task creation
     document.getElementById('saveQuickTask')?.addEventListener('click', function() {
-        const title = document.getElementById('taskTitle').value;
-        const description = document.getElementById('taskDescription').value;
-        const categoryId = document.getElementById('taskCategory').value;
-        const color = document.getElementById('taskColor').value;
+        const taskTitle = document.getElementById('taskTitle');
+        const taskDescription = document.getElementById('taskDescription');
+        const taskCategory = document.getElementById('taskCategory');
+        const taskColor = document.getElementById('taskColor');
 
-        if (!title || !categoryId) return;
+        if (!taskTitle || !taskTitle.value || !taskCategory || !taskCategory.value) return;
 
         fetch('/api/tasks', {
             method: 'POST',
@@ -63,10 +64,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                title,
-                description,
-                category_id: categoryId,
-                color
+                title: taskTitle.value,
+                description: taskDescription?.value || '',
+                category_id: taskCategory.value,
+                color: taskColor?.value || '#6c757d'
             })
         })
         .then(response => response.json())
@@ -74,9 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add the new task to all task select dropdowns
             document.querySelectorAll('.task-select').forEach(select => {
                 const optgroup = select.querySelector(`optgroup[label="${
-                    document.getElementById('taskCategory').options[
-                        document.getElementById('taskCategory').selectedIndex
-                    ].text
+                    taskCategory.options[taskCategory.selectedIndex].text
                 }"]`);
 
                 if (optgroup) {
@@ -105,48 +104,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function setupAutoSave() {
-        const saveData = () => {
-            const date = document.getElementById('datePicker').value;
-            const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
-                content: input.value,
-                completed: input.classList.contains('completed')
-            }));
+    // Save functionality
+    function saveData() {
+        const date = document.getElementById('datePicker').value;
+        const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
+            content: input.value,
+            completed: input.classList.contains('completed')
+        }));
 
-            const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
-                start_time: block.dataset.time,
-                end_time: addMinutes(block.dataset.time, 15),
-                task_id: block.querySelector('.task-select').value || null,
-                completed: false
-            }));
+        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+            start_time: block.dataset.time,
+            end_time: addMinutes(block.dataset.time, 15),
+            task_id: block.querySelector('.task-select').value || null,
+            completed: false
+        }));
 
-            const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
-            const brainDump = document.getElementById('brainDump').value;
+        const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
+        const brainDump = document.getElementById('brainDump').value;
 
-            fetch('/api/daily-plan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    date,
-                    priorities,
-                    time_blocks: timeBlocks,
-                    productivity_rating: rating,
-                    brain_dump: brainDump
-                })
-            });
-        };
-
-        // Save every 30 seconds and on form changes
-        setInterval(saveData, 30000);
-        document.querySelectorAll('input, textarea, select').forEach(el => {
-            el.addEventListener('change', saveData);
-        });
+        fetch('/api/daily-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date,
+                priorities,
+                time_blocks: timeBlocks,
+                productivity_rating: rating,
+                brain_dump: brainDump
+            })
+        }).catch(error => console.error('Error saving data:', error));
     }
 
     // Initialize auto-save
-    setupAutoSave();
+    setInterval(saveData, 30000);
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('change', saveData);
+    });
 });
 
 function addMinutes(time, minutes) {

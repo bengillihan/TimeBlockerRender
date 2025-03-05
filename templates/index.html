@@ -62,7 +62,7 @@
                                         {% for category in categories %}
                                             <optgroup label="{{ category.name }}">
                                                 {% for task in category.tasks %}
-                                                    <option value="{{ task.id }}">{{ task.title }}</option>
+                                                    <option value="{{ task.id }}" data-color="{{ task.color }}">{{ task.title }}</option>
                                                 {% endfor %}
                                             </optgroup>
                                         {% endfor %}
@@ -123,6 +123,10 @@
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskColor" class="form-label">Task Color</label>
+                        <input type="color" class="form-control form-control-color" id="taskColor" value="#6c757d">
                     </div>
                 </form>
             </div>
