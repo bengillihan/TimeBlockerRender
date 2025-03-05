@@ -58,7 +58,10 @@ def index():
         date=datetime.strptime(date, '%Y-%m-%d').date()
     ).first()
 
-    return render_template('index.html', daily_plan=daily_plan, date=date)
+    # Get categories and their tasks for the time block selector
+    categories = Category.query.filter_by(user_id=current_user.id).all()
+
+    return render_template('index.html', daily_plan=daily_plan, date=date, categories=categories)
 
 @app.route('/login')
 def login():

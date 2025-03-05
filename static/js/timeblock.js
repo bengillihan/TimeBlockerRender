@@ -12,15 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
         handle: '.priority-input'
     });
 
-    // Initialize time blocks
-    const timeBlocks = document.querySelectorAll('.time-content');
-    timeBlocks.forEach(block => {
-        block.addEventListener('dragstart', handleDragStart);
-        block.addEventListener('dragend', handleDragEnd);
-        block.addEventListener('dragover', handleDragOver);
-        block.addEventListener('drop', handleDrop);
-    });
-
     // Initialize checkboxes
     document.querySelectorAll('.priority-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
@@ -29,68 +20,57 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Save functionality
+    // Initialize task selects
+    document.querySelectorAll('.task-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const timeBlock = this.closest('.time-block');
+            saveData();
+        });
+    });
+
+    function setupAutoSave() {
+        const saveData = () => {
+            const date = document.getElementById('datePicker').value;
+            const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
+                content: input.value,
+                completed: input.classList.contains('completed')
+            }));
+
+            const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+                start_time: block.dataset.time,
+                end_time: addMinutes(block.dataset.time, 15),
+                task_id: block.querySelector('.task-select').value || null,
+                completed: false
+            }));
+
+            const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
+            const brainDump = document.getElementById('brainDump').value;
+
+            fetch('/api/daily-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    date,
+                    priorities,
+                    time_blocks: timeBlocks,
+                    productivity_rating: rating,
+                    brain_dump: brainDump
+                })
+            });
+        };
+
+        // Save every 30 seconds and on form changes
+        setInterval(saveData, 30000);
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.addEventListener('change', saveData);
+        });
+    }
+
+    // Initialize auto-save
     setupAutoSave();
 });
-
-function handleDragStart(e) {
-    this.classList.add('dragging');
-    e.dataTransfer.setData('text/plain', this.textContent);
-}
-
-function handleDragEnd(e) {
-    this.classList.remove('dragging');
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    const data = e.dataTransfer.getData('text/plain');
-    this.textContent = data;
-}
-
-function setupAutoSave() {
-    const saveData = () => {
-        const date = document.getElementById('datePicker').value;
-        const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
-            content: input.value,
-            completed: input.classList.contains('completed')
-        }));
-        
-        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
-            start_time: block.dataset.time,
-            end_time: addMinutes(block.dataset.time, 15),
-            content: block.querySelector('.time-content').textContent,
-            completed: false
-        }));
-
-        const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
-        const brainDump = document.getElementById('brainDump').value;
-
-        fetch('/api/daily-plan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                date,
-                priorities,
-                time_blocks: timeBlocks,
-                productivity_rating: rating,
-                brain_dump: brainDump
-            })
-        });
-    };
-
-    // Save every 30 seconds and on form changes
-    setInterval(saveData, 30000);
-    document.querySelectorAll('input, textarea').forEach(el => {
-        el.addEventListener('change', saveData);
-    });
-}
 
 function addMinutes(time, minutes) {
     const [hours, mins] = time.split(':').map(Number);

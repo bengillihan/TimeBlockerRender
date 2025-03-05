@@ -55,7 +55,18 @@
                         {% for minute in [0, 15, 30, 45] %}
                             <div class="time-block" data-time="{{ '%02d:%02d'|format(hour, minute) }}">
                                 <div class="time-label">{{ '%02d:%02d'|format(hour, minute) }}</div>
-                                <div class="time-content" draggable="true"></div>
+                                <div class="time-content">
+                                    <select class="form-select form-select-sm task-select">
+                                        <option value="">Select a task</option>
+                                        {% for category in categories %}
+                                            <optgroup label="{{ category.name }}">
+                                                {% for task in category.tasks %}
+                                                    <option value="{{ task.id }}">{{ task.title }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
                         {% endfor %}
                     {% endfor %}
