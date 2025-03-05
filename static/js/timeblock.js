@@ -23,7 +23,66 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize task selects
     document.querySelectorAll('.task-select').forEach(select => {
         select.addEventListener('change', function() {
-            const timeBlock = this.closest('.time-block');
+            if (this.value === 'new') {
+                // Reset form
+                document.getElementById('quickTaskForm').reset();
+                // Store the select element that triggered the modal
+                window.activeTimeBlockSelect = this;
+                // Show modal
+                new bootstrap.Modal(document.getElementById('addTaskModal')).show();
+                return;
+            }
+            saveData();
+        });
+    });
+
+    // Handle quick task creation
+    document.getElementById('saveQuickTask')?.addEventListener('click', function() {
+        const title = document.getElementById('taskTitle').value;
+        const description = document.getElementById('taskDescription').value;
+        const categoryId = document.getElementById('taskCategory').value;
+
+        if (!title || !categoryId) return;
+
+        fetch('/api/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                category_id: categoryId
+            })
+        })
+        .then(response => response.json())
+        .then(task => {
+            // Add the new task to all task select dropdowns
+            document.querySelectorAll('.task-select').forEach(select => {
+                const optgroup = select.querySelector(`optgroup[label="${
+                    document.getElementById('taskCategory').options[
+                        document.getElementById('taskCategory').selectedIndex
+                    ].text
+                }"]`);
+
+                if (optgroup) {
+                    const option = document.createElement('option');
+                    option.value = task.id;
+                    option.textContent = task.title;
+                    optgroup.appendChild(option);
+                }
+            });
+
+            // Set the newly created task as the selected option
+            if (window.activeTimeBlockSelect) {
+                window.activeTimeBlockSelect.value = task.id;
+                window.activeTimeBlockSelect = null;
+            }
+
+            // Hide modal
+            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+
+            // Save the updated time block data
             saveData();
         });
     });
