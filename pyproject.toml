@@ -15,4 +15,6 @@ dependencies = [
     "requests>=2.32.3",
     "python-dotenv>=1.0.1",
     "pytz>=2025.1",
+    "google-api-python-client>=2.162.0",
+    "google-auth-httplib2>=0.2.0",
 ]

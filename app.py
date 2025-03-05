@@ -10,6 +10,7 @@ from sqlalchemy import func
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__) # Added logger for error handling
 
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
@@ -75,10 +76,19 @@ def index():
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
 
+    # Get calendar events for the selected date
+    calendar_events = []
+    if hasattr(current_user, 'credentials_info'):
+        try:
+            from calendar_service import get_calendar_events
+            calendar_events = get_calendar_events(current_user.credentials_info, date)
+        except Exception as e:
+            logger.error(f"Error fetching calendar events: {str(e)}")
+            flash("Could not fetch calendar events. Please try logging in again.", "warning")
+
     # If there's a daily plan, get its time blocks with task information
     time_blocks = []
     category_stats = {}
-    task_stats = {}
     total_minutes = 0
 
     if daily_plan:
@@ -96,15 +106,6 @@ def index():
                     # Calculate minutes (each block is 15 minutes)
                     minutes = 15
                     total_minutes += minutes
-
-                    # Update task statistics
-                    if task.id not in task_stats:
-                        task_stats[task.id] = {
-                            'title': task.title,
-                            'minutes': 0,
-                            'category_id': task.category_id
-                        }
-                    task_stats[task.id]['minutes'] += minutes
 
                     # Update category statistics
                     if task.category_id not in category_stats:
@@ -124,7 +125,8 @@ def index():
                          categories=categories,
                          time_blocks=time_blocks,
                          category_stats=category_stats,
-                         total_minutes=total_minutes)
+                         total_minutes=total_minutes,
+                         calendar_events=calendar_events)
 
 @app.route('/login')
 def login():

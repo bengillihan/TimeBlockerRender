@@ -51,7 +51,7 @@ def login():
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
         redirect_uri=callback_uri,
-        scope=["openid", "email", "profile"],
+        scope=["openid", "email", "profile", "https://www.googleapis.com/auth/calendar.readonly"],
     )
     return redirect(request_uri)
 

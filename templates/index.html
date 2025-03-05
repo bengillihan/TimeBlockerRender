@@ -83,7 +83,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Time Blocks</h5>
+                <h5 class="card-title mb-0">Time Blocks & Calendar</h5>
             </div>
             <div class="card-body">
                 <div id="timeBlocks" class="time-blocks">
@@ -169,6 +169,29 @@
                                 </div>
                             {% endfor %}
                         {% endfor %}
+                    </div>
+
+                    <!-- Calendar Events -->
+                    <div class="time-block-column">
+                        <h6 class="text-muted mb-2">Calendar Events</h6>
+                        {% if calendar_events %}
+                            {% for event in calendar_events %}
+                                <div class="time-block">
+                                    <div class="time-label">{{ event.start_time }}</div>
+                                    <div class="time-content calendar-event" style="background-color: rgba(var(--bs-primary-rgb), 0.1);">
+                                        <div class="event-title">{{ event.summary }}</div>
+                                        {% if event.description %}
+                                            <small class="event-description text-muted">{{ event.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-muted text-center p-3">
+                                <i class="fas fa-calendar-alt mb-2"></i>
+                                <p class="mb-0">No calendar events found for today</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -1,11 +1,46 @@
+/* Add styles for calendar events */
+.calendar-event {
+    padding: 8px;
+    border-radius: 4px;
+    background-color: var(--bs-primary-bg-subtle);
+    border-left: 4px solid var(--bs-primary);
+}
+
+.event-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.event-description {
+    font-size: 0.875em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Adjust time blocks container for three columns */
 .time-blocks {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
 
 .time-block-column {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.time-blocks {
     display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.time-block-column {
+    display: flex;
+    flex-direction: column;
     gap: 2px;
 }
 
