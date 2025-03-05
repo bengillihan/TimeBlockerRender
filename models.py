@@ -8,8 +8,18 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
+    nav_links = db.relationship('NavLink', backref='user', lazy=True)  # Add relationship
     selected_calendars = db.Column(db.JSON)  # Store selected calendar IDs
     nylas_access_token = db.Column(db.String(512))  # Add Nylas access token field
+
+class NavLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    icon_class = db.Column(db.String(50), default='fas fa-link')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)

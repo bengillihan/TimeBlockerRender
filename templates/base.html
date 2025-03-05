@@ -32,6 +32,22 @@
                             <i class="fas fa-calendar-alt"></i> Calendar Settings
                         </a>
                     </li>
+                    <!-- Custom Navigation Links -->
+                    {% if current_user.nav_links %}
+                        {% for link in current_user.nav_links %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ link.url }}" target="_blank">
+                                <i class="{{ link.icon_class }}"></i> {{ link.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    {% endif %}
+                    <!-- Link to manage navigation -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('nav_links') }}">
+                            <i class="fas fa-cog"></i> Customize Links
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
                 <div class="navbar-nav ms-auto">

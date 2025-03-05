@@ -38,7 +38,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Import routes after app initialization to avoid circular imports
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink # Added NavLink import
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
@@ -443,6 +443,55 @@ def health_check():
             'status': 'unhealthy',
             'error': str(e)
         }), 500
+
+
+# Add these routes to your existing app.py
+# Place them before the final app.run() line
+
+@app.route('/nav_links')
+@login_required
+def nav_links():
+    """Show navigation links management page."""
+    nav_links = NavLink.query.filter_by(user_id=current_user.id).order_by(NavLink.order).all()
+    return render_template('nav_links.html', nav_links=nav_links)
+
+@app.route('/api/nav_links', methods=['POST'])
+@login_required
+def add_nav_link():
+    """Add a new navigation link."""
+    data = request.json
+    if not data.get('name') or not data.get('url'):
+        return jsonify({'error': 'Name and URL are required'}), 400
+
+    # Get the highest order number and add 1
+    max_order = db.session.query(func.max(NavLink.order)).filter_by(user_id=current_user.id).scalar()
+    new_order = (max_order or 0) + 1
+
+    link = NavLink(
+        name=data['name'],
+        url=data['url'],
+        icon_class=data.get('icon_class', 'fas fa-link'),
+        user_id=current_user.id,
+        order=new_order
+    )
+    db.session.add(link)
+    db.session.commit()
+
+    return jsonify({
+        'id': link.id,
+        'name': link.name,
+        'url': link.url,
+        'icon_class': link.icon_class
+    })
+
+@app.route('/api/nav_links/<int:link_id>', methods=['DELETE'])
+@login_required
+def delete_nav_link(link_id):
+    """Delete a navigation link."""
+    link = NavLink.query.filter_by(id=link_id, user_id=current_user.id).first_or_404()
+    db.session.delete(link)
+    db.session.commit()
+    return '', 204
 
 with app.app_context():
     db.create_all()

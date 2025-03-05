@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Navigation Links</h2>
+            <p class="text-muted">Customize your navigation bar links.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Add New Link Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Add New Link</h5>
+                    <form id="addLinkForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="linkName" class="form-label">Link Name</label>
+                            <input type="text" class="form-control" id="linkName" name="name" required maxlength="50">
+                        </div>
+                        <div class="mb-3">
+                            <label for="linkUrl" class="form-label">URL</label>
+                            <input type="url" class="form-control" id="linkUrl" name="url" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="iconClass" class="form-label">Icon (Optional)</label>
+                            <select class="form-select" id="iconClass" name="icon_class">
+                                <option value="fas fa-link">🔗 Link</option>
+                                <option value="fas fa-list-check">📋 List</option>
+                                <option value="far fa-calendar">📅 Calendar</option>
+                                <option value="fas fa-tasks">✅ Tasks</option>
+                                <option value="fas fa-notes-medical">📝 Notes</option>
+                                <option value="fas fa-chart-bar">📊 Chart</option>
+                                <option value="fas fa-book">📚 Book</option>
+                                <option value="fas fa-folder">📁 Folder</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Link</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing Links -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Your Links</h5>
+                    <div id="linksList">
+                        {% for link in nav_links %}
+                        <div class="d-flex align-items-center border-bottom py-2" data-link-id="{{ link.id }}">
+                            <i class="{{ link.icon_class }} me-2"></i>
+                            <span class="flex-grow-1">{{ link.name }}</span>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-danger delete-link">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('linkName').value,
+        url: document.getElementById('linkUrl').value,
+        icon_class: document.getElementById('iconClass').value
+    };
+
+    try {
+        const response = await fetch('/api/nav_links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Failed to add link. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+
+document.querySelectorAll('.delete-link').forEach(button => {
+    button.addEventListener('click', async function() {
+        const linkId = this.closest('[data-link-id]').dataset.linkId;
+        if (!confirm('Are you sure you want to delete this link?')) return;
+
+        try {
+            const response = await fetch(`/api/nav_links/${linkId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete link. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+});
+</script>
+{% endblock %}
