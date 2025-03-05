@@ -61,12 +61,11 @@
                         <div class="input-group">
                             <div class="input-group-text">
                                 <input type="checkbox" class="priority-checkbox" 
-                                       {% if priorities[i].completed if i < priorities|length else False %}checked{% endif %}>
+                                       {% if i < priorities|length and priorities[i].completed %}checked{% endif %}>
                             </div>
-                            <input type="text" class="form-control priority-input" 
+                            <input type="text" class="form-control priority-input {% if i < priorities|length and priorities[i].completed %}completed{% endif %}" 
                                    placeholder="Priority {{ i + 1 }}"
-                                   value="{{ priorities[i].content if i < priorities|length else '' }}"
-                                   {% if priorities[i].completed if i < priorities|length else False %}class="completed"{% endif %}>
+                                   value="{{ priorities[i].content if i < priorities|length else '' }}">
                         </div>
                     </li>
                     {% endfor %}
