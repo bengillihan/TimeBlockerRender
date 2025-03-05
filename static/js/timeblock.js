@@ -59,7 +59,24 @@ document.addEventListener('DOMContentLoaded', function() {
             handle: '.drag-handle',
             ghostClass: 'sortable-ghost',
             onEnd: function(evt) {
-                const timeBlocks = evt.to.querySelectorAll('.time-block');
+                const timeBlocks = [...evt.to.querySelectorAll('.time-block')];
+
+                // Update times for all blocks in the column to maintain chronological order
+                timeBlocks.forEach((block, index) => {
+                    // Get the base time from the column (morning or afternoon)
+                    const isMorning = block.closest('.time-block-column').querySelector('h6').textContent === 'Morning';
+                    const baseHour = isMorning ? 6 : 12;
+
+                    // Calculate new time based on position
+                    const blocksPerHour = 4; // 15-minute intervals
+                    const hour = Math.floor(baseHour + (index / blocksPerHour));
+                    const minute = (index % blocksPerHour) * 15;
+                    const newTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+                    // Update the block's time label and dataset
+                    block.dataset.time = newTime;
+                    block.querySelector('.time-label').textContent = newTime;
+                });
 
                 // Get the task that was moved
                 const movedTask = evt.item.querySelector('.task-select').value;
@@ -71,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     evt.item.querySelector('.time-content').style.borderLeftColor = movedTaskColor;
                 }
 
-                // Save the updated order
+                // Save the updated order and times
                 saveData();
             }
         });
