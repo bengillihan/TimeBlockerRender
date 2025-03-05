@@ -78,16 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     block.querySelector('.time-label').textContent = newTime;
                 });
 
-                // Get the task that was moved
-                const movedTask = evt.item.querySelector('.task-select').value;
-                const movedTaskColor = evt.item.querySelector('option:checked')?.dataset?.categoryColor;
-
-                if (movedTask) {
-                    // Update visual styles
-                    evt.item.querySelector('.time-content').classList.add('has-task');
-                    evt.item.querySelector('.time-content').style.borderLeftColor = movedTaskColor;
-                }
-
                 // Save the updated order and times
                 saveData();
             }
@@ -118,6 +108,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     const timeContent = targetSelect.closest('.time-content');
                     timeContent.classList.add('has-task');
                     timeContent.style.borderLeftColor = selectedOption.dataset.categoryColor;
+
+                    // Copy notes as well
+                    const sourceNotes = timeBlock.querySelector('.task-notes').value;
+                    const targetNotes = targetBlock.querySelector('.task-notes');
+                    targetNotes.value = sourceNotes;
+                    targetNotes.style.display = 'inline-block';
 
                     // Save changes
                     saveData();
@@ -179,6 +175,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
             saveData();
         });
+    });
+
+    // Add real-time notes update handling
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('task-notes')) {
+            const notesInput = e.target;
+            const timeBlock = notesInput.closest('.time-block');
+
+            // Ensure notes don't exceed max length
+            if (notesInput.value.length > 15) {
+                notesInput.value = notesInput.value.substring(0, 15);
+            }
+
+            // Save data without page reload
+            saveData();
+        }
     });
 
     // Handle quick task creation
@@ -273,13 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(saveData, 30000);
     document.querySelectorAll('input, textarea, select').forEach(el => {
         el.addEventListener('change', saveData);
-    });
-
-    // Add auto-save for notes input
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('task-notes')) {
-            saveData();
-        }
     });
 });
 
