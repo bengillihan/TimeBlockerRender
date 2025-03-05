@@ -26,44 +26,30 @@
                 <h5 class="card-title mb-0">Time Statistics</h5>
             </div>
             <div class="card-body">
-                {% set grand_total = 0 %}
-                {% for category in categories %}
-                    {% for task in category.tasks %}
-                        {% set task_time = time_blocks|selectattr('task_id', 'equalto', task.id)|list|length * 15 %}
-                        {% set grand_total = grand_total + task_time %}
-                    {% endfor %}
-                {% endfor %}
-                {% if grand_total > 0 %}
+                {% if total_minutes > 0 %}
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <h6 class="mb-0">Total Daily Hours</h6>
-                    <span class="h6 mb-0">{{ (grand_total / 60)|round(1) }} hrs</span>
+                    <span class="h6 mb-0">{{ (total_minutes / 60)|round(1) }} hrs</span>
                 </div>
                 {% endif %}
 
-                {% for category in categories %}
+                {% for category_id, stats in category_stats.items() %}
                 <div class="mb-3">
-                    <h6 class="mb-2" style="color: {{ category.color }}">
-                        <i class="fas fa-square me-1" style="color: {{ category.color }}"></i>
-                        {{ category.name }}
+                    <h6 class="mb-2" style="color: {{ stats.color }}">
+                        <i class="fas fa-square me-1" style="color: {{ stats.color }}"></i>
+                        {{ stats.name }}
                     </h6>
                     <div class="ps-3">
-                        {% set total_category_time = 0 %}
-                        {% for task in category.tasks %}
-                            {% set task_time = time_blocks|selectattr('task_id', 'equalto', task.id)|list|length * 15 %}
-                            {% if task_time > 0 %}
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <small>{{ task.title }}</small>
-                                    <small>{{ (task_time / 60)|round(1) }} hrs</small>
-                                </div>
-                                {% set total_category_time = total_category_time + task_time %}
-                            {% endif %}
+                        {% for task_id, task in stats.tasks.items() %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small>{{ task.title }}</small>
+                            <small>{{ (task.minutes / 60)|round(1) }} hrs</small>
+                        </div>
                         {% endfor %}
-                        {% if total_category_time > 0 %}
-                            <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
-                                <small><strong>Category Total</strong></small>
-                                <small><strong>{{ (total_category_time / 60)|round(1) }} hrs</strong></small>
-                            </div>
-                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
+                            <small><strong>Category Total</strong></small>
+                            <small><strong>{{ (stats.minutes / 60)|round(1) }} hrs</strong></small>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -236,8 +222,7 @@
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                    
+                    </div>                    
                 </form>
             </div>
             <div class="modal-footer">

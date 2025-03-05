@@ -76,12 +76,52 @@ def index():
 
     # If there's a daily plan, get its time blocks with task information
     time_blocks = []
+    category_stats = {}
+    task_stats = {}
+    total_minutes = 0
+
     if daily_plan:
-        time_blocks = [{
-            'start_time': block.start_time.strftime('%H:%M'),
-            'task_id': block.task_id,
-            'completed': block.completed
-        } for block in daily_plan.time_blocks]
+        # Process time blocks and calculate statistics
+        for block in daily_plan.time_blocks:
+            time_blocks.append({
+                'start_time': block.start_time.strftime('%H:%M'),
+                'task_id': block.task_id,
+                'completed': block.completed
+            })
+
+            if block.task_id:
+                task = Task.query.get(block.task_id)
+                if task:
+                    # Calculate minutes (each block is 15 minutes)
+                    minutes = 15
+                    total_minutes += minutes
+
+                    # Update task statistics
+                    if task.id not in task_stats:
+                        task_stats[task.id] = {
+                            'title': task.title,
+                            'minutes': 0,
+                            'category_id': task.category_id
+                        }
+                    task_stats[task.id]['minutes'] += minutes
+
+                    # Update category statistics
+                    if task.category_id not in category_stats:
+                        category_stats[task.category_id] = {
+                            'name': task.category.name,
+                            'color': task.category.color,
+                            'minutes': 0,
+                            'tasks': {}
+                        }
+                    category_stats[task.category_id]['minutes'] += minutes
+
+                    # Add task to category stats if not present
+                    if task.id not in category_stats[task.category_id]['tasks']:
+                        category_stats[task.category_id]['tasks'][task.id] = {
+                            'title': task.title,
+                            'minutes': 0
+                        }
+                    category_stats[task.category_id]['tasks'][task.id]['minutes'] += minutes
 
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
@@ -90,7 +130,9 @@ def index():
                          daily_plan=daily_plan, 
                          date=formatted_date, 
                          categories=categories,
-                         time_blocks=time_blocks)
+                         time_blocks=time_blocks,
+                         category_stats=category_stats,
+                         total_minutes=total_minutes)
 
 @app.route('/login')
 def login():
