@@ -61,7 +61,20 @@ def index():
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
 
-    return render_template('index.html', daily_plan=daily_plan, date=date, categories=categories)
+    # If there's a daily plan, get its time blocks with task information
+    time_blocks = []
+    if daily_plan:
+        time_blocks = [{
+            'start_time': block.start_time.strftime('%H:%M'),
+            'task_id': block.task_id,
+            'completed': block.completed
+        } for block in daily_plan.time_blocks]
+
+    return render_template('index.html', 
+                         daily_plan=daily_plan, 
+                         date=date, 
+                         categories=categories,
+                         time_blocks=time_blocks)
 
 @app.route('/login')
 def login():

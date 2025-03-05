@@ -12,6 +12,19 @@ document.addEventListener('DOMContentLoaded', function() {
         handle: '.priority-input'
     });
 
+    // Initialize task colors for existing selections
+    document.querySelectorAll('.task-select').forEach(select => {
+        if (select.value) {
+            const selectedOption = select.options[select.selectedIndex];
+            const taskColor = selectedOption.dataset.color;
+            const timeContent = select.closest('.time-content');
+            if (taskColor) {
+                timeContent.classList.add('has-task');
+                timeContent.style.borderLeftColor = taskColor;
+            }
+        }
+    });
+
     // Initialize checkboxes
     document.querySelectorAll('.priority-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {

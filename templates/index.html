@@ -53,16 +53,22 @@
                 <div id="timeBlocks" class="time-blocks">
                     {% for hour in range(6, 18) %}
                         {% for minute in [0, 15, 30, 45] %}
-                            <div class="time-block" data-time="{{ '%02d:%02d'|format(hour, minute) }}">
-                                <div class="time-label">{{ '%02d:%02d'|format(hour, minute) }}</div>
-                                <div class="time-content">
+                            {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                            {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                            <div class="time-block" data-time="{{ current_time }}">
+                                <div class="time-label">{{ current_time }}</div>
+                                <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
                                     <select class="form-select form-select-sm task-select">
                                         <option value="">Select a task</option>
                                         <option value="new">+ Add New Task</option>
                                         {% for category in categories %}
                                             <optgroup label="{{ category.name }}">
                                                 {% for task in category.tasks %}
-                                                    <option value="{{ task.id }}" data-color="{{ task.color }}">{{ task.title }}</option>
+                                                    <option value="{{ task.id }}" 
+                                                            data-color="{{ task.color }}"
+                                                            {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                        {{ task.title }}
+                                                    </option>
                                                 {% endfor %}
                                             </optgroup>
                                         {% endfor %}
