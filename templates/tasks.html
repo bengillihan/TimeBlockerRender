@@ -20,16 +20,29 @@
         {% for category in categories %}
         <div class="col-md-4 mb-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">{{ category.name }}</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary edit-category" title="Edit" data-id="{{ category.id }}" data-name="{{ category.name }}" data-color="{{ category.color }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-category" title="Delete" data-id="{{ category.id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <ul class="list-group task-list" data-category-id="{{ category.id }}">
                         {% for task in category.tasks %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="{{ task.id }}">
+                        <li class="list-group-item d-flex justify-content-between align-items-center" data-task-id="{{ task.id }}" style="border-left: 4px solid {{ task.color }}">
                             <span class="task-title">{{ task.title }}</span>
                             <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-primary edit-task" title="Edit">
+                                <button class="btn btn-sm btn-outline-primary edit-task" title="Edit"
+                                    data-id="{{ task.id }}"
+                                    data-title="{{ task.title }}"
+                                    data-description="{{ task.description }}"
+                                    data-category="{{ task.category_id }}"
+                                    data-color="{{ task.color }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger delete-task" title="Delete">
@@ -56,9 +69,14 @@
             </div>
             <div class="modal-body">
                 <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
                     <div class="mb-3">
                         <label for="categoryName" class="form-label">Category Name</label>
                         <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryColor" class="form-label">Category Color</label>
+                        <input type="color" class="form-control form-control-color" id="categoryColor" value="#6c757d">
                     </div>
                 </form>
             </div>
@@ -70,7 +88,7 @@
     </div>
 </div>
 
-<!-- Add Task Modal -->
+<!-- Add/Edit Task Modal -->
 <div class="modal fade" id="addTaskModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -80,6 +98,7 @@
             </div>
             <div class="modal-body">
                 <form id="taskForm">
+                    <input type="hidden" id="taskId">
                     <div class="mb-3">
                         <label for="taskTitle" class="form-label">Task Title</label>
                         <input type="text" class="form-control" id="taskTitle" required>
@@ -95,6 +114,10 @@
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taskColor" class="form-label">Task Color</label>
+                        <input type="color" class="form-control form-control-color" id="taskColor" value="#6c757d">
                     </div>
                 </form>
             </div>
@@ -112,58 +135,103 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Save category
     document.getElementById('saveCategory').addEventListener('click', function() {
+        const categoryId = document.getElementById('categoryId').value;
         const name = document.getElementById('categoryName').value;
+        const color = document.getElementById('categoryColor').value;
         if (!name) return;
 
-        fetch('/api/categories', {
-            method: 'POST',
+        const method = categoryId ? 'PUT' : 'POST';
+        const url = categoryId ? `/api/categories/${categoryId}` : '/api/categories';
+
+        fetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name, color })
         })
         .then(response => response.json())
         .then(category => {
-            location.reload(); // Reload to show new category
+            location.reload(); // Reload to show changes
+        });
+    });
+
+    // Edit category
+    document.querySelectorAll('.edit-category').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const color = this.dataset.color;
+
+            document.getElementById('categoryId').value = id;
+            document.getElementById('categoryName').value = name;
+            document.getElementById('categoryColor').value = color;
+
+            new bootstrap.Modal(document.getElementById('addCategoryModal')).show();
+        });
+    });
+
+    // Delete category
+    document.querySelectorAll('.delete-category').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            if (confirm('Are you sure you want to delete this category and all its tasks?')) {
+                fetch(`/api/categories/${id}`, {
+                    method: 'DELETE'
+                }).then(() => {
+                    location.reload();
+                });
+            }
         });
     });
 
     // Save task
     document.getElementById('saveTask').addEventListener('click', function() {
+        const taskId = document.getElementById('taskId').value;
         const title = document.getElementById('taskTitle').value;
         const description = document.getElementById('taskDescription').value;
         const categoryId = document.getElementById('taskCategory').value;
+        const color = document.getElementById('taskColor').value;
 
-        fetch('/api/tasks', {
-            method: 'POST',
+        if (!title || !categoryId) return;
+
+        const method = taskId ? 'PUT' : 'POST';
+        const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
+
+        fetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 title,
                 description,
-                category_id: categoryId
+                category_id: categoryId,
+                color
             })
         })
         .then(response => response.json())
         .then(task => {
-            const taskList = document.querySelector(`[data-category-id="${task.category_id}"]`);
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.dataset.taskId = task.id;
-            li.innerHTML = `
-                <span class="task-title">${task.title}</span>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-primary edit-task" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-task" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            taskList.appendChild(li);
-            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+            location.reload(); // Reload to show changes
+        });
+    });
+
+    // Edit task
+    document.querySelectorAll('.edit-task').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const title = this.dataset.title;
+            const description = this.dataset.description;
+            const categoryId = this.dataset.category;
+            const color = this.dataset.color;
+
+            document.getElementById('taskId').value = id;
+            document.getElementById('taskTitle').value = title;
+            document.getElementById('taskDescription').value = description;
+            document.getElementById('taskCategory').value = categoryId;
+            document.getElementById('taskColor').value = color;
+
+            new bootstrap.Modal(document.getElementById('addTaskModal')).show();
         });
     });
 

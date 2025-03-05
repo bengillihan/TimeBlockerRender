@@ -32,6 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 new bootstrap.Modal(document.getElementById('addTaskModal')).show();
                 return;
             }
+
+            const timeContent = this.closest('.time-content');
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                const taskColor = selectedOption.dataset.color;
+                timeContent.classList.add('has-task');
+                timeContent.style.borderLeftColor = taskColor;
+            } else {
+                timeContent.classList.remove('has-task');
+                timeContent.style.borderLeftColor = '';
+            }
+
             saveData();
         });
     });
@@ -41,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const title = document.getElementById('taskTitle').value;
         const description = document.getElementById('taskDescription').value;
         const categoryId = document.getElementById('taskCategory').value;
+        const color = document.getElementById('taskColor').value;
 
         if (!title || !categoryId) return;
 
@@ -52,7 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 title,
                 description,
-                category_id: categoryId
+                category_id: categoryId,
+                color
             })
         })
         .then(response => response.json())
@@ -69,13 +83,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const option = document.createElement('option');
                     option.value = task.id;
                     option.textContent = task.title;
+                    option.dataset.color = task.color;
                     optgroup.appendChild(option);
                 }
             });
 
             // Set the newly created task as the selected option
             if (window.activeTimeBlockSelect) {
+                const timeContent = window.activeTimeBlockSelect.closest('.time-content');
                 window.activeTimeBlockSelect.value = task.id;
+                timeContent.classList.add('has-task');
+                timeContent.style.borderLeftColor = task.color;
                 window.activeTimeBlockSelect = null;
             }
 

@@ -77,13 +77,36 @@ def tasks():
 @login_required
 def add_category():
     name = request.json.get('name')
+    color = request.json.get('color', '#6c757d')
     if not name:
         return jsonify({'error': 'Category name is required'}), 400
 
-    category = Category(name=name, user_id=current_user.id)
+    category = Category(name=name, color=color, user_id=current_user.id)
     db.session.add(category)
     db.session.commit()
-    return jsonify({'id': category.id, 'name': category.name})
+    return jsonify({'id': category.id, 'name': category.name, 'color': category.color})
+
+@app.route('/api/categories/<int:category_id>', methods=['PUT', 'DELETE'])
+@login_required
+def category_operations(category_id):
+    category = Category.query.filter_by(id=category_id, user_id=current_user.id).first_or_404()
+
+    if request.method == 'DELETE':
+        # Delete all tasks in the category
+        Task.query.filter_by(category_id=category.id).delete()
+        db.session.delete(category)
+        db.session.commit()
+        return '', 204
+
+    data = request.json
+    category.name = data.get('name', category.name)
+    category.color = data.get('color', category.color)
+    db.session.commit()
+    return jsonify({
+        'id': category.id,
+        'name': category.name,
+        'color': category.color
+    })
 
 @app.route('/api/tasks', methods=['GET', 'POST'])
 @login_required
@@ -94,7 +117,8 @@ def manage_tasks():
             'id': task.id,
             'title': task.title,
             'description': task.description,
-            'category_id': task.category_id
+            'category_id': task.category_id,
+            'color': task.color
         } for task in tasks])
 
     data = request.json
@@ -102,6 +126,7 @@ def manage_tasks():
         title=data['title'],
         description=data.get('description', ''),
         category_id=data['category_id'],
+        color=data.get('color', '#6c757d'),
         user_id=current_user.id
     )
     db.session.add(task)
@@ -110,7 +135,8 @@ def manage_tasks():
         'id': task.id,
         'title': task.title,
         'description': task.description,
-        'category_id': task.category_id
+        'category_id': task.category_id,
+        'color': task.color
     })
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT', 'DELETE'])
@@ -127,12 +153,14 @@ def task_operations(task_id):
     task.title = data.get('title', task.title)
     task.description = data.get('description', task.description)
     task.category_id = data.get('category_id', task.category_id)
+    task.color = data.get('color', task.color)
     db.session.commit()
     return jsonify({
         'id': task.id,
         'title': task.title,
         'description': task.description,
-        'category_id': task.category_id
+        'category_id': task.category_id,
+        'color': task.color
     })
 
 @app.route('/api/daily-plan', methods=['POST'])
