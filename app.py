@@ -1,11 +1,12 @@
 import os
 import logging
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import func
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -111,17 +112,8 @@ def index():
                             'name': task.category.name,
                             'color': task.category.color,
                             'minutes': 0,
-                            'tasks': {}
                         }
                     category_stats[task.category_id]['minutes'] += minutes
-
-                    # Add task to category stats if not present
-                    if task.id not in category_stats[task.category_id]['tasks']:
-                        category_stats[task.category_id]['tasks'][task.id] = {
-                            'title': task.title,
-                            'minutes': 0
-                        }
-                    category_stats[task.category_id]['tasks'][task.id]['minutes'] += minutes
 
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
@@ -281,6 +273,73 @@ def save_daily_plan():
 
     db.session.commit()
     return jsonify({'status': 'success'})
+
+@app.route('/summary')
+@login_required
+def summary():
+    # Get the date range parameters
+    period = request.args.get('period', '7')  # Default to 7 days
+    days = int(period)
+    end_date = datetime.now(pacific_tz).date()
+    start_date = end_date - timedelta(days=days)
+
+    # Query for all daily plans in the date range
+    daily_plans = DailyPlan.query.filter(
+        DailyPlan.user_id == current_user.id,
+        DailyPlan.date >= start_date,
+        DailyPlan.date <= end_date
+    ).all()
+
+    # Initialize statistics dictionaries
+    category_stats = {}
+    task_stats = {}
+    total_minutes = 0
+
+    # Calculate statistics
+    for plan in daily_plans:
+        for block in plan.time_blocks:
+            if block.task_id:
+                task = Task.query.get(block.task_id)
+                if task:
+                    # Each block is 15 minutes
+                    minutes = 15
+                    total_minutes += minutes
+
+                    # Update task statistics
+                    if task.id not in task_stats:
+                        task_stats[task.id] = {
+                            'title': task.title,
+                            'minutes': 0,
+                            'category_id': task.category_id,
+                            'category_name': task.category.name,
+                            'category_color': task.category.color
+                        }
+                    task_stats[task.id]['minutes'] += minutes
+
+                    # Update category statistics
+                    if task.category_id not in category_stats:
+                        category_stats[task.category_id] = {
+                            'name': task.category.name,
+                            'color': task.category.color,
+                            'minutes': 0,
+                            'days_used': set()
+                        }
+                    category_stats[task.category_id]['minutes'] += minutes
+                    category_stats[task.category_id]['days_used'].add(plan.date)
+
+    # Calculate average daily hours for categories
+    for cat_stats in category_stats.values():
+        days_used = len(cat_stats['days_used'])
+        cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
+        del cat_stats['days_used']  # Remove set before passing to template
+
+    return render_template('summary.html',
+                         days=days,
+                         start_date=start_date,
+                         end_date=end_date,
+                         category_stats=category_stats,
+                         task_stats=task_stats,
+                         total_minutes=total_minutes)
 
 with app.app_context():
     db.create_all()
