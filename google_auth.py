@@ -40,78 +40,92 @@ def login():
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
-    google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
-    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+    try:
+        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
-    callback_uri = f"{REPLIT_URL}/google_login/callback"
-    logger.info(f"OAuth login callback URI: {callback_uri}")
-    logger.info(f"Current request base URL: {request.base_url}")
-    logger.info(f"Current request URL: {request.url}")
+        # Log OAuth request details
+        logger.info("Initiating Google OAuth login")
+        logger.info(f"Redirect URI: {REPLIT_URL}/google_login/callback")
 
-    request_uri = client.prepare_request_uri(
-        authorization_endpoint,
-        redirect_uri=callback_uri,
-        scope=["openid", "email", "profile", "https://www.googleapis.com/auth/calendar.readonly"],
-    )
-    return redirect(request_uri)
+        request_uri = client.prepare_request_uri(
+            authorization_endpoint,
+            redirect_uri=f"{REPLIT_URL}/google_login/callback",
+            scope=[
+                "openid",
+                "email",
+                "profile",
+                "https://www.googleapis.com/auth/calendar.readonly"
+            ],
+        )
+        return redirect(request_uri)
+    except Exception as e:
+        logger.error(f"Error during OAuth login: {str(e)}")
+        flash("Error connecting to Google. Please try again.", "error")
+        return redirect(url_for("index"))
 
 @google_auth.route("/google_login/callback")
 def callback():
     if not GOOGLE_CLIENT_ID:
         return redirect(url_for("index"))
 
-    code = request.args.get("code")
-    google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
-    token_endpoint = google_provider_cfg["token_endpoint"]
+    try:
+        code = request.args.get("code")
+        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        token_endpoint = google_provider_cfg["token_endpoint"]
 
-    callback_uri = f"{REPLIT_URL}/google_login/callback"
-    logger.info(f"OAuth callback verification URI: {callback_uri}")
-    logger.info(f"Actual callback request URL: {request.url}")
+        callback_uri = f"{REPLIT_URL}/google_login/callback"
+        logger.info(f"Processing OAuth callback at: {callback_uri}")
 
-    token_url, headers, body = client.prepare_token_request(
-        token_endpoint,
-        authorization_response=request.url.replace("http://", "https://"),
-        redirect_url=callback_uri,
-        code=code,
-    )
-    token_response = requests.post(
-        token_url,
-        headers=headers,
-        data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
-    )
+        token_url, headers, body = client.prepare_token_request(
+            token_endpoint,
+            authorization_response=request.url.replace("http://", "https://"),
+            redirect_url=callback_uri,
+            code=code,
+        )
+        token_response = requests.post(
+            token_url,
+            headers=headers,
+            data=body,
+            auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+        )
 
-    # Parse the tokens
-    client.parse_request_body_response(json.dumps(token_response.json()))
+        # Parse the tokens
+        client.parse_request_body_response(json.dumps(token_response.json()))
 
-    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    uri, headers, body = client.add_token(userinfo_endpoint)
-    userinfo_response = requests.get(uri, headers=headers, data=body)
+        userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+        uri, headers, body = client.add_token(userinfo_endpoint)
+        userinfo_response = requests.get(uri, headers=headers, data=body)
 
-    userinfo = userinfo_response.json()
-    if userinfo.get("email_verified"):
-        users_email = userinfo["email"]
-        users_name = userinfo["given_name"]
-    else:
-        return "User email not available or not verified by Google.", 400
+        userinfo = userinfo_response.json()
+        if userinfo.get("email_verified"):
+            users_email = userinfo["email"]
+            users_name = userinfo["given_name"]
+        else:
+            logger.error("User email not verified by Google")
+            return "User email not available or not verified by Google.", 400
 
-    # Find or create user
-    user = User.query.filter_by(email=users_email).first()
-    if not user:
-        user = User(username=users_name, email=users_email)
-        db.session.add(user)
+        # Find or create user
+        user = User.query.filter_by(email=users_email).first()
+        if not user:
+            user = User(username=users_name, email=users_email)
+            db.session.add(user)
 
-    # Store the credentials info for Calendar API access
-    user.credentials_info = {
-        'token': token_response.json().get('access_token'),
-        'refresh_token': token_response.json().get('refresh_token'),
-    }
+        # Store the credentials info for Calendar API access
+        user.credentials_info = {
+            'token': token_response.json().get('access_token'),
+            'refresh_token': token_response.json().get('refresh_token'),
+        }
 
-    db.session.commit()
-    login_user(user)
+        db.session.commit()
+        login_user(user)
 
-    flash("Successfully connected to Google Calendar!", "success")
-    return redirect(url_for("index"))
+        flash("Successfully connected to Google Calendar!", "success")
+        return redirect(url_for("index"))
+    except Exception as e:
+        logger.error(f"Error during OAuth callback: {str(e)}")
+        flash("Error during Google authentication. Please try again.", "error")
+        return redirect(url_for("index"))
 
 @google_auth.route("/logout")
 @login_required
