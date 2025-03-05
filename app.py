@@ -224,21 +224,31 @@ def manage_tasks():
         } for task in tasks])
 
     data = request.json
-    task = Task(
-        title=data['title'],
-        description=data.get('description', ''),
-        category_id=data['category_id'],
-        user_id=current_user.id
-    )
-    db.session.add(task)
-    db.session.commit()
-    return jsonify({
-        'id': task.id,
-        'title': task.title,
-        'description': task.description,
-        'category_id': task.category_id,
-        'color': task.category.color
-    })
+    # Validate required fields
+    if not data.get('title') or not data.get('category_id'):
+        return jsonify({'error': 'Title and category are required'}), 400
+
+    try:
+        task = Task(
+            title=data['title'],
+            description=data.get('description', ''),
+            category_id=data['category_id'],
+            user_id=current_user.id
+        )
+        db.session.add(task)
+        db.session.commit()
+
+        return jsonify({
+            'id': task.id,
+            'title': task.title,
+            'description': task.description,
+            'category_id': task.category_id,
+            'color': task.category.color
+        })
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error creating task: {str(e)}")
+        return jsonify({'error': 'Failed to create task'}), 500
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT', 'DELETE'])
 @login_required
