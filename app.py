@@ -78,21 +78,27 @@ def index():
 
     # Get calendar events for the selected date
     calendar_events = []
-    if hasattr(current_user, 'credentials_info'):
+    if hasattr(current_user, 'credentials_info') and current_user.credentials_info:
         try:
             from calendar_service import get_calendar_events
             # Use selected calendars if available, otherwise default to primary
             selected_calendars = current_user.selected_calendars or ['primary']
-            logger.debug(f"Fetching calendar events for user {current_user.id} with selected calendars: {selected_calendars}")
+            logger.info(f"Fetching calendar events for date: {date} with calendars: {selected_calendars}")
+
             calendar_events = get_calendar_events(
                 current_user.credentials_info, 
                 date,
                 calendar_ids=selected_calendars
             )
-            logger.debug(f"Retrieved {len(calendar_events)} calendar events")
+            logger.info(f"Retrieved {len(calendar_events)} calendar events")
+            for event in calendar_events:
+                logger.debug(f"Event: {event['summary']} at {event['start_time']}")
         except Exception as e:
             logger.error(f"Error fetching calendar events: {str(e)}")
-            flash("Could not fetch calendar events. Please try logging in again.", "warning")
+            flash("Could not fetch calendar events. Please try reconnecting your Google Calendar.", "warning")
+    else:
+        logger.warning(f"User {current_user.id} is missing Google credentials")
+        flash("Please connect your Google Calendar to see events", "info")
 
     # Initialize empty lists/dicts for data
     time_blocks = []

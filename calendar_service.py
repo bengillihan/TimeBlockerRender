@@ -3,6 +3,7 @@ import os
 import google.oauth2.credentials
 from googleapiclient.discovery import build
 import logging
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,11 @@ def get_calendar_list(credentials_info):
 def get_calendar_events(credentials_info, selected_date, calendar_ids=None):
     """Fetch calendar events for the selected date."""
     try:
-        logger.debug(f"Creating credentials with token info")
+        if not credentials_info or not credentials_info.get('token'):
+            logger.error("Missing or invalid credentials info")
+            return []
+
+        logger.info(f"Creating credentials for date: {selected_date}")
         credentials = google.oauth2.credentials.Credentials(
             token=credentials_info.get('token'),
             refresh_token=credentials_info.get('refresh_token'),
@@ -52,39 +57,48 @@ def get_calendar_events(credentials_info, selected_date, calendar_ids=None):
             client_secret=os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
         )
 
-        logger.debug("Building Calendar API service")
         service = build('calendar', 'v3', credentials=credentials)
-        logger.debug(f"Successfully created Calendar API service")
+        logger.info("Successfully created Calendar API service")
 
+        # Convert selected_date to UTC for API request
         start_of_day = datetime.combine(selected_date, datetime.min.time())
         end_of_day = start_of_day + timedelta(days=1)
 
+        # Convert to UTC for API request
+        pacific = pytz.timezone('America/Los_Angeles')
+        start_of_day = pacific.localize(start_of_day).astimezone(pytz.UTC)
+        end_of_day = pacific.localize(end_of_day).astimezone(pytz.UTC)
+
         formatted_events = []
         calendars_to_check = calendar_ids if calendar_ids else ['primary']
-        logger.debug(f"Checking calendars: {calendars_to_check}")
+        logger.info(f"Checking calendars: {calendars_to_check}")
 
         for calendar_id in calendars_to_check:
             try:
-                logger.debug(f"Fetching events for calendar: {calendar_id}")
+                logger.info(f"Fetching events for calendar: {calendar_id}")
                 events_result = service.events().list(
                     calendarId=calendar_id,
-                    timeMin=start_of_day.isoformat() + 'Z',
-                    timeMax=end_of_day.isoformat() + 'Z',
+                    timeMin=start_of_day.isoformat(),
+                    timeMax=end_of_day.isoformat(),
                     maxResults=50,
                     singleEvents=True,
                     orderBy='startTime'
                 ).execute()
 
                 events = events_result.get('items', [])
-                logger.debug(f"Found {len(events)} events in calendar {calendar_id}")
+                logger.info(f"Found {len(events)} events in calendar {calendar_id}")
 
                 for event in events:
                     start = event['start'].get('dateTime', event['start'].get('date'))
                     end = event['end'].get('dateTime', event['end'].get('date'))
 
                     try:
+                        # Parse times and convert to Pacific time for display
                         start_time = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                        start_time = start_time.astimezone(pacific)
+
                         end_time = datetime.fromisoformat(end.replace('Z', '+00:00'))
+                        end_time = end_time.astimezone(pacific)
 
                         formatted_events.append({
                             'summary': event['summary'],
@@ -94,7 +108,7 @@ def get_calendar_events(credentials_info, selected_date, calendar_ids=None):
                             'color': event.get('colorId', '1'),
                             'calendar_name': event.get('organizer', {}).get('displayName', 'Calendar')
                         })
-                        logger.debug(f"Successfully formatted event: {event['summary']}")
+                        logger.debug(f"Formatted event: {event['summary']} at {start_time.strftime('%H:%M')}")
                     except ValueError as e:
                         logger.error(f"Error parsing event times for {event.get('summary')}: {str(e)}")
                         continue
@@ -103,7 +117,7 @@ def get_calendar_events(credentials_info, selected_date, calendar_ids=None):
                 logger.error(f"Error fetching events for calendar {calendar_id}: {str(e)}")
                 continue
 
-        logger.debug(f"Total events found across all calendars: {len(formatted_events)}")
+        logger.info(f"Total events found across all calendars: {len(formatted_events)}")
         return sorted(formatted_events, key=lambda x: x['start_time'])
 
     except Exception as e:
