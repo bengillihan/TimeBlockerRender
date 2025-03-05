@@ -45,7 +45,8 @@ def get_calendar_events(access_token, selected_date):
                 'start_time': start_time.strftime('%H:%M'),
                 'end_time': end_time.strftime('%H:%M'),
                 'description': event.description or '',
-                'calendar_name': event.calendar_id
+                'calendar_name': event.calendar_id,
+                'color': event.get('colorId', '1')  # Added color support
             })
 
         logger.info(f"Retrieved {len(formatted_events)} events from Nylas")
