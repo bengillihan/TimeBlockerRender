@@ -19,8 +19,15 @@
                             <li>Copy the IframePub URL (ends with "...&embed=true")</li>
                         </ol>
                     </li>
-                    <li><strong>Google Calendar:</strong> Use the calendar embed URL from "Settings > Integrate calendar > Embed code"</li>
-                    <li><strong>Notion:</strong> Share > "Copy link" and ensure the page is set to public</li>
+                    <li><strong>Notion:</strong> 
+                        For embedding without showing in navigation:
+                        <ol>
+                            <li>Share your Notion page and make it public</li>
+                            <li>Click "Share" > "Copy link"</li>
+                            <li>Add "?pvs=4" at the end of the URL for better embedding</li>
+                            <li>Check "Embed only" to hide from navigation</li>
+                        </ol>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -55,9 +62,15 @@
                                 <option value="fas fa-folder">📁 Folder</option>
                             </select>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="embedLink" name="embed">
-                            <label class="form-check-label" for="embedLink">Embed this link at the bottom of the page</label>
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="embedLink" name="embed">
+                                <label class="form-check-label" for="embedLink">Embed this link at the bottom of the page</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="showInNav" name="show_in_nav" checked>
+                                <label class="form-check-label" for="showInNav">Show in navigation bar</label>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Link</button>
                     </form>
@@ -78,6 +91,12 @@
                                        data-link-id="{{ link.id }}" 
                                        {% if link.embed %}checked{% endif %}>
                                 <label class="form-check-label">Embed</label>
+                            </div>
+                            <div class="form-check me-2">
+                                <input type="checkbox" class="form-check-input nav-toggle" 
+                                       data-link-id="{{ link.id }}" 
+                                       {% if link.show_in_nav %}checked{% endif %}>
+                                <label class="form-check-label">Show in Nav</label>
                             </div>
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-outline-danger delete-link">
@@ -103,7 +122,8 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         name: document.getElementById('linkName').value,
         url: document.getElementById('linkUrl').value,
         icon_class: document.getElementById('iconClass').value,
-        embed: document.getElementById('embedLink').checked
+        embed: document.getElementById('embedLink').checked,
+        show_in_nav: document.getElementById('showInNav').checked
     };
 
     try {
@@ -126,9 +146,10 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
     }
 });
 
-document.querySelectorAll('.embed-toggle').forEach(checkbox => {
+document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
     checkbox.addEventListener('change', async function() {
         const linkId = this.dataset.linkId;
+        const isEmbed = this.classList.contains('embed-toggle');
         try {
             const response = await fetch(`/api/nav_links/${linkId}`, {
                 method: 'PUT',
@@ -136,12 +157,12 @@ document.querySelectorAll('.embed-toggle').forEach(checkbox => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    embed: this.checked
+                    [isEmbed ? 'embed' : 'show_in_nav']: this.checked
                 })
             });
 
             if (!response.ok) {
-                alert('Failed to update embed setting. Please try again.');
+                alert('Failed to update setting. Please try again.');
                 this.checked = !this.checked; // Revert the checkbox
             }
         } catch (error) {

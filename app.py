@@ -476,7 +476,8 @@ def add_nav_link():
         icon_class=data.get('icon_class', 'fas fa-link'),
         user_id=current_user.id,
         order=new_order,
-        embed=data.get('embed', False)
+        embed=data.get('embed', False),
+        show_in_nav=data.get('show_in_nav', True)
     )
     db.session.add(link)
     db.session.commit()
@@ -486,7 +487,8 @@ def add_nav_link():
         'name': link.name,
         'url': link.url,
         'icon_class': link.icon_class,
-        'embed': link.embed
+        'embed': link.embed,
+        'show_in_nav': link.show_in_nav
     })
 
 @app.route('/api/nav_links/<int:link_id>', methods=['PUT', 'DELETE'])
@@ -503,6 +505,8 @@ def nav_link_operations(link_id):
     data = request.json
     if 'embed' in data:
         link.embed = data['embed']
+    if 'show_in_nav' in data:
+        link.show_in_nav = data['show_in_nav']
     if 'name' in data:
         link.name = data['name']
     if 'url' in data:
@@ -516,7 +520,8 @@ def nav_link_operations(link_id):
         'name': link.name,
         'url': link.url,
         'icon_class': link.icon_class,
-        'embed': link.embed
+        'embed': link.embed,
+        'show_in_nav': link.show_in_nav
     })
 
 with app.app_context():

@@ -20,6 +20,7 @@ class NavLink(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     order = db.Column(db.Integer, default=0)
     embed = db.Column(db.Boolean, default=False)  # Add embed field
+    show_in_nav = db.Column(db.Boolean, default=True)  # Add show_in_nav field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):

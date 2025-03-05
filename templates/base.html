@@ -35,11 +35,13 @@
                     <!-- Custom Navigation Links -->
                     {% if current_user.nav_links %}
                         {% for link in current_user.nav_links %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ link.url }}" target="_blank">
-                                <i class="{{ link.icon_class }}"></i> {{ link.name }}
-                            </a>
-                        </li>
+                            {% if link.show_in_nav %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ link.url }}" target="_blank">
+                                    <i class="{{ link.icon_class }}"></i> {{ link.name }}
+                                </a>
+                            </li>
+                            {% endif %}
                         {% endfor %}
                     {% endif %}
                     <!-- Link to manage navigation -->
