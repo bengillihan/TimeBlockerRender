@@ -1,0 +1,76 @@
+Full Prompt for Replit AI Agent to Build a Time Block Planning Web App (Python FastAPI Version)
+Project: Time Block Planning Web App
+Objective:
+Develop a time-blocking web application with Google Authentication, allowing users to plan, track, and review their daily schedules efficiently.
+
+Each user will have private, personalized data including:
+
+Top 5 Priorities for the day.
+15-minute time blocks from 6:00 AM - 5:00 PM.
+A "Brain Dump" section for freeform notes.
+A history log to review and edit past days.
+A daily productivity rating (1-5 scale).
+Key Features & Functionality
+1️⃣ User Authentication & Setup (Google Auth)
+✅ Users log in with Google OAuth.
+✅ Each user has a unique account and private data.
+✅ User’s tasks, schedules, and history are stored in PostgreSQL (or Firestore).
+
+2️⃣ Task & Schedule Management
+✅ Users can list their Top 5 Priorities for the day.
+✅ A Brain Dump section allows users to jot down notes.
+✅ Users can schedule tasks into 15-minute increments (6 AM - 5 PM).
+✅ Drag & Drop functionality for task scheduling.
+✅ Completed tasks are visually marked.
+✅ Unfinished tasks automatically roll over to the next day.
+
+3️⃣ Daily Planning UI
+✅ Auto-populated date at the top of the page.
+✅ Time-blocking grid (6:00 AM - 5:00 PM, in 15-minute increments).
+✅ Dedicated input fields for:
+
+Top 5 Priorities
+Brain Dump/Notes ✅ Smooth drag-and-drop task scheduling.
+✅ Task rollover automation for unfinished tasks.
+4️⃣ End-of-Day Review & History Tracking
+✅ Users rate their daily productivity (1-5 scale).
+✅ Users leave final notes or reflections for each day.
+✅ Navigation to previous days via:
+
+⬅️➡️ Left/right arrows to go back/forward one day.
+📅 Calendar picker to select a past date.
+✅ Past days remain editable for later reflection.
+5️⃣ Data Storage & Security
+✅ Each user's data is private and stored in PostgreSQL with FastAPI ORM (SQLAlchemy).
+✅ Local storage fallback for offline use, with auto-sync when online.
+✅ Cloud sync ensures data is available across devices.
+
+🔧 Tech Stack Recommendations (Python FastAPI Version)
+Front-End:
+React.js (or Next.js for better performance)
+TailwindCSS or Material UI for a clean UI
+Drag-and-drop using React DnD or Sortable.js
+Date & time picker UI components for scheduling
+Back-End:
+Python FastAPI (🚀 async, lightweight, and scalable)
+PostgreSQL (via SQLAlchemy ORM)
+Redis (for caching and session management)
+OAuth2 with Google Login (via authlib or fastapi-users)
+Authentication & Storage:
+Google OAuth2 for login (authlib or fastapi-users)
+PostgreSQL (for long-term data storage)
+Redis (for session management)
+Local Storage (browser) for offline mode
+🚀 Additional Features (Optional Future Enhancements)
+✅ Dark Mode Toggle
+✅ Export daily plan to PDF or Print
+✅ Google Calendar Sync (Future Feature)
+✅ AI-powered task suggestions based on past behavior
+
+📌 Development Priorities
+🔹 Fast, intuitive UI – Plan a day in under 2 minutes.
+🔹 Seamless Google login – Users log in and see their personal data instantly.
+🔹 Efficient drag-and-drop scheduling – Quick adjustments for flexibility.
+🔹 Offline-first capability – Plan even without internet, then sync later.
+🔹 Minimalist history tracking – Easy access to past schedules.
+
