@@ -37,6 +37,10 @@
                                 <option value="fas fa-folder">📁 Folder</option>
                             </select>
                         </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="embedLink" name="embed">
+                            <label class="form-check-label" for="embedLink">Embed this link at the bottom of the page</label>
+                        </div>
                         <button type="submit" class="btn btn-primary">Add Link</button>
                     </form>
                 </div>
@@ -51,6 +55,12 @@
                         <div class="d-flex align-items-center border-bottom py-2" data-link-id="{{ link.id }}">
                             <i class="{{ link.icon_class }} me-2"></i>
                             <span class="flex-grow-1">{{ link.name }}</span>
+                            <div class="form-check me-2">
+                                <input type="checkbox" class="form-check-input embed-toggle" 
+                                       data-link-id="{{ link.id }}" 
+                                       {% if link.embed %}checked{% endif %}>
+                                <label class="form-check-label">Embed</label>
+                            </div>
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-outline-danger delete-link">
                                     <i class="fas fa-trash"></i>
@@ -70,11 +80,12 @@
 <script>
 document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const formData = {
         name: document.getElementById('linkName').value,
         url: document.getElementById('linkUrl').value,
-        icon_class: document.getElementById('iconClass').value
+        icon_class: document.getElementById('iconClass').value,
+        embed: document.getElementById('embedLink').checked
     };
 
     try {
@@ -95,6 +106,32 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
     }
+});
+
+document.querySelectorAll('.embed-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', async function() {
+        const linkId = this.dataset.linkId;
+        try {
+            const response = await fetch(`/api/nav_links/${linkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    embed: this.checked
+                })
+            });
+
+            if (!response.ok) {
+                alert('Failed to update embed setting. Please try again.');
+                this.checked = !this.checked; // Revert the checkbox
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            this.checked = !this.checked; // Revert the checkbox
+        }
+    });
 });
 
 document.querySelectorAll('.delete-link').forEach(button => {

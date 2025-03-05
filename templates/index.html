@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<!-- Add embedded calendars section -->
+<!-- Add embedded links section after the review section -->
 <div class="row mt-4">
     <div class="col">
         <div class="card">
@@ -256,23 +256,18 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: 56.25%;">
-                            <iframe src="https://calendar.google.com/calendar/embed?src=bdgillihan%40gmail.com&ctz=America%2FLos_Angeles" 
-                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
-                                    frameborder="0" 
-                                    scrolling="no">
-                            </iframe>
+                    {% for link in current_user.nav_links %}
+                        {% if link.embed %}
+                        <div class="col-md-6 mb-4">
+                            <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: 56.25%;">
+                                <iframe src="{{ link.url }}"
+                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+                                        frameborder="0">
+                                </iframe>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: 56.25%;">
-                            <iframe src="https://www.notion.so/ampowersys/ea170ba4f6eb40f9b4200603d8cb364f?v=d9a59e5b86da4281a1aa55b8bbf44ce3&pvs=4"
-                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
-                                    frameborder="0">
-                            </iframe>
-                        </div>
-                    </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
         </div>

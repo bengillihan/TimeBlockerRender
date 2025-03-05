@@ -19,6 +19,7 @@ class NavLink(db.Model):
     icon_class = db.Column(db.String(50), default='fas fa-link')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     order = db.Column(db.Integer, default=0)
+    embed = db.Column(db.Boolean, default=False)  # Add embed field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):
