@@ -81,7 +81,15 @@ def index():
     if hasattr(current_user, 'credentials_info'):
         try:
             from calendar_service import get_calendar_events
-            calendar_events = get_calendar_events(current_user.credentials_info, date)
+            # Use selected calendars if available, otherwise default to primary
+            selected_calendars = current_user.selected_calendars or ['primary']
+            logger.debug(f"Fetching calendar events for user {current_user.id} with selected calendars: {selected_calendars}")
+            calendar_events = get_calendar_events(
+                current_user.credentials_info, 
+                date,
+                calendar_ids=selected_calendars
+            )
+            logger.debug(f"Retrieved {len(calendar_events)} calendar events")
         except Exception as e:
             logger.error(f"Error fetching calendar events: {str(e)}")
             flash("Could not fetch calendar events. Please try logging in again.", "warning")
@@ -344,6 +352,26 @@ def summary():
                          category_stats=category_stats,
                          task_stats=task_stats,
                          total_minutes=total_minutes)
+
+@app.route('/calendar/settings', methods=['GET', 'POST'])
+@login_required
+def calendar_settings():
+    if request.method == 'POST':
+        selected_ids = request.json.get('calendar_ids', [])
+        current_user.selected_calendars = selected_ids
+        db.session.commit()
+        return jsonify({'status': 'success'})
+
+    try:
+        from calendar_service import get_calendar_list
+        calendars = get_calendar_list(current_user.credentials_info)
+        return render_template('calendar_settings.html', 
+                            calendars=calendars,
+                            selected_calendars=current_user.selected_calendars or [])
+    except Exception as e:
+        logger.error(f"Error fetching calendar list: {str(e)}")
+        flash("Could not fetch calendars. Please try logging in again.", "warning")
+        return redirect(url_for('index'))
 
 with app.app_context():
     db.create_all()
