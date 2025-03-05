@@ -81,6 +81,7 @@ def callback():
         auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
     )
 
+    # Parse the tokens
     client.parse_request_body_response(json.dumps(token_response.json()))
 
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
@@ -94,13 +95,22 @@ def callback():
     else:
         return "User email not available or not verified by Google.", 400
 
+    # Find or create user
     user = User.query.filter_by(email=users_email).first()
     if not user:
         user = User(username=users_name, email=users_email)
         db.session.add(user)
-        db.session.commit()
 
+    # Store the credentials info for Calendar API access
+    user.credentials_info = {
+        'token': token_response.json().get('access_token'),
+        'refresh_token': token_response.json().get('refresh_token'),
+    }
+
+    db.session.commit()
     login_user(user)
+
+    flash("Successfully connected to Google Calendar!", "success")
     return redirect(url_for("index"))
 
 @google_auth.route("/logout")

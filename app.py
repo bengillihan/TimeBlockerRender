@@ -363,15 +363,31 @@ def calendar_settings():
         return jsonify({'status': 'success'})
 
     try:
+        # Check if user has Google credentials
+        if not hasattr(current_user, 'credentials_info'):
+            logger.warning(f"User {current_user.id} missing Google credentials")
+            flash("Please connect your Google account first", "warning")
+            return redirect(url_for('google_auth.login'))
+
+        logger.debug(f"Fetching calendar list for user {current_user.id}")
         from calendar_service import get_calendar_list
         calendars = get_calendar_list(current_user.credentials_info)
+
+        if not calendars:
+            logger.warning("No calendars found in response")
+            flash("No calendars found. Please ensure you've granted calendar access.", "warning")
+            return render_template('calendar_settings.html', 
+                                calendars=[],
+                                selected_calendars=[])
+
+        logger.debug(f"Found {len(calendars)} calendars")
         return render_template('calendar_settings.html', 
                             calendars=calendars,
                             selected_calendars=current_user.selected_calendars or [])
     except Exception as e:
         logger.error(f"Error fetching calendar list: {str(e)}")
         flash("Could not fetch calendars. Please try logging in again.", "warning")
-        return redirect(url_for('index'))
+        return redirect(url_for('google_auth.login'))
 
 with app.app_context():
     db.create_all()
