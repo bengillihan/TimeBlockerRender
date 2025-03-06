@@ -13,6 +13,7 @@
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 <button id="todayBtn" class="btn btn-outline-primary ms-2">Today</button>
+                <span id="currentTime" class="ms-3 badge bg-dark"></span>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="rating">
@@ -71,10 +72,10 @@
                     <li class="list-group-item">
                         <div class="input-group">
                             <div class="input-group-text">
-                                <input type="checkbox" class="priority-checkbox" 
+                                <input type="checkbox" class="priority-checkbox"
                                        {% if i < priorities|length and priorities[i].completed %}checked{% endif %}>
                             </div>
-                            <input type="text" class="form-control priority-input {% if i < priorities|length and priorities[i].completed %}completed{% endif %}" 
+                            <input type="text" class="form-control priority-input {% if i < priorities|length and priorities[i].completed %}completed{% endif %}"
                                    placeholder="Priority {{ i + 1 }}"
                                    value="{{ priorities[i].content if i < priorities|length else '' }}">
                         </div>
@@ -89,7 +90,7 @@
                 <h5 class="card-title mb-0">Notes</h5>
             </div>
             <div class="card-body">
-                <textarea id="brainDump" class="form-control" rows="5" 
+                <textarea id="brainDump" class="form-control" rows="5"
                           placeholder="Write your thoughts here...">{{ brain_dump }}</textarea>
             </div>
         </div>
@@ -122,7 +123,7 @@
                                                 {% for category in categories %}
                                                     <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
                                                         {% for task in category.tasks %}
-                                                            <option value="{{ task.id }}" 
+                                                            <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
                                                                     {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
                                                                 {{ task.title }}
@@ -131,12 +132,12 @@
                                                     </optgroup>
                                                 {% endfor %}
                                             </select>
-                                            <input type="text" class="form-control form-control-sm task-notes" 
-                                                   placeholder="Add notes..." 
+                                            <input type="text" class="form-control form-control-sm task-notes"
+                                                   placeholder="Add notes..."
                                                    maxlength="15"
                                                    value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
-                                                   style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %}; 
-                                                          width: 100px; 
+                                                   style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %};
+                                                          width: 100px;
                                                           margin-left: 4px;">
                                             <div class="task-controls">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
@@ -165,7 +166,7 @@
                                                 {% for category in categories %}
                                                     <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
                                                         {% for task in category.tasks %}
-                                                            <option value="{{ task.id }}" 
+                                                            <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
                                                                     {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
                                                                 {{ task.title }}
@@ -174,12 +175,12 @@
                                                     </optgroup>
                                                 {% endfor %}
                                             </select>
-                                            <input type="text" class="form-control form-control-sm task-notes" 
-                                                   placeholder="Add notes..." 
+                                            <input type="text" class="form-control form-control-sm task-notes"
+                                                   placeholder="Add notes..."
                                                    maxlength="15"
                                                    value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
-                                                   style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %}; 
-                                                          width: 100px; 
+                                                   style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %};
+                                                          width: 100px;
                                                           margin-left: 4px;">
                                             <div class="task-controls">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
@@ -215,7 +216,7 @@
                                             {% for category in categories %}
                                                 <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
                                                     {% for task in category.tasks %}
-                                                        <option value="{{ task.id }}" 
+                                                        <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
                                                                 {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
                                                             {{ task.title }}
@@ -224,12 +225,12 @@
                                                 </optgroup>
                                             {% endfor %}
                                         </select>
-                                        <input type="text" class="form-control form-control-sm task-notes" 
-                                               placeholder="Add notes..." 
+                                        <input type="text" class="form-control form-control-sm task-notes"
+                                               placeholder="Add notes..."
                                                maxlength="15"
                                                value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
-                                               style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %}; 
-                                                      width: 100px; 
+                                               style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %};
+                                                      width: 100px;
                                                       margin-left: 4px;">
                                         <div class="task-controls">
                                             <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
@@ -264,7 +265,7 @@
                         <div class="col-md-6 mb-4">
                             <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: {{ link.iframe_height }}px;">
                                 <iframe src="{{ link.url }}"
-                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
                                         frameborder="0"
                                         allowfullscreen>
                                 </iframe>
@@ -303,7 +304,7 @@
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
-                    </div>                    
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -313,8 +314,101 @@
         </div>
     </div>
 </div>
+
+<!-- Add CSS for time indicator -->
+<style>
+.time-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: red;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.time-block {
+    position: relative;
+}
+
+#timeBlocks {
+    position: relative;
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/timeblock.js') }}"></script>
+<script>
+// Update current time display
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+    });
+    document.getElementById('currentTime').textContent = timeString;
+}
+
+// Update time indicator position
+function updateTimeIndicator() {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    // Remove existing indicator
+    const existingIndicator = document.querySelector('.time-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+
+    // Only show indicator for current day
+    const currentDate = new Date().toISOString().split('T')[0];
+    const selectedDate = document.getElementById('datePicker').value;
+    if (currentDate !== selectedDate) {
+        return;
+    }
+
+    // Find the closest time block
+    const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+    const timeBlocks = document.querySelectorAll('.time-block');
+
+    for (const block of timeBlocks) {
+        const blockTime = block.dataset.time;
+        if (blockTime <= timeString) {
+            const nextBlock = block.nextElementSibling;
+            if (!nextBlock || nextBlock.dataset.time > timeString) {
+                // Calculate position within the block
+                const blockRect = block.getBoundingClientRect();
+                const indicator = document.createElement('div');
+                indicator.className = 'time-indicator';
+
+                // Position the indicator
+                const minutes = currentMinute % 15;
+                const percentage = (minutes / 15) * 100;
+                indicator.style.top = `${blockRect.top + (blockRect.height * percentage / 100)}px`;
+
+                document.getElementById('timeBlocks').appendChild(indicator);
+                break;
+            }
+        }
+    }
+}
+
+// Update time every minute
+setInterval(updateCurrentTime, 60000);
+updateCurrentTime(); // Initial update
+
+// Update indicator every 30 minutes
+setInterval(updateTimeIndicator, 1800000);
+updateTimeIndicator(); // Initial update
+
+// Also update indicator when changing dates
+document.getElementById('datePicker').addEventListener('change', updateTimeIndicator);
+document.getElementById('prevDay').addEventListener('click', updateTimeIndicator);
+document.getElementById('nextDay').addEventListener('click', updateTimeIndicator);
+document.getElementById('todayBtn').addEventListener('click', updateTimeIndicator);
+</script>
 {% endblock %}
