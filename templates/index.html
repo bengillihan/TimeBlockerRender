@@ -322,12 +322,19 @@
     left: 0;
     right: 0;
     height: 2px;
-    background-color: red;
+    background-color: #ff3333;
     z-index: 100;
     pointer-events: none;
+    border-top: 1px solid rgba(255, 51, 51, 0.8);
+    box-shadow: 0 1px 3px rgba(255, 51, 51, 0.4);
 }
 
 .time-block {
+    position: relative;
+    height: 40px;  /* Set explicit height */
+}
+
+.time-block-column {
     position: relative;
 }
 
@@ -371,26 +378,35 @@ function updateTimeIndicator() {
         return;
     }
 
-    // Find the closest time block
+    // Find the relevant time block
     const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
     const timeBlocks = document.querySelectorAll('.time-block');
 
-    for (const block of timeBlocks) {
+    for (let i = 0; i < timeBlocks.length; i++) {
+        const block = timeBlocks[i];
         const blockTime = block.dataset.time;
+
         if (blockTime <= timeString) {
-            const nextBlock = block.nextElementSibling;
+            const nextBlock = timeBlocks[i + 1];
             if (!nextBlock || nextBlock.dataset.time > timeString) {
-                // Calculate position within the block
-                const blockRect = block.getBoundingClientRect();
+                // Calculate indicator position
+                const blockTop = block.offsetTop;
+                const blockHeight = block.offsetHeight;
+                const minutes = currentMinute % 15;
+                const percentage = (minutes / 15);
+
+                // Create and position the indicator
                 const indicator = document.createElement('div');
                 indicator.className = 'time-indicator';
 
-                // Position the indicator
-                const minutes = currentMinute % 15;
-                const percentage = (minutes / 15) * 100;
-                indicator.style.top = `${blockRect.top + (blockRect.height * percentage / 100)}px`;
+                // Position relative to the block
+                const column = block.closest('.time-block-column');
+                const position = blockTop + (blockHeight * percentage);
+                indicator.style.top = `${position}px`;
+                indicator.style.width = '100%';
 
-                document.getElementById('timeBlocks').appendChild(indicator);
+                // Add the indicator to the column
+                column.appendChild(indicator);
                 break;
             }
         }
@@ -401,8 +417,8 @@ function updateTimeIndicator() {
 setInterval(updateCurrentTime, 60000);
 updateCurrentTime(); // Initial update
 
-// Update indicator every 30 minutes
-setInterval(updateTimeIndicator, 1800000);
+// Update indicator every minute
+setInterval(updateTimeIndicator, 60000); // Changed to update every minute for smoother movement
 updateTimeIndicator(); // Initial update
 
 // Also update indicator when changing dates
