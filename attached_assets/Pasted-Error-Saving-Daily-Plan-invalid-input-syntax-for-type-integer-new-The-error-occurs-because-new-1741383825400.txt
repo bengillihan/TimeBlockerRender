@@ -1,0 +1,70 @@
+Error Saving Daily Plan (invalid input syntax for type integer: "new")
+The error occurs because "new" is being passed as an integer (task_id) when trying to save a new task in the time_block table.
+
+Root Cause:
+When selecting a task from the dropdown, there's an option to add a new task.
+The "new" value is being stored as the task_id when saving time blocks.
+PostgreSQL expects an integer for task_id, but receives "new", causing a data type mismatch error.
+How to Fix It
+1️⃣ Fix the JavaScript to Prevent "new" from Being Sent
+Modify the saveData() function to filter out "new" before sending data to the backend.
+
+Before (Incorrect)
+js
+Copy
+Edit
+const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+    start_time: block.dataset.time,
+    end_time: addMinutes(block.dataset.time, 15),
+    task_id: block.querySelector('.task-select').value || null,  // ❌ This may be "new"
+    notes: block.querySelector('.task-notes')?.value || '',
+    completed: block.querySelector('.time-block-checkbox')?.checked || false
+}));
+After (Fixed)
+js
+Copy
+Edit
+const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
+    let selectedTask = block.querySelector('.task-select').value;
+    
+    return {
+        start_time: block.dataset.time,
+        end_time: addMinutes(block.dataset.time, 15),
+        task_id: selectedTask !== "new" ? selectedTask : null,  // ✅ Ensures "new" is not sent
+        notes: block.querySelector('.task-notes')?.value || '',
+        completed: block.querySelector('.time-block-checkbox')?.checked || false
+    };
+});
+2️⃣ Fix the Backend to Validate task_id Before Inserting
+Modify save_daily_plan() in Python to ensure that "new" is not inserted.
+
+Before (Incorrect)
+python
+Copy
+Edit
+time_blocks = [
+    TimeBlock(
+        daily_plan_id=daily_plan.id,
+        start_time=datetime.strptime(block['start_time'], '%H:%M').time(),
+        end_time=datetime.strptime(block['end_time'], '%H:%M').time(),
+        task_id=block.get('task_id'),  # ❌ Could be "new"
+        completed=block.get('completed', False),
+        notes=block.get('notes', '')[:15]  # Limit notes to 15 chars
+    )
+    for block in data.get('time_blocks', [])
+]
+After (Fixed)
+python
+Copy
+Edit
+time_blocks = [
+    TimeBlock(
+        daily_plan_id=daily_plan.id,
+        start_time=datetime.strptime(block['start_time'], '%H:%M').time(),
+        end_time=datetime.strptime(block['end_time'], '%H:%M').time(),
+        task_id=int(block['task_id']) if block.get('task_id') and block['task_id'].isdigit() else None,  # ✅ Ensures only valid integers are stored
+        completed=block.get('completed', False),
+        notes=block.get('notes', '')[:15]  # Limit notes to 15 chars
+    )
+    for block in data.get('time_blocks', [])
+]

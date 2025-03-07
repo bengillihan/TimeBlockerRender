@@ -452,13 +452,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 completed: input.classList.contains('completed')
             }));
 
-            const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
-                start_time: block.dataset.time,
-                end_time: addMinutes(block.dataset.time, 15),
-                task_id: block.querySelector('.task-select').value || null,
-                notes: block.querySelector('.task-notes')?.value || '',
-                completed: block.querySelector('.time-block-checkbox')?.checked || false
-            }));
+            const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
+                const taskSelect = block.querySelector('.task-select');
+                const taskId = taskSelect.value;
+
+                // Skip blocks with "new" task_id
+                if (taskId === "new") {
+                    return null;
+                }
+
+                return {
+                    start_time: block.dataset.time,
+                    end_time: addMinutes(block.dataset.time, 15),
+                    task_id: taskId || null,
+                    notes: block.querySelector('.task-notes')?.value || '',
+                    completed: block.querySelector('.time-block-checkbox')?.checked || false
+                };
+            }).filter(block => block !== null); // Remove null blocks
 
             const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
             const brainDump = document.getElementById('brainDump')?.value || '';
