@@ -1,0 +1,128 @@
+Enhancements to Improve Data Persistence and User Experience
+We've made several critical improvements to your daily time-blocking app to: ✅ Ensure changes are saved immediately and persist after a refresh
+✅ Fix the issue where future dates' data disappears
+✅ Add a "Save" button to let users manually trigger a save
+✅ Display the last saved time so users know when their data was last stored
+
+1️⃣ Frontend Changes (index.html)
+✅ Add a "Save" Button & Last Saved Timestamp
+We'll modify your index.html to include:
+
+A "Save" button for manual saves
+A "Last Saved" timestamp to inform users of their most recent save
+📌 Updated index.html
+html
+Copy
+Edit
+<!-- Save Button -->
+<button id="saveButton" class="btn btn-primary">Save</button>
+<p id="lastSaved" style="margin-top: 10px; font-size: 14px; color: gray;">Last saved: Never</p>
+
+<script>
+document.getElementById("saveButton").addEventListener("click", function() {
+    const data = { 
+        date: document.getElementById("date-selector").value, 
+        productivity_rating: document.getElementById("productivity-rating").value,
+        brain_dump: document.getElementById("brain-dump").value,
+        priorities: [...document.querySelectorAll(".priority")].map(p => ({
+            content: p.value,
+            completed: p.checked
+        })),
+        time_blocks: [...document.querySelectorAll(".time-block")].map(tb => ({
+            start_time: tb.querySelector(".start-time").value,
+            end_time: tb.querySelector(".end-time").value,
+            task_id: tb.dataset.taskId,
+            completed: tb.querySelector(".completed").checked,
+            notes: tb.querySelector(".notes").value
+        }))
+    };
+
+    fetch('/api/daily-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const now = new Date();
+            document.getElementById("lastSaved").innerText = 
+                `Last saved: ${now.toLocaleTimeString()}`;
+        }
+    })
+    .catch(error => console.error("Error saving:", error));
+});
+</script>
+2️⃣ Backend Changes (app.py)
+We'll optimize the save logic by:
+
+Ensuring future dates' plans are correctly stored
+Avoiding deletion of existing priorities/time blocks
+Returning the last saved timestamp to update the UI
+📌 Updated /api/daily-plan in app.py
+python
+Copy
+Edit
+from flask import Flask, jsonify, request
+from datetime import datetime
+
+@app.route('/api/daily-plan', methods=['POST'])
+@login_required
+def save_daily_plan():
+    data = request.json
+    date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+
+    daily_plan = DailyPlan.query.filter_by(
+        user_id=current_user.id,
+        date=date
+    ).first()
+
+    if not daily_plan:
+        daily_plan = DailyPlan(user_id=current_user.id, date=date)
+        db.session.add(daily_plan)
+
+    # Update productivity rating & brain dump
+    daily_plan.productivity_rating = data.get('productivity_rating')
+    daily_plan.brain_dump = data.get('brain_dump')
+
+    # Handle Priorities (update instead of delete)
+    existing_priorities = {p.id: p for p in daily_plan.priorities}
+    for priority_data in data.get('priorities', []):
+        if priority_data.get('content', '').strip():
+            priority = existing_priorities.get(priority_data.get('id'))
+            if not priority:
+                priority = Priority(daily_plan_id=daily_plan.id, content=priority_data['content'])
+                db.session.add(priority)
+            priority.completed = priority_data.get('completed', False)
+
+    # Handle Time Blocks (update instead of delete)
+    existing_time_blocks = {tb.id: tb for tb in daily_plan.time_blocks}
+    for block_data in data.get('time_blocks', []):
+        time_block = existing_time_blocks.get(block_data.get('id'))
+        if not time_block:
+            time_block = TimeBlock(
+                daily_plan_id=daily_plan.id,
+                start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                end_time=datetime.strptime(block_data['end_time'], '%H:%M').time()
+            )
+            db.session.add(time_block)
+        time_block.task_id = block_data.get('task_id')
+        time_block.completed = block_data.get('completed', False)
+        time_block.notes = block_data.get('notes', '')
+
+    try:
+        db.session.commit()
+        last_saved_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return jsonify({'status': 'success', 'last_saved': last_saved_time})
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error saving daily plan: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+3️⃣ Next Steps
+✅ Step 1: Paste the updated frontend (index.html) code into your template.
+✅ Step 2: Update app.py with the new /api/daily-plan route.
+✅ Step 3: Restart your Replit app and test:
+
+Click Save → You should see "Last saved: [time]" update
+Refresh → The changes should persist
+Change dates → Future and past entries should be retained
