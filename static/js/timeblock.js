@@ -13,29 +13,41 @@ document.addEventListener('DOMContentLoaded', function() {
     if (datePicker) {
         // Add Last Saved display and Save button next to the date picker
         const dateContainer = datePicker.closest('.date-navigation');
+        if (dateContainer) {
+            // Create a container for the save elements
+            const saveContainer = document.createElement('div');
+            saveContainer.className = 'd-flex align-items-center ms-3';
 
-        // Create a container for the save elements
-        const saveContainer = document.createElement('div');
-        saveContainer.className = 'd-flex align-items-center ms-3';
+            // Add Last Saved display
+            const lastSavedDisplay = document.createElement('small');
+            lastSavedDisplay.id = 'lastSaved';
+            lastSavedDisplay.className = 'text-muted me-2';
+            lastSavedDisplay.textContent = 'Last saved: Never';
 
-        // Add Last Saved display
-        const lastSavedDisplay = document.createElement('small');
-        lastSavedDisplay.id = 'lastSaved';
-        lastSavedDisplay.className = 'text-muted me-2';
-        lastSavedDisplay.textContent = 'Last saved: Never';
+            // Add Save button
+            const saveButton = document.createElement('button');
+            saveButton.id = 'saveButton';
+            saveButton.className = 'btn btn-sm btn-primary ms-2';
+            saveButton.textContent = 'Save';
 
-        // Add Save button
-        const saveButton = document.createElement('button');
-        saveButton.id = 'saveButton';
-        saveButton.className = 'btn btn-sm btn-primary ms-2';
-        saveButton.textContent = 'Save';
+            // Add elements to the save container
+            saveContainer.appendChild(lastSavedDisplay);
+            saveContainer.appendChild(saveButton);
 
-        // Add elements to the save container
-        saveContainer.appendChild(lastSavedDisplay);
-        saveContainer.appendChild(saveButton);
+            // Add save container next to date picker
+            dateContainer.appendChild(saveContainer);
 
-        // Add save container next to date picker
-        dateContainer.appendChild(saveContainer);
+            // Save button click handler
+            saveButton.addEventListener('click', async function() {
+                try {
+                    await saveData();
+                    updateLastSavedTime();
+                } catch (error) {
+                    console.error('Error saving data:', error);
+                    alert('Failed to save. Please try again.');
+                }
+            });
+        }
 
         // Set the timezone for the date picker
         const today = new Date();
@@ -148,41 +160,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize task colors for existing selections
+    // Initialize time block colors
     document.querySelectorAll('.task-select').forEach(select => {
-        if (select.value) {
+        const timeContent = select.closest('.time-content');
+        if (select.value && timeContent) {
             const selectedOption = select.options[select.selectedIndex];
             const categoryColor = selectedOption.dataset.categoryColor;
-            const timeContent = select.closest('.time-content');
             if (categoryColor) {
                 timeContent.classList.add('has-task');
                 timeContent.style.borderLeftColor = categoryColor;
+                timeContent.querySelector('.task-notes').style.display = 'inline-block';
             }
         }
-    });
-
-    // Initialize checkboxes
-    document.querySelectorAll('.priority-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const input = this.closest('.input-group').querySelector('.priority-input');
-            input.classList.toggle('completed', this.checked);
-            saveData();
-        });
     });
 
     // Handle task selection changes
     document.querySelectorAll('.task-select').forEach(select => {
         select.addEventListener('change', function() {
-            if (this.value === 'new') {
-                // Reset form
-                document.getElementById('quickTaskForm').reset();
-                // Store the select element that triggered the modal
-                window.activeTimeBlockSelect = this;
-                // Show modal
-                new bootstrap.Modal(document.getElementById('addTaskModal')).show();
-                return;
-            }
-
             const timeContent = this.closest('.time-content');
             const notesInput = timeContent.querySelector('.task-notes');
 
@@ -199,16 +193,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 notesInput.value = '';
             }
 
-            saveData(); // This will trigger the updateTimeTotals
+            saveData(); // Save changes
         });
     });
 
-    // Add real-time notes update handling
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('task-notes')) {
-            saveData();  // Save immediately when notes are updated
-        }
+    // Initialize checkboxes
+    document.querySelectorAll('.priority-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const input = this.closest('.input-group').querySelector('.priority-input');
+            input.classList.toggle('completed', this.checked);
+            saveData();
+        });
     });
+
 
     // Handle quick task creation
     document.getElementById('saveQuickTask')?.addEventListener('click', function() {
@@ -314,17 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-
-    // Save button click handler (moved from above)
-    saveButton.addEventListener('click', async function() {
-        try {
-            await saveData();
-            updateLastSavedTime();
-        } catch (error) {
-            console.error('Error saving data:', error);
-            alert('Failed to save. Please try again.');
-        }
-    });
 
     // Add the updateTimeTotals function before the saveData function
     function updateTimeTotals() {
