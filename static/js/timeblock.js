@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 notesInput.value = '';
             }
 
-            saveData();
+            saveData(); // This will trigger the updateTimeTotals
         });
     });
 
@@ -326,8 +326,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Add the updateTimeTotals function before the saveData function
+    function updateTimeTotals() {
+        const timeBlocks = document.querySelectorAll('.time-block');
+        const categoryStats = {};
+        let totalMinutes = 0;
 
-    // Save functionality
+        timeBlocks.forEach(block => {
+            const select = block.querySelector('.task-select');
+            if (select.value) {
+                const selectedOption = select.options[select.selectedIndex];
+                const categoryId = selectedOption.parentElement.dataset.categoryId;
+                const categoryName = selectedOption.parentElement.label;
+                const categoryColor = selectedOption.dataset.categoryColor;
+
+                // Each block is 15 minutes
+                const minutes = 15;
+                totalMinutes += minutes;
+
+                if (!categoryStats[categoryId]) {
+                    categoryStats[categoryId] = {
+                        name: categoryName,
+                        color: categoryColor,
+                        minutes: 0
+                    };
+                }
+                categoryStats[categoryId].minutes += minutes;
+            }
+        });
+
+        // Update the stats display
+        const statsContainer = document.getElementById('categoryStats');
+        if (statsContainer) {
+            statsContainer.innerHTML = '';
+            Object.values(categoryStats).forEach(stat => {
+                const hours = (stat.minutes / 60).toFixed(1);
+                const statElement = document.createElement('div');
+                statElement.className = 'category-stat';
+                statElement.innerHTML = `
+                    <span class="category-color" style="background-color: ${stat.color}"></span>
+                    ${stat.name}: ${hours} hours
+                `;
+                statsContainer.appendChild(statElement);
+            });
+
+            // Update total time
+            const totalHours = (totalMinutes / 60).toFixed(1);
+            const totalElement = document.createElement('div');
+            totalElement.className = 'total-time mt-2';
+            totalElement.innerHTML = `<strong>Total: ${totalHours} hours</strong>`;
+            statsContainer.appendChild(totalElement);
+        }
+    }
+
+    // Update the saveData function to call updateTimeTotals after successful save
     async function saveData() {
         const date = document.getElementById('datePicker').value;
         const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
@@ -368,6 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             if (result.status === 'success') {
                 updateLastSavedTime();
+                updateTimeTotals();  // Update totals after successful save
             }
 
             return result;
