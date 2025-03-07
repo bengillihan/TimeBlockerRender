@@ -456,19 +456,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 const taskSelect = block.querySelector('.task-select');
                 const taskId = taskSelect.value;
 
-                // Skip blocks with "new" task_id
+                // Only skip if task_id is explicitly "new"
+                // Keep blocks that have no task (null/empty) or valid task_id
                 if (taskId === "new") {
+                    console.log('Skipping block with "new" task_id:', block.dataset.time);
                     return null;
                 }
 
-                return {
+                // Preserve the block if it has a valid task_id or is empty
+                const blockData = {
                     start_time: block.dataset.time,
                     end_time: addMinutes(block.dataset.time, 15),
-                    task_id: taskId || null,
+                    task_id: taskId || null, // Convert empty string to null
                     notes: block.querySelector('.task-notes')?.value || '',
                     completed: block.querySelector('.time-block-checkbox')?.checked || false
                 };
-            }).filter(block => block !== null); // Remove null blocks
+                console.log('Saving block:', blockData);
+                return blockData;
+            }).filter(block => block !== null); // Remove only null blocks
 
             const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
             const brainDump = document.getElementById('brainDump')?.value || '';
