@@ -288,37 +288,46 @@ def save_daily_plan():
         daily_plan = DailyPlan(user_id=current_user.id, date=date)
         db.session.add(daily_plan)
 
-    # Update basic fields
-    daily_plan.productivity_rating = data.get('productivity_rating')
-    daily_plan.brain_dump = data.get('brain_dump')
+    # Update basic fields only if provided
+    if 'productivity_rating' in data:
+        daily_plan.productivity_rating = data.get('productivity_rating')
+    if 'brain_dump' in data:
+        daily_plan.brain_dump = data.get('brain_dump')
 
-    # Handle priorities (update instead of delete)
-    existing_priorities = {p.id: p for p in daily_plan.priorities}
-    Priority.query.filter_by(daily_plan_id=daily_plan.id).delete()
-    for i, priority_data in enumerate(data.get('priorities', [])):
-        if priority_data.get('content', '').strip():
-            priority = Priority(
-                daily_plan_id=daily_plan.id,
-                content=priority_data['content'],
-                order=i,
-                completed=priority_data.get('completed', False)
-            )
-            db.session.add(priority)
+    # Handle priorities - preserve existing ones if this is just carrying over incomplete priorities
+    if data.get('priorities'):
+        existing_priorities = {p.content.strip(): p for p in daily_plan.priorities}
+        # Only delete existing priorities if we're doing a full save, not when carrying over
+        if len(data.get('time_blocks', [])) > 0:  # Full save
+            Priority.query.filter_by(daily_plan_id=daily_plan.id).delete()
+            existing_priorities = {}
 
-    # Handle time blocks (update instead of delete)
-    existing_blocks = {tb.id: tb for tb in daily_plan.time_blocks}
-    TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
-    for block_data in data.get('time_blocks', []):
-        if block_data.get('start_time'):
-            time_block = TimeBlock(
-                daily_plan_id=daily_plan.id,
-                start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
-                end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
-                task_id=block_data.get('task_id'),
-                completed=block_data.get('completed', False),
-                notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
-            )
-            db.session.add(time_block)
+        # Add new priorities
+        for i, priority_data in enumerate(data.get('priorities', [])):
+            content = priority_data.get('content', '').strip()
+            if content and content not in existing_priorities:
+                priority = Priority(
+                    daily_plan_id=daily_plan.id,
+                    content=content,
+                    order=len(existing_priorities) + i,
+                    completed=priority_data.get('completed', False)
+                )
+                db.session.add(priority)
+
+    # Handle time blocks - only update if explicitly provided with data
+    if data.get('time_blocks'):
+        TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        for block_data in data.get('time_blocks', []):
+            if block_data.get('start_time'):
+                time_block = TimeBlock(
+                    daily_plan_id=daily_plan.id,
+                    start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                    task_id=block_data.get('task_id'),
+                    completed=block_data.get('completed', False),
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                )
+                db.session.add(time_block)
 
     try:
         db.session.commit()

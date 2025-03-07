@@ -278,14 +278,33 @@ document.addEventListener('DOMContentLoaded', function() {
             // First, save current day's data
             await saveData();
 
-            // Then create next day's plan with carried over priorities
+            // Then fetch next day's existing data (if any)
+            const nextDayResponse = await fetch('/api/daily-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    date: nextDateStr,
+                    priorities: [], // Initially empty to just check if the day exists
+                    time_blocks: [],
+                    productivity_rating: 0,
+                    brain_dump: ''
+                })
+            });
+
+            if (!nextDayResponse.ok) {
+                throw new Error('Failed to check next day\'s data');
+            }
+
+            // Get incomplete priorities from current day
             const incompletePriorities = priorities.filter(p => !p.completed && p.content.trim());
 
-            // Prepare data for the next day
+            // Prepare data for the next day, keeping any existing data
             const nextDayData = {
                 date: nextDateStr,
-                priorities: incompletePriorities,
-                time_blocks: [],
+                priorities: incompletePriorities, // Only add incomplete priorities
+                time_blocks: [], // Don't modify existing time blocks
                 productivity_rating: 0,
                 brain_dump: ''
             };
