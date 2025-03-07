@@ -1,0 +1,221 @@
+1. Issues and Fixes
+Syntax Errors
+Backticks (`) needed in template literals
+
+Fix:
+js
+Copy
+Edit
+document.getElementById('lastSaved').textContent =
+    `Last saved: ${now.toLocaleTimeString()}`;
+This was incorrect in your code:
+js
+Copy
+Edit
+document.getElementById('lastSaved').textContent =
+    Last saved: ${now.toLocaleTimeString()};
+Wrong use of backticks in navigation URL
+
+Fix:
+js
+Copy
+Edit
+window.location.href = `/?date=${dateStr}`;
+This was incorrect:
+js
+Copy
+Edit
+window.location.href = /?date=${dateStr};
+Wrong syntax in fetch request
+
+Fix:
+js
+Copy
+Edit
+const response = await fetch(`/api/templates/${templateId}`, {
+    method: 'DELETE'
+});
+You wrote:
+js
+Copy
+Edit
+const response = await fetch(/api/templates/${templateId}, {
+    method: 'DELETE'
+});
+Wrong syntax for confirm dialog message
+
+Fix:
+js
+Copy
+Edit
+if (!confirm(`Are you sure you want to delete the template "${templateName}"?`)) {
+    return;
+}
+Your incorrect version:
+js
+Copy
+Edit
+if (!confirm(Are you sure you want to delete the template "${templateName}"?)) {
+2. Improvements for Reliability
+a) Prevent Auto-Save from Running Multiple Times Unnecessarily
+Instead of setting hasUnsavedChanges = true; every time, check if a change is actually made. Fix:
+
+js
+Copy
+Edit
+function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    if (!hasUnsavedChanges) {
+        hasUnsavedChanges = true;
+    }
+    autoSaveTimeout = setTimeout(async () => {
+        try {
+            await saveData();
+            updateLastSavedTime();
+            hasUnsavedChanges = false;
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }, AUTO_SAVE_DELAY);
+}
+b) Ensure Save Button is Disabled Until Changes Occur
+Add this function:
+js
+Copy
+Edit
+function toggleSaveButton(state) {
+    document.getElementById('saveButton').disabled = !state;
+}
+Modify triggerAutoSave() to enable the save button only when changes occur:
+js
+Copy
+Edit
+function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    if (!hasUnsavedChanges) {
+        hasUnsavedChanges = true;
+        toggleSaveButton(true);
+    }
+    autoSaveTimeout = setTimeout(async () => {
+        try {
+            await saveData();
+            updateLastSavedTime();
+            hasUnsavedChanges = false;
+            toggleSaveButton(false);
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }, AUTO_SAVE_DELAY);
+}
+c) Handle API Errors Gracefully
+Currently, if saveData() fails, there is no clear error message. Fix:
+
+js
+Copy
+Edit
+async function saveData() {
+    try {
+        const response = await fetch('/api/daily-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({...}) // Your actual payload
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error saving:', errorData.error);
+            alert(`Save failed: ${errorData.error || "Unknown error"}`);
+            return;
+        }
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            updateLastSavedTime();
+            hasUnsavedChanges = false;
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+        alert('Failed to save due to network issues.');
+    }
+}
+3. Enhancements for Features
+a) Add Visual Indicator When Auto-Saving
+A subtle animation near the save button when auto-save happens would be useful. Fix:
+
+Add this before saveData():
+js
+Copy
+Edit
+function showSavingIndicator() {
+    const lastSaved = document.getElementById('lastSaved');
+    lastSaved.innerHTML = 'Saving...';
+    lastSaved.style.opacity = 1;
+}
+
+function hideSavingIndicator() {
+    setTimeout(() => {
+        updateLastSavedTime();
+        document.getElementById('lastSaved').style.opacity = 0.7;
+    }, 1000);
+}
+Modify triggerAutoSave():
+js
+Copy
+Edit
+function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    if (!hasUnsavedChanges) {
+        hasUnsavedChanges = true;
+        toggleSaveButton(true);
+        showSavingIndicator();
+    }
+    autoSaveTimeout = setTimeout(async () => {
+        try {
+            await saveData();
+            hideSavingIndicator();
+            hasUnsavedChanges = false;
+            toggleSaveButton(false);
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }, AUTO_SAVE_DELAY);
+}
+b) Add Confirmation Before Leaving a Page With Unsaved Changes
+You already have beforeunload, but you could enhance it to show a more user-friendly modal. Fix:
+
+js
+Copy
+Edit
+window.addEventListener('beforeunload', (event) => {
+    if (hasUnsavedChanges) {
+        event.preventDefault();
+        return (event.returnValue = "You have unsaved changes. Do you really want to leave?");
+    }
+});
+c) Auto-Save Before Navigating Away
+Instead of just warning, try saving before allowing navigation. Fix:
+
+js
+Copy
+Edit
+async function confirmAndNavigate(url) {
+    if (hasUnsavedChanges) {
+        if (confirm('You have unsaved changes. Do you want to save before leaving?')) {
+            await saveData();
+        }
+    }
+    window.location.href = url;
+}
+Usage:
+
+js
+Copy
+Edit
+document.getElementById('prevDay')?.addEventListener('click', function() {
+    confirmAndNavigate(`/?date=${formatDate(new Date(datePicker.value) - 1)}`);
+});
+Final Thoughts
+These changes should: ✔ Fix syntax errors.
+✔ Improve reliability by preventing unnecessary auto-saves.
+✔ Improve user experience with better UI feedback.
+✔ Ensure data is saved before navigation.
