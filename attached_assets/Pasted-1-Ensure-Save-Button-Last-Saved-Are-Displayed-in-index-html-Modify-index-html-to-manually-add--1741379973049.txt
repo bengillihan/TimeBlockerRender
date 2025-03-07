@@ -1,0 +1,83 @@
+1️⃣ Ensure Save Button & "Last Saved" Are Displayed in index.html
+Modify index.html to manually add the Save button and Last Saved text inside the date navigation area.
+
+📌 Updated index.html (Ensures button is placed)
+Find this section:
+
+html
+Copy
+Edit
+<div class="d-flex align-items-center gap-2">
+    <button id="prevDay" class="btn btn-outline-secondary">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <input type="date" id="datePicker" class="form-control" value="{{ date }}">
+    <button id="nextDay" class="btn btn-outline-secondary">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    <button id="todayBtn" class="btn btn-outline-primary ms-2">Today</button>
+</div>
+Replace it with this updated version:
+
+html
+Copy
+Edit
+<div class="d-flex align-items-center gap-2">
+    <button id="prevDay" class="btn btn-outline-secondary">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <input type="date" id="datePicker" class="form-control" value="{{ date }}">
+    <button id="nextDay" class="btn btn-outline-secondary">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    <button id="todayBtn" class="btn btn-outline-primary ms-2">Today</button>
+
+    <!-- Ensure Save Button & Last Saved Are Visible -->
+    <div class="d-flex align-items-center ms-3">
+        <small id="lastSaved" class="text-muted me-2">Last saved: Never</small>
+        <button id="saveButton" class="btn btn-sm btn-primary ms-2">Save</button>
+    </div>
+</div>
+✅ Why?
+✔ Directly ensures Save button & Last Saved appear correctly.
+✔ Prevents JavaScript from needing to dynamically insert them.
+
+2️⃣ Fix JavaScript to Update "Last Saved" & Ensure Click Works
+Modify timeblock.js to correctly update the timestamp & save data.
+
+📌 Updated timeblock.js
+Find this part:
+
+js
+Copy
+Edit
+document.addEventListener('DOMContentLoaded', function() {
+Ensure it includes:
+
+js
+Copy
+Edit
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.getElementById("saveButton");
+    const lastSavedText = document.getElementById("lastSaved");
+
+    if (saveButton) {
+        saveButton.addEventListener("click", async function() {
+            try {
+                await saveData();
+                updateLastSavedTime();
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Failed to save. Please try again.');
+            }
+        });
+    }
+
+    function updateLastSavedTime() {
+        const now = new Date();
+        lastSavedText.textContent = `Last saved: ${now.toLocaleTimeString()}`;
+    }
+});
+✅ Why?
+✔ Ensures the Save button works correctly even if it was previously missing.
+✔ Guarantees "Last Saved" timestamp updates after a save.

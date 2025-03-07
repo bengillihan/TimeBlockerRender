@@ -11,43 +11,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize date picker with Pacific time
     const datePicker = document.getElementById('datePicker');
     if (datePicker) {
-        // Add Last Saved display and Save button next to the date picker
-        const dateContainer = datePicker.closest('.date-navigation');
-        if (dateContainer) {
-            // Create a container for the save elements
-            const saveContainer = document.createElement('div');
-            saveContainer.className = 'd-flex align-items-center ms-3';
-
-            // Add Last Saved display
-            const lastSavedDisplay = document.createElement('small');
-            lastSavedDisplay.id = 'lastSaved';
-            lastSavedDisplay.className = 'text-muted me-2';
-            lastSavedDisplay.textContent = 'Last saved: Never';
-
-            // Add Save button
-            const saveButton = document.createElement('button');
-            saveButton.id = 'saveButton';
-            saveButton.className = 'btn btn-sm btn-primary ms-2';
-            saveButton.textContent = 'Save';
-
-            // Add elements to the save container
-            saveContainer.appendChild(lastSavedDisplay);
-            saveContainer.appendChild(saveButton);
-
-            // Add save container next to date picker
-            dateContainer.appendChild(saveContainer);
-
-            // Save button click handler
-            saveButton.addEventListener('click', async function() {
-                try {
-                    await saveData();
-                    updateLastSavedTime();
-                } catch (error) {
-                    console.error('Error saving data:', error);
-                    alert('Failed to save. Please try again.');
-                }
-            });
-        }
+        // Save button click handler
+        document.getElementById('saveButton')?.addEventListener('click', async function() {
+            try {
+                await saveData();
+                updateLastSavedTime();
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Failed to save. Please try again.');
+            }
+        });
 
         // Set the timezone for the date picker
         const today = new Date();
