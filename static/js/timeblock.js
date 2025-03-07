@@ -11,6 +11,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize date picker with Pacific time
     const datePicker = document.getElementById('datePicker');
     if (datePicker) {
+        // Add Last Saved display and Save button next to the date picker
+        const dateContainer = datePicker.closest('.date-navigation');
+
+        // Create a container for the save elements
+        const saveContainer = document.createElement('div');
+        saveContainer.className = 'd-flex align-items-center ms-3';
+
+        // Add Last Saved display
+        const lastSavedDisplay = document.createElement('small');
+        lastSavedDisplay.id = 'lastSaved';
+        lastSavedDisplay.className = 'text-muted me-2';
+        lastSavedDisplay.textContent = 'Last saved: Never';
+
+        // Add Save button
+        const saveButton = document.createElement('button');
+        saveButton.id = 'saveButton';
+        saveButton.className = 'btn btn-sm btn-primary ms-2';
+        saveButton.textContent = 'Save';
+
+        // Add elements to the save container
+        saveContainer.appendChild(lastSavedDisplay);
+        saveContainer.appendChild(saveButton);
+
+        // Add save container next to date picker
+        dateContainer.appendChild(saveContainer);
+
         // Set the timezone for the date picker
         const today = new Date();
         const pacificDate = new Date(today.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
@@ -288,51 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add Last Saved display
-    const lastSavedDisplay = document.createElement('p');
-    lastSavedDisplay.id = 'lastSaved';
-    lastSavedDisplay.style.marginTop = '10px';
-    lastSavedDisplay.style.fontSize = '14px';
-    lastSavedDisplay.style.color = 'gray';
-    lastSavedDisplay.textContent = 'Last saved: Never';
 
-    // Add Save button
-    const saveButton = document.createElement('button');
-    saveButton.id = 'saveButton';
-    saveButton.className = 'btn btn-primary';
-    saveButton.textContent = 'Save';
-
-    // Add template management UI elements
-    const templateControls = document.createElement('div');
-    templateControls.className = 'template-controls mt-3 mb-3';
-    templateControls.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <input type="text" id="templateName" class="form-control" placeholder="Template Name">
-                    <button id="saveTemplateBtn" class="btn btn-success">Save as Template</button>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="input-group">
-                    <select id="templateSelect" class="form-control">
-                        <option value="">Select a Template</option>
-                    </select>
-                    <button id="applyTemplateBtn" class="btn btn-primary">Apply Template</button>
-                    <button id="deleteTemplateBtn" class="btn btn-danger">Delete</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Insert elements into the DOM
-    const container = document.querySelector('.container');
-    container.appendChild(lastSavedDisplay);
-    container.appendChild(saveButton);
-    container.appendChild(templateControls);
-
-
-    // Save button click handler
+    // Save button click handler (moved from above)
     saveButton.addEventListener('click', async function() {
         try {
             await saveData();
