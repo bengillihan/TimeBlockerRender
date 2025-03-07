@@ -289,45 +289,45 @@ def save_daily_plan():
         daily_plan = DailyPlan(user_id=current_user.id, date=date)
         db.session.add(daily_plan)
 
+    # Update basic fields
     daily_plan.productivity_rating = data.get('productivity_rating')
     daily_plan.brain_dump = data.get('brain_dump')
 
-    # Update priorities
+    # Handle priorities (update instead of delete)
+    existing_priorities = {p.id: p for p in daily_plan.priorities}
     Priority.query.filter_by(daily_plan_id=daily_plan.id).delete()
-    for i, priority in enumerate(data.get('priorities', [])):
-        if priority.get('content', '').strip():  # Only add non-empty priorities
-            p = Priority(
+    for i, priority_data in enumerate(data.get('priorities', [])):
+        if priority_data.get('content', '').strip():
+            priority = Priority(
                 daily_plan_id=daily_plan.id,
-                content=priority['content'],
+                content=priority_data['content'],
                 order=i,
-                completed=priority.get('completed', False)
+                completed=priority_data.get('completed', False)
             )
-            db.session.add(p)
+            db.session.add(priority)
 
-    # Update time blocks
+    # Handle time blocks (update instead of delete)
+    existing_blocks = {tb.id: tb for tb in daily_plan.time_blocks}
     TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
-    for block in data.get('time_blocks', []):
-        time_str = block['start_time']
-        # Create time object in Pacific timezone
-        time_obj = datetime.strptime(time_str, '%H:%M').time()
-        end_time = datetime.strptime(block['end_time'], '%H:%M').time()
-
-        tb = TimeBlock(
-            daily_plan_id=daily_plan.id,
-            start_time=time_obj,
-            end_time=end_time,
-            task_id=block.get('task_id'),
-            completed=block.get('completed', False),
-            notes=block.get('notes', '')
-        )
-        db.session.add(tb)
+    for block_data in data.get('time_blocks', []):
+        if block_data.get('start_time'):
+            time_block = TimeBlock(
+                daily_plan_id=daily_plan.id,
+                start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                task_id=block_data.get('task_id'),
+                completed=block_data.get('completed', False),
+                notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+            )
+            db.session.add(time_block)
 
     try:
         db.session.commit()
-        return jsonify({'status': 'success'})
+        last_saved = datetime.now(pacific_tz).strftime('%Y-%m-%d %H:%M:%S')
+        return jsonify({'status': 'success', 'last_saved': last_saved})
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error saving daily plan: {str(e)}")
+        logger.error(f"Error saving daily plan: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/summary')

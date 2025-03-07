@@ -288,6 +288,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Add Last Saved display
+    const lastSavedDisplay = document.createElement('p');
+    lastSavedDisplay.id = 'lastSaved';
+    lastSavedDisplay.style.marginTop = '10px';
+    lastSavedDisplay.style.fontSize = '14px';
+    lastSavedDisplay.style.color = 'gray';
+    lastSavedDisplay.textContent = 'Last saved: Never';
+
+    // Add Save button
+    const saveButton = document.createElement('button');
+    saveButton.id = 'saveButton';
+    saveButton.className = 'btn btn-primary';
+    saveButton.textContent = 'Save';
+
+    // Insert elements into the DOM
+    const container = document.querySelector('.container');
+    container.insertBefore(saveButton, container.firstChild);
+    container.insertBefore(lastSavedDisplay, container.firstChild);
+
+    // Save button click handler
+    saveButton.addEventListener('click', async function() {
+        try {
+            await saveData();
+            updateLastSavedTime();
+        } catch (error) {
+            console.error('Error saving data:', error);
+            alert('Failed to save. Please try again.');
+        }
+    });
+
+
     // Save functionality
     async function saveData() {
         const date = document.getElementById('datePicker').value;
@@ -301,35 +332,81 @@ document.addEventListener('DOMContentLoaded', function() {
             end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
             notes: block.querySelector('.task-notes')?.value || '',
-            completed: false
+            completed: block.querySelector('.time-block-checkbox')?.checked || false
         }));
 
         const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
         const brainDump = document.getElementById('brainDump')?.value || '';
 
-        return fetch('/api/daily-plan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                date,
-                priorities,
-                time_blocks: timeBlocks,
-                productivity_rating: rating,
-                brain_dump: brainDump
-            })
-        }).catch(error => {
+        try {
+            const response = await fetch('/api/daily-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    date,
+                    priorities,
+                    time_blocks: timeBlocks,
+                    productivity_rating: rating,
+                    brain_dump: brainDump
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save data');
+            }
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                updateLastSavedTime();
+            }
+
+            return result;
+        } catch (error) {
             console.error('Error saving data:', error);
             throw error;
-        });
+        }
     }
 
-    // Initialize auto-save
-    setInterval(saveData, 30000);  // Save every 30 seconds
+    function updateLastSavedTime() {
+        const now = new Date();
+        document.getElementById('lastSaved').textContent =
+            `Last saved: ${now.toLocaleTimeString()}`;
+    }
+
+    // Auto-save setup
+    let autoSaveTimeout;
+    const AUTO_SAVE_DELAY = 2000; // 2 seconds delay after last change
+
+    function triggerAutoSave() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(async () => {
+            try {
+                await saveData();
+            } catch (error) {
+                console.error('Auto-save failed:', error);
+            }
+        }, AUTO_SAVE_DELAY);
+    }
+
+    // Add auto-save triggers to all interactive elements
     document.querySelectorAll('input, textarea, select').forEach(el => {
-        el.addEventListener('change', saveData);
+        el.addEventListener('change', triggerAutoSave);
+        if (el.tagName.toLowerCase() === 'textarea' ||
+            (el.tagName.toLowerCase() === 'input' && el.type === 'text')) {
+            el.addEventListener('input', triggerAutoSave);
+        }
     });
+
+    // Backup auto-save every 30 seconds
+    setInterval(async () => {
+        try {
+            await saveData();
+        } catch (error) {
+            console.error('Periodic auto-save failed:', error);
+        }
+    }, 30000);
 });
 
 function addMinutes(time, minutes) {
