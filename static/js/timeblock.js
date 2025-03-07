@@ -327,9 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Insert elements into the DOM
     const container = document.querySelector('.container');
-    container.insertBefore(templateControls, lastSavedDisplay);
-    container.insertBefore(saveButton, templateControls);
-    container.insertBefore(lastSavedDisplay, saveButton);
+    container.appendChild(lastSavedDisplay);
+    container.appendChild(saveButton);
+    container.appendChild(templateControls);
+
 
     // Save button click handler
     saveButton.addEventListener('click', async function() {
