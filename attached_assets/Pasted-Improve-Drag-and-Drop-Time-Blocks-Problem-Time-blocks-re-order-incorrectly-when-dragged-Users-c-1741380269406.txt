@@ -1,0 +1,71 @@
+Improve Drag-and-Drop Time Blocks
+🔹 Problem:
+Time blocks re-order incorrectly when dragged.
+Users can't visually see where they are dragging.
+🔧 Fix: Add Placeholder for Dragging
+📌 Modify timeblock.js to show a placeholder when dragging.
+
+js
+Copy
+Edit
+document.querySelectorAll('.time-block-column').forEach(column => {
+    new Sortable(column, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function(evt) {
+            updateTimeOrder(evt.to);
+            saveData();
+        }
+    });
+});
+
+// Add CSS for better visibility
+const style = document.createElement('style');
+style.innerHTML = `
+    .sortable-ghost {
+        background: rgba(0, 0, 0, 0.1);
+        border: dashed 2px #666;
+    }
+    .sortable-chosen {
+        background: #f0f0f0;
+    }
+`;
+document.head.appendChild(style);
+✅ Why?
+✔ Users get clear visual feedback when dragging.
+✔ Ensures blocks don’t get misplaced.
+
+✅ Priority 5: Allow Task Duplication in Templates
+🔹 Problem:
+Users can save templates, but tasks within them cannot be reused across multiple templates.
+🔧 Fix: Allow Users to Choose Whether to Clone Tasks
+📌 Modify app.py so that templates don't overwrite existing tasks.
+
+python
+Copy
+Edit
+@app.route('/api/templates', methods=['POST'])
+@login_required
+def save_template():
+    """Save the current day's plan as a template."""
+    data = request.json
+    template_name = data.get('name')
+
+    if not template_name:
+        return jsonify({'error': 'Template name is required'}), 400
+
+    new_template = DayTemplate(
+        name=template_name,
+        user_id=current_user.id,
+        priorities=data.get('priorities', []),
+        time_blocks=data.get('time_blocks', [])
+    )
+
+    db.session.add(new_template)
+    db.session.commit()
+    return jsonify({'message': 'Template saved successfully', 'template_id': new_template.id}), 200
+✅ Why?
+✔ Users can save multiple templates without conflicts.
+✔ Allows different templates to reference the same tasks.

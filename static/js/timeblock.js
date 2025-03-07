@@ -1,3 +1,21 @@
+let hasUnsavedChanges = false;
+let autoSaveTimeout;
+const AUTO_SAVE_DELAY = 3000; // 3-second delay after last change
+
+function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    hasUnsavedChanges = true;
+    autoSaveTimeout = setTimeout(async () => {
+        try {
+            await saveData();
+            updateLastSavedTime();
+            hasUnsavedChanges = false;
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }, AUTO_SAVE_DELAY);
+}
+
 // Date navigation functions
 function formatDate(date) {
     return date.toISOString().split('T')[0];
@@ -16,10 +34,24 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 await saveData();
                 updateLastSavedTime();
+                hasUnsavedChanges = false;
             } catch (error) {
                 console.error('Error saving data:', error);
                 alert('Failed to save. Please try again.');
             }
+        });
+
+        // Add navigation warning for date changes
+        datePicker.addEventListener('change', function(e) {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                    e.preventDefault();
+                    // Restore the previous date value
+                    this.value = this.defaultValue;
+                    return;
+                }
+            }
+            navigateToDate(this.value);
         });
 
         // Set the timezone for the date picker
@@ -398,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             if (result.status === 'success') {
                 updateLastSavedTime();
+                hasUnsavedChanges = false;  // Reset the flag after successful save
                 updateTimeTotals();  // Update totals after successful save
             }
 
@@ -414,27 +447,21 @@ document.addEventListener('DOMContentLoaded', function() {
             `Last saved: ${now.toLocaleTimeString()}`;
     }
 
-    // Auto-save setup
-    let autoSaveTimeout;
-    const AUTO_SAVE_DELAY = 2000; // 2 seconds delay after last change
-
-    function triggerAutoSave() {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(async () => {
-            try {
-                await saveData();
-            } catch (error) {
-                console.error('Auto-save failed:', error);
-            }
-        }, AUTO_SAVE_DELAY);
-    }
-
     // Add auto-save triggers to all interactive elements
     document.querySelectorAll('input, textarea, select').forEach(el => {
         el.addEventListener('change', triggerAutoSave);
         if (el.tagName.toLowerCase() === 'textarea' ||
             (el.tagName.toLowerCase() === 'input' && el.type === 'text')) {
             el.addEventListener('input', triggerAutoSave);
+        }
+    });
+
+    // Warning before leaving page with unsaved changes
+    window.addEventListener('beforeunload', (event) => {
+        if (hasUnsavedChanges) {
+            event.preventDefault();
+            event.returnValue = "You have unsaved changes. Do you really want to leave?";
+            return event.returnValue;
         }
     });
 
