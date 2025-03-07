@@ -302,10 +302,34 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.className = 'btn btn-primary';
     saveButton.textContent = 'Save';
 
+    // Add template management UI elements
+    const templateControls = document.createElement('div');
+    templateControls.className = 'template-controls mt-3 mb-3';
+    templateControls.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" id="templateName" class="form-control" placeholder="Template Name">
+                    <button id="saveTemplateBtn" class="btn btn-success">Save as Template</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <select id="templateSelect" class="form-control">
+                        <option value="">Select a Template</option>
+                    </select>
+                    <button id="applyTemplateBtn" class="btn btn-primary">Apply Template</button>
+                    <button id="deleteTemplateBtn" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    `;
+
     // Insert elements into the DOM
     const container = document.querySelector('.container');
-    container.insertBefore(saveButton, container.firstChild);
-    container.insertBefore(lastSavedDisplay, container.firstChild);
+    container.insertBefore(templateControls, lastSavedDisplay);
+    container.insertBefore(saveButton, templateControls);
+    container.insertBefore(lastSavedDisplay, saveButton);
 
     // Save button click handler
     saveButton.addEventListener('click', async function() {
@@ -407,6 +431,146 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Periodic auto-save failed:', error);
         }
     }, 30000);
+
+    // Load existing templates
+    async function loadTemplates() {
+        try {
+            const response = await fetch('/api/templates');
+            const templates = await response.json();
+            const templateSelect = document.getElementById('templateSelect');
+
+            // Clear existing options except the placeholder
+            while (templateSelect.options.length > 1) {
+                templateSelect.remove(1);
+            }
+
+            // Add templates to select
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                templateSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading templates:', error);
+        }
+    }
+
+    // Initial load of templates
+    loadTemplates();
+
+    // Save template handler
+    document.getElementById('saveTemplateBtn').addEventListener('click', async function() {
+        const templateName = document.getElementById('templateName').value;
+        if (!templateName) {
+            alert('Please enter a template name');
+            return;
+        }
+
+        try {
+            const data = {
+                name: templateName,
+                priorities: [...document.querySelectorAll('.priority-input')].map(input => ({
+                    content: input.value,
+                    completed: input.classList.contains('completed')
+                })),
+                time_blocks: [...document.querySelectorAll('.time-block')].map(block => ({
+                    start_time: block.dataset.time,
+                    end_time: addMinutes(block.dataset.time, 15),
+                    task_id: block.querySelector('.task-select').value || null,
+                    notes: block.querySelector('.task-notes')?.value || ''
+                }))
+            };
+
+            const response = await fetch('/api/templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Template saved successfully!');
+                document.getElementById('templateName').value = '';
+                await loadTemplates();
+            } else {
+                throw new Error(result.error || 'Failed to save template');
+            }
+        } catch (error) {
+            console.error('Error saving template:', error);
+            alert(error.message || 'Failed to save template. Please try again.');
+        }
+    });
+
+    // Apply template handler
+    document.getElementById('applyTemplateBtn').addEventListener('click', async function() {
+        const templateId = document.getElementById('templateSelect').value;
+        if (!templateId) {
+            alert('Please select a template to apply');
+            return;
+        }
+
+        if (!confirm('This will replace your current plan. Are you sure?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/apply-template', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    template_id: templateId,
+                    date: document.getElementById('datePicker').value
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('Template applied successfully!');
+                location.reload();
+            } else {
+                throw new Error(result.error || 'Failed to apply template');
+            }
+        } catch (error) {
+            console.error('Error applying template:', error);
+            alert(error.message || 'Failed to apply template. Please try again.');
+        }
+    });
+
+    // Delete template handler
+    document.getElementById('deleteTemplateBtn').addEventListener('click', async function() {
+        const templateSelect = document.getElementById('templateSelect');
+        const templateId = templateSelect.value;
+
+        if (!templateId) {
+            alert('Please select a template to delete');
+            return;
+        }
+
+        const templateName = templateSelect.options[templateSelect.selectedIndex].text;
+        if (!confirm(`Are you sure you want to delete the template "${templateName}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/templates/${templateId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Template deleted successfully!');
+                await loadTemplates();
+            } else {
+                const result = await response.json();
+                throw new Error(result.error || 'Failed to delete template');
+            }
+        } catch (error) {
+            console.error('Error deleting template:', error);
+            alert(error.message || 'Failed to delete template. Please try again.');
+        }
+    });
 });
 
 function addMinutes(time, minutes) {

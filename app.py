@@ -9,7 +9,6 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
 from nylas_auth import nylas_auth # Added import for Nylas auth blueprint
 
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__) # Added logger for error handling
@@ -38,7 +37,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Import routes after app initialization to avoid circular imports
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink # Added NavLink import
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate # Added NavLink and DayTemplate imports
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
@@ -464,9 +463,6 @@ def health_check():
         }), 500
 
 
-# Add these routes to your existing app.py
-# Place them before the final app.run() line
-
 @app.route('/nav_links')
 @login_required
 def nav_links():
@@ -544,6 +540,143 @@ def nav_link_operations(link_id):
         'show_in_nav': link.show_in_nav,
         'iframe_height': link.iframe_height
     })
+
+@app.route('/api/templates', methods=['POST'])
+@login_required
+def save_template():
+    """Save the current day's plan as a template."""
+    data = request.json
+    template_name = data.get('name')
+
+    if not template_name:
+        return jsonify({'error': 'Template name is required'}), 400
+
+    existing_template = DayTemplate.query.filter_by(
+        name=template_name, 
+        user_id=current_user.id
+    ).first()
+
+    if existing_template:
+        return jsonify({'error': 'Template with this name already exists'}), 400
+
+    new_template = DayTemplate(
+        name=template_name,
+        user_id=current_user.id,
+        priorities=data.get('priorities', []),
+        time_blocks=data.get('time_blocks', [])
+    )
+    db.session.add(new_template)
+    db.session.commit()
+
+    return jsonify({'message': 'Template saved successfully'}), 200
+
+@app.route('/api/templates', methods=['GET'])
+@login_required
+def get_templates():
+    """Fetch all saved templates for the user."""
+    templates = DayTemplate.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        'id': t.id, 
+        'name': t.name,
+        'created_at': t.created_at.isoformat()
+    } for t in templates])
+
+@app.route('/api/templates/<int:template_id>', methods=['GET'])
+@login_required
+def get_template(template_id):
+    """Retrieve a specific template's details."""
+    template = DayTemplate.query.filter_by(
+        id=template_id, 
+        user_id=current_user.id
+    ).first_or_404()
+
+    return jsonify({
+        'id': template.id,
+        'name': template.name,
+        'priorities': template.priorities,
+        'time_blocks': template.time_blocks
+    })
+
+@app.route('/api/templates/<int:template_id>', methods=['DELETE'])
+@login_required
+def delete_template(template_id):
+    """Delete a saved template."""
+    template = DayTemplate.query.filter_by(
+        id=template_id, 
+        user_id=current_user.id
+    ).first_or_404()
+
+    db.session.delete(template)
+    db.session.commit()
+    return jsonify({'message': 'Template deleted successfully'}), 200
+
+@app.route('/api/apply-template', methods=['POST'])
+@login_required
+def apply_template():
+    """Apply a saved template to a selected date."""
+    data = request.json
+    template_id = data.get('template_id')
+    date_str = data.get('date')
+
+    if not template_id or not date_str:
+        return jsonify({'error': 'Template ID and date are required'}), 400
+
+    template = DayTemplate.query.filter_by(
+        id=template_id, 
+        user_id=current_user.id
+    ).first_or_404()
+
+    # Convert date string to date object
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+
+    # Check if there's already a daily plan for this date
+    daily_plan = DailyPlan.query.filter_by(
+        user_id=current_user.id, 
+        date=date
+    ).first()
+
+    if not daily_plan:
+        daily_plan = DailyPlan(user_id=current_user.id, date=date)
+        db.session.add(daily_plan)
+
+    # Clear existing priorities and time blocks
+    Priority.query.filter_by(daily_plan_id=daily_plan.id).delete()
+    TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+
+    # Apply template priorities
+    for i, priority_data in enumerate(template.priorities or []):
+        if priority_data.get('content', '').strip():
+            priority = Priority(
+                daily_plan_id=daily_plan.id,
+                content=priority_data['content'],
+                order=i,
+                completed=False  # Start fresh with uncompleted priorities
+            )
+            db.session.add(priority)
+
+    # Apply template time blocks
+    for block_data in template.time_blocks or []:
+        if block_data.get('start_time'):
+            time_block = TimeBlock(
+                daily_plan_id=daily_plan.id,
+                start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                task_id=block_data.get('task_id'),
+                completed=False,  # Start fresh with uncompleted blocks
+                notes=block_data.get('notes', '')[:15]  # Maintain the 15-char limit
+            )
+            db.session.add(time_block)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Template applied successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error applying template: {str(e)}")
+        return jsonify({'error': 'Failed to apply template'}), 500
 
 with app.app_context():
     db.create_all()

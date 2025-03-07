@@ -1,0 +1,190 @@
+Feature Overview
+🔹 Users often have repeating daily routines (e.g., "Work Schedule", "Weekend Plan", "Morning Routine").
+🔹 This feature will allow users to save a day’s plan as a template and quickly apply it to any future date.
+
+✨ Key Features:
+1️⃣ Save Current Day as a Template
+
+Users can name a template and save it.
+2️⃣ Apply a Template to a Future Date
+Users select a saved template and apply it to any date.
+3️⃣ Manage & Delete Templates
+Users can view, rename, or delete stored templates.
+🛠 Implementation Plan
+1️⃣ Database Model Update
+Add a new DayTemplate model to store saved templates.
+
+📌 Modify models.py
+python
+Copy
+Edit
+class DayTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    priorities = db.Column(db.JSON, nullable=True)  # Store priorities as JSON
+    time_blocks = db.Column(db.JSON, nullable=True)  # Store time blocks as JSON
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+2️⃣ Backend API for Saving & Applying Templates
+📌 Add to app.py
+python
+Copy
+Edit
+@app.route('/api/templates', methods=['POST'])
+@login_required
+def save_template():
+    """Save the current day's plan as a template."""
+    data = request.json
+    template_name = data.get('name')
+    
+    if not template_name:
+        return jsonify({'error': 'Template name is required'}), 400
+
+    existing_template = DayTemplate.query.filter_by(name=template_name, user_id=current_user.id).first()
+    if existing_template:
+        return jsonify({'error': 'Template with this name already exists'}), 400
+
+    new_template = DayTemplate(
+        name=template_name,
+        user_id=current_user.id,
+        priorities=data.get('priorities', []),
+        time_blocks=data.get('time_blocks', [])
+    )
+    db.session.add(new_template)
+    db.session.commit()
+
+    return jsonify({'message': 'Template saved successfully'}), 200
+
+@app.route('/api/templates', methods=['GET'])
+@login_required
+def get_templates():
+    """Fetch all saved templates for the user."""
+    templates = DayTemplate.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{'id': t.id, 'name': t.name} for t in templates])
+
+@app.route('/api/templates/<int:template_id>', methods=['GET'])
+@login_required
+def get_template(template_id):
+    """Retrieve a specific template's details."""
+    template = DayTemplate.query.filter_by(id=template_id, user_id=current_user.id).first_or_404()
+    return jsonify({'id': template.id, 'name': template.name, 'priorities': template.priorities, 'time_blocks': template.time_blocks})
+
+@app.route('/api/templates/<int:template_id>', methods=['DELETE'])
+@login_required
+def delete_template(template_id):
+    """Delete a saved template."""
+    template = DayTemplate.query.filter_by(id=template_id, user_id=current_user.id).first_or_404()
+    db.session.delete(template)
+    db.session.commit()
+    return jsonify({'message': 'Template deleted successfully'}), 200
+
+@app.route('/api/apply-template', methods=['POST'])
+@login_required
+def apply_template():
+    """Apply a saved template to a selected date."""
+    data = request.json
+    template_id = data.get('template_id')
+    date = data.get('date')
+
+    template = DayTemplate.query.filter_by(id=template_id, user_id=current_user.id).first_or_404()
+
+    # Check if there's already a daily plan for this date
+    daily_plan = DailyPlan.query.filter_by(user_id=current_user.id, date=date).first()
+    if not daily_plan:
+        daily_plan = DailyPlan(user_id=current_user.id, date=date)
+        db.session.add(daily_plan)
+
+    # Apply template data
+    daily_plan.priorities = [Priority(daily_plan_id=daily_plan.id, **p) for p in template.priorities]
+    daily_plan.time_blocks = [TimeBlock(daily_plan_id=daily_plan.id, **tb) for tb in template.time_blocks]
+
+    db.session.commit()
+    return jsonify({'message': 'Template applied successfully'}), 200
+3️⃣ Frontend UI Updates (index.html JavaScript)
+📌 Save Template UI
+html
+Copy
+Edit
+<input type="text" id="templateName" placeholder="Template Name">
+<button id="saveTemplateBtn" class="btn btn-success">Save as Template</button>
+📌 Apply Template UI
+html
+Copy
+Edit
+<select id="templateSelect">
+    <option value="">Select a Template</option>
+</select>
+<button id="applyTemplateBtn" class="btn btn-primary">Apply Template</button>
+4️⃣ JavaScript Functions (index.html Script)
+📌 Save Current Day as Template
+js
+Copy
+Edit
+document.getElementById("saveTemplateBtn").addEventListener("click", function() {
+    const templateName = document.getElementById("templateName").value;
+    if (!templateName) {
+        alert("Please enter a template name.");
+        return;
+    }
+
+    const data = {
+        name: templateName,
+        priorities: [...document.querySelectorAll('.priority-input')].map(input => ({
+            content: input.value,
+            completed: input.classList.contains('completed')
+        })),
+        time_blocks: [...document.querySelectorAll('.time-block')].map(block => ({
+            start_time: block.dataset.time,
+            end_time: addMinutes(block.dataset.time, 15),
+            task_id: block.querySelector('.task-select').value || null,
+            notes: block.querySelector('.task-notes')?.value || '',
+            completed: false
+        }))
+    };
+
+    fetch('/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(response => response.json())
+      .then(data => alert(data.message || "Template saved!"))
+      .catch(error => console.error('Error saving template:', error));
+});
+📌 Fetch & Apply Templates
+js
+Copy
+Edit
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('/api/templates')
+        .then(response => response.json())
+        .then(templates => {
+            const templateSelect = document.getElementById("templateSelect");
+            templates.forEach(template => {
+                const option = document.createElement("option");
+                option.value = template.id;
+                option.textContent = template.name;
+                templateSelect.appendChild(option);
+            });
+        });
+
+    document.getElementById("applyTemplateBtn").addEventListener("click", function() {
+        const templateId = document.getElementById("templateSelect").value;
+        const date = document.getElementById("datePicker").value;
+
+        if (!templateId) {
+            alert("Please select a template.");
+            return;
+        }
+
+        fetch('/api/apply-template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template_id: templateId, date: date })
+        }).then(response => response.json())
+          .then(data => {
+              alert(data.message || "Template applied!");
+              location.reload();
+          })
+          .catch(error => console.error('Error applying template:', error));
+    });
+});

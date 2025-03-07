@@ -66,3 +66,12 @@ class Task(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     time_blocks = db.relationship('TimeBlock', backref='task', lazy=True)
+
+class DayTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    priorities = db.Column(db.JSON, nullable=True)  # Store priorities as JSON
+    time_blocks = db.Column(db.JSON, nullable=True)  # Store time blocks as JSON
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref=db.backref('templates', lazy=True))
