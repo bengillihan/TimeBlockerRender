@@ -2,6 +2,7 @@ import json
 import os
 import requests
 import logging
+from typing import Optional, Tuple
 from app import db
 from flask import Blueprint, redirect, request, url_for, flash
 from flask_login import login_required, login_user, logout_user
@@ -32,12 +33,12 @@ For detailed instructions, see:
 https://docs.replit.com/tutorials/python/authentication-with-flask
 """)
 
-client = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
+client: Optional[WebApplicationClient] = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
 google_auth = Blueprint("google_auth", __name__)
 
 @google_auth.route("/google_login")
 def login():
-    if not GOOGLE_CLIENT_ID:
+    if not GOOGLE_CLIENT_ID or not client:
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
@@ -70,7 +71,7 @@ def login():
 
 @google_auth.route("/google_login/callback")
 def callback():
-    if not GOOGLE_CLIENT_ID:
+    if not GOOGLE_CLIENT_ID or not client or not GOOGLE_CLIENT_SECRET:
         return redirect(url_for("index"))
 
     try:
@@ -93,11 +94,13 @@ def callback():
             redirect_url=callback_uri,
             code=code,
         )
+        # Ensure auth tuple has proper typing
+        auth: Tuple[str, str] = (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
         token_response = requests.post(
             token_url,
             headers=headers,
             data=body,
-            auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+            auth=auth,
         )
 
         # Check token response
