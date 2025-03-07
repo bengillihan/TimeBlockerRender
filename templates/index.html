@@ -125,7 +125,7 @@
                                                 <option value="">Select a task</option>
                                                 <option value="new">+ Add New Task</option>
                                                 {% for category in categories %}
-                                                    <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
+                                                    <optgroup label="{{ category.name }}" data-color="{{ category.color }}" data-category-id="{{ category.id }}">
                                                         {% for task in category.tasks %}
                                                             <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
@@ -168,7 +168,7 @@
                                                 <option value="">Select a task</option>
                                                 <option value="new">+ Add New Task</option>
                                                 {% for category in categories %}
-                                                    <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
+                                                    <optgroup label="{{ category.name }}" data-color="{{ category.color }}" data-category-id="{{ category.id }}">
                                                         {% for task in category.tasks %}
                                                             <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
@@ -218,7 +218,7 @@
                                             <option value="">Select a task</option>
                                             <option value="new">+ Add New Task</option>
                                             {% for category in categories %}
-                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}">
+                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}" data-category-id="{{ category.id }}">
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"

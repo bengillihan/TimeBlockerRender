@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
-        // Add the updateTimeTotals function before the saveData function
+        // Update the updateTimeTotals function with correct category tracking
         function updateTimeTotals() {
             const timeBlocks = document.querySelectorAll('.time-block');
             const categoryStats = {};
@@ -417,52 +417,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
             timeBlocks.forEach(block => {
                 const select = block.querySelector('.task-select');
-                if (select.value) {
+                if (select.value && select.value !== 'new') {
                     const selectedOption = select.options[select.selectedIndex];
-                    const categoryId = selectedOption.parentElement.dataset.categoryId;
-                    const categoryName = selectedOption.parentElement.label;
-                    const categoryColor = selectedOption.dataset.categoryColor;
+                    const categoryOptgroup = selectedOption.closest('optgroup');
+                    if (categoryOptgroup) {
+                        const categoryId = categoryOptgroup.getAttribute('data-category-id');
+                        const categoryName = categoryOptgroup.label;
+                        const categoryColor = categoryOptgroup.getAttribute('data-color');
 
-                    // Each block is 15 minutes
-                    const minutes = 15;
-                    totalMinutes += minutes;
+                        // Each block is 15 minutes
+                        const minutes = 15;
+                        totalMinutes += minutes;
 
-                    if (!categoryStats[categoryId]) {
-                        categoryStats[categoryId] = {
-                            name: categoryName,
-                            color: categoryColor,
-                            minutes: 0
-                        };
+                        if (!categoryStats[categoryId]) {
+                            categoryStats[categoryId] = {
+                                name: categoryName,
+                                color: categoryColor,
+                                minutes: 0
+                            };
+                        }
+                        categoryStats[categoryId].minutes += minutes;
                     }
-                    categoryStats[categoryId].minutes += minutes;
                 }
             });
 
             // Update the stats display
-            const statsContainer = document.getElementById('categoryStats');
+            const statsContainer = document.querySelector('.card-body');
             if (statsContainer) {
-                statsContainer.innerHTML = '';
-                Object.values(categoryStats).forEach(stat => {
-                    const hours = (stat.minutes / 60).toFixed(1);
-                    const statElement = document.createElement('div');
-                    statElement.className = 'category-stat';
-                    statElement.innerHTML = `
-                        <span class="category-color" style="background-color: ${stat.color}"></span>
-                        ${stat.name}: ${hours} hours
-                    `;
-                    statsContainer.appendChild(statElement);
-                });
+                // Update total time if it exists
+                const totalTimeElement = statsContainer.querySelector('.mb-0');
+                if (totalTimeElement) {
+                    totalTimeElement.textContent = `${(totalMinutes / 60).toFixed(1)} hrs`;
+                }
 
-                // Update total time
-                const totalHours = (totalMinutes / 60).toFixed(1);
-                const totalElement = document.createElement('div');
-                totalElement.className = 'total-time mt-2';
-                totalElement.innerHTML = `<strong>Total: ${totalHours} hours</strong>`;
-                statsContainer.appendChild(totalElement);
+                // Update individual category stats
+                Object.values(categoryStats).forEach(stat => {
+                    const categoryElement = statsContainer.querySelector(`[style*="color: ${stat.color}"]`);
+                    if (categoryElement) {
+                        const timeElement = categoryElement.closest('.mb-3').querySelector('small:last-child');
+                        if (timeElement) {
+                            timeElement.textContent = `${(stat.minutes / 60).toFixed(1)} hrs`;
+                        }
+                    }
+                });
             }
         }
 
-        // Update the saveData function to call updateTimeTotals after successful save
+        // Update the existing saveData function to properly call updateTimeTotals
         async function saveData() {
             const date = document.getElementById('datePicker').value;
             const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
@@ -521,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     updateLastSavedTime();
                     hasUnsavedChanges = false;
                     toggleSaveButton(false);
-                    updateTimeTotals();
+                    updateTimeTotals(); // Call updateTimeTotals after successful save
                 }
 
                 return result;
