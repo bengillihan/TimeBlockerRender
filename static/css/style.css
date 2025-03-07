@@ -118,6 +118,7 @@
 .rating {
     display: flex;
     gap: 10px;
+    flex-direction: row-reverse;
 }
 
 .rating input {
@@ -136,6 +137,10 @@
 .rating label:hover,
 .rating label:hover ~ label {
     color: var(--bs-warning);
+}
+
+.rating:hover input:checked ~ label:hover ~ label {
+    color: var(--bs-secondary);
 }
 
 .priority-input.completed {
