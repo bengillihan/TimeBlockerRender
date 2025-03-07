@@ -241,6 +241,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 const timeContent = this.closest('.time-content');
                 const notesInput = timeContent.querySelector('.task-notes');
 
+                if (this.value === "new") {
+                    // Store the current select element for later use
+                    window.activeTimeBlockSelect = this;
+
+                    // Clear the form
+                    document.getElementById('taskTitle').value = '';
+                    document.getElementById('taskDescription').value = '';
+                    document.getElementById('taskCategory').selectedIndex = 0;
+
+                    // Show the modal
+                    const modal = new bootstrap.Modal(document.getElementById('addTaskModal'));
+                    modal.show();
+
+                    // Reset the select back to empty until a new task is created
+                    this.value = "";
+                    return;
+                }
+
                 if (this.value) {
                     const selectedOption = this.options[this.selectedIndex];
                     const categoryColor = selectedOption.dataset.categoryColor;
