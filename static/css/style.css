@@ -18,6 +18,12 @@
     padding: 1px;
     min-height: 24px; 
     cursor: move;
+    position: relative;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.time-block:hover {
+    background-color: var(--bs-secondary-bg);
 }
 
 .time-label {
@@ -88,10 +94,10 @@
 
 .drag-handle {
     cursor: move;
-    padding: 0 2px;
+    padding: 0 4px;
     color: var(--bs-secondary);
     opacity: 0.5;
-    font-size: 0.8em;
+    transition: opacity 0.15s ease-in-out;
 }
 
 .time-block:hover .drag-handle {
@@ -100,7 +106,13 @@
 
 .sortable-ghost {
     opacity: 0.4;
-    background-color: var(--bs-secondary-bg);
+    background: rgba(0, 0, 0, 0.1);
+    border: 2px dashed var(--bs-border-color);
+}
+
+.sortable-chosen {
+    background: var(--bs-secondary-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .rating {

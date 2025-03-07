@@ -101,31 +101,33 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: 150,
             handle: '.drag-handle',
             ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
             onEnd: function(evt) {
-                const timeBlocks = [...evt.to.querySelectorAll('.time-block')];
-
-                // Update times for all blocks in the column to maintain chronological order
-                timeBlocks.forEach((block, index) => {
-                    // Get the base time from the column (morning or afternoon)
-                    const isMorning = block.closest('.time-block-column').querySelector('h6').textContent === 'Morning';
-                    const baseHour = isMorning ? 6 : 12;
-
-                    // Calculate new time based on position
-                    const blocksPerHour = 4; // 15-minute intervals
-                    const hour = Math.floor(baseHour + (index / blocksPerHour));
-                    const minute = (index % blocksPerHour) * 15;
-                    const newTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-                    // Update the block's time label and dataset
-                    block.dataset.time = newTime;
-                    block.querySelector('.time-label').textContent = newTime;
-                });
-
-                // Save the updated order and times
+                updateTimeOrder(evt.to);
                 saveData();
             }
         });
     });
+
+    // Function to update time order after drag and drop
+    function updateTimeOrder(column) {
+        const timeBlocks = [...column.querySelectorAll('.time-block')];
+        const isMorning = column.querySelector('h6').textContent === 'Morning';
+        const baseHour = isMorning ? 6 : 12;
+
+        timeBlocks.forEach((block, index) => {
+            // Calculate new time based on position
+            const blocksPerHour = 4; // 15-minute intervals
+            const hour = Math.floor(baseHour + (index / blocksPerHour));
+            const minute = (index % blocksPerHour) * 15;
+            const newTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+            // Update the block's time label and dataset
+            block.dataset.time = newTime;
+            block.querySelector('.time-label').textContent = newTime;
+        });
+    }
+
 
     // Add copy up/down functionality
     document.addEventListener('click', function(e) {
