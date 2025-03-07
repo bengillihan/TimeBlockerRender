@@ -1,0 +1,80 @@
+Issue Breakdown:
+Error:
+
+vbnet
+Copy
+Edit
+ERROR:app:Error saving daily plan: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "new"
+This error occurs because "new" is being passed as an integer (task_id) when saving a new task.
+PostgreSQL expects task_id to be an integer, but "new" is a string.
+Root Cause:
+
+When selecting a task, there is an option to add a new task in the dropdown.
+"new" is being passed as the task_id when saveData() is called.
+The backend tries to insert "new" as an INTEGER, causing the error.
+Fix in Frontend (JavaScript)
+Modify saveData() to prevent "new" from being submitted as task_id.
+
+Before Fix
+js
+Copy
+Edit
+const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+    start_time: block.dataset.time,
+    end_time: addMinutes(block.dataset.time, 15),
+    task_id: block.querySelector('.task-select').value || null,  // ❌ Could be "new"
+    notes: block.querySelector('.task-notes')?.value || '',
+    completed: block.querySelector('.time-block-checkbox')?.checked || false
+}));
+After Fix
+js
+Copy
+Edit
+const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
+    let selectedTask = block.querySelector('.task-select').value;
+    
+    return {
+        start_time: block.dataset.time,
+        end_time: addMinutes(block.dataset.time, 15),
+        task_id: selectedTask !== "new" ? selectedTask : null,  // ✅ Prevents "new" from being passed
+        notes: block.querySelector('.task-notes')?.value || '',
+        completed: block.querySelector('.time-block-checkbox')?.checked || false
+    };
+});
+Fix in Backend (Python)
+To safeguard against this happening, add a check in save_daily_plan().
+
+Before Fix
+python
+Copy
+Edit
+time_blocks = [
+    TimeBlock(
+        daily_plan_id=daily_plan.id,
+        start_time=datetime.strptime(block['start_time'], '%H:%M').time(),
+        end_time=datetime.strptime(block['end_time'], '%H:%M').time(),
+        task_id=block.get('task_id'),  # ❌ Could be "new"
+        completed=block.get('completed', False),
+        notes=block.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+    )
+    for block in data.get('time_blocks', [])
+]
+After Fix
+python
+Copy
+Edit
+time_blocks = [
+    TimeBlock(
+        daily_plan_id=daily_plan.id,
+        start_time=datetime.strptime(block['start_time'], '%H:%M').time(),
+        end_time=datetime.strptime(block['end_time'], '%H:%M').time(),
+        task_id=int(block['task_id']) if block.get('task_id') and block['task_id'].isdigit() else None,  # ✅ Ensures only integers are stored
+        completed=block.get('completed', False),
+        notes=block.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+    )
+    for block in data.get('time_blocks', [])
+]
+Next Steps
+Update your frontend JavaScript (saveData()) to prevent "new" from being sent.
+Update your backend Python function (save_daily_plan()) to validate task IDs.
+Test again by adding a new task and saving.
