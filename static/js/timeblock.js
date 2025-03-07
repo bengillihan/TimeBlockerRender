@@ -28,6 +28,8 @@ function navigateToDate(dateStr) {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize date picker with Pacific time
     const datePicker = document.getElementById('datePicker');
+    let previousDate = datePicker.value; // Store the last confirmed date
+
     if (datePicker) {
         // Save button click handler
         document.getElementById('saveButton')?.addEventListener('click', async function() {
@@ -46,11 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (hasUnsavedChanges) {
                 if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
                     e.preventDefault();
-                    // Restore the previous date value
-                    this.value = this.defaultValue;
+                    this.value = previousDate; // Restore last confirmed date
                     return;
                 }
             }
+            previousDate = this.value; // Update last confirmed date
             navigateToDate(this.value);
         });
 
@@ -61,27 +63,41 @@ document.addEventListener('DOMContentLoaded', function() {
             datePicker.value = pacificDate.toISOString().split('T')[0];
         }
 
-        // Date navigation handlers
+        // Date navigation handlers with unsaved changes check
         document.getElementById('prevDay')?.addEventListener('click', function() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                    return;
+                }
+            }
             const currentDate = new Date(datePicker.value);
             currentDate.setDate(currentDate.getDate() - 1);
-            navigateToDate(formatDate(currentDate));
+            previousDate = formatDate(currentDate);
+            navigateToDate(previousDate);
         });
 
         document.getElementById('nextDay')?.addEventListener('click', function() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                    return;
+                }
+            }
             const currentDate = new Date(datePicker.value);
             currentDate.setDate(currentDate.getDate() + 1);
-            navigateToDate(formatDate(currentDate));
+            previousDate = formatDate(currentDate);
+            navigateToDate(previousDate);
         });
 
         document.getElementById('todayBtn')?.addEventListener('click', function() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                    return;
+                }
+            }
             const today = new Date();
             const pacificToday = new Date(today.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-            navigateToDate(formatDate(pacificToday));
-        });
-
-        datePicker.addEventListener('change', function() {
-            navigateToDate(this.value);
+            previousDate = formatDate(pacificToday);
+            navigateToDate(previousDate);
         });
     }
 

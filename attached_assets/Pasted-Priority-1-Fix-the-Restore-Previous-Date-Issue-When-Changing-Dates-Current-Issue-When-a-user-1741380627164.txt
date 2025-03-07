@@ -1,0 +1,168 @@
+Priority 1: Fix the "Restore Previous Date" Issue When Changing Dates
+📌 Current Issue:
+
+When a user selects a new date in the date picker, it immediately navigates.
+If they decline the warning about unsaved changes, the date should stay the same, but right now it still updates.
+🔧 Fix: Ensure Date Picker Restores Correct Value on Cancel 📌 Modify timeblock.js
+
+js
+Copy
+Edit
+document.addEventListener('DOMContentLoaded', function() {
+    const datePicker = document.getElementById('datePicker');
+    let previousDate = datePicker.value; // Store the last confirmed date
+
+    datePicker.addEventListener('change', function(e) {
+        if (hasUnsavedChanges) {
+            if (!confirm('You have unsaved changes. Do you want to leave without saving?')) {
+                e.preventDefault();
+                this.value = previousDate; // Restore last confirmed date
+                return;
+            }
+        }
+        previousDate = this.value; // Update last confirmed date
+        navigateToDate(this.value);
+    });
+});
+✅ Why?
+✔ Ensures users can cancel navigation without being forced to a new date.
+✔ Prevents accidental data loss due to unwanted date changes.
+
+✅ Priority 2: Improve Template Management
+📌 Current Issue:
+
+If a user applies a template, it deletes existing priorities & time blocks instead of merging them.
+If a template has the same priority name as an existing one, it should update it instead of duplicating.
+🔧 Fix: Modify /api/apply-template to Merge Instead of Overwriting 📌 Modify app.py
+
+python
+Copy
+Edit
+@app.route('/api/apply-template', methods=['POST'])
+@login_required
+def apply_template():
+    """Apply a saved template to a selected date without deleting existing data."""
+    data = request.json
+    template_id = data.get('template_id')
+    date_str = data.get('date')
+
+    if not template_id or not date_str:
+        return jsonify({'error': 'Template ID and date are required'}), 400
+
+    template = DayTemplate.query.filter_by(id=template_id, user_id=current_user.id).first_or_404()
+
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+
+    daily_plan = DailyPlan.query.filter_by(user_id=current_user.id, date=date).first()
+    if not daily_plan:
+        daily_plan = DailyPlan(user_id=current_user.id, date=date)
+        db.session.add(daily_plan)
+
+    # Merge priorities without duplicates
+    existing_priorities = {p.content.strip(): p for p in daily_plan.priorities}
+    for priority_data in template.priorities or []:
+        content = priority_data.get('content', '').strip()
+        if content and content not in existing_priorities:
+            new_priority = Priority(daily_plan_id=daily_plan.id, content=content, completed=False)
+            db.session.add(new_priority)
+
+    # Merge time blocks without deleting manual entries
+    existing_time_blocks = {(tb.start_time, tb.end_time): tb for tb in daily_plan.time_blocks}
+    for block_data in template.time_blocks or []:
+        time_key = (block_data['start_time'], block_data['end_time'])
+        if time_key not in existing_time_blocks:
+            new_time_block = TimeBlock(
+                daily_plan_id=daily_plan.id,
+                start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                task_id=block_data.get('task_id'),
+                completed=False,
+                notes=block_data.get('notes', '')[:15]
+            )
+            db.session.add(new_time_block)
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Template applied successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to apply template', 'details': str(e)}), 500
+✅ Why?
+✔ Prevents unnecessary deletion of existing data when applying a template.
+✔ Merges priorities instead of duplicating them if they have the same name.
+✔ Ensures user modifications are not lost.
+
+✅ Priority 3: Improve Save Button UX
+📌 Current Issue:
+
+The Save button does not show a "Saving..." state while saving.
+Users might click multiple times, not knowing the save is in progress.
+🔧 Fix: Disable Button & Show Loading State While Saving 📌 Modify timeblock.js
+
+js
+Copy
+Edit
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.getElementById("saveButton");
+
+    if (saveButton) {
+        saveButton.addEventListener("click", async function() {
+            try {
+                saveButton.disabled = true;
+                saveButton.textContent = "Saving...";
+                await saveData();
+                updateLastSavedTime();
+                hasUnsavedChanges = false;
+            } catch (error) {
+                console.error('Error saving data:', error);
+                alert('Failed to save. Please try again.');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = "Save";
+            }
+        });
+    }
+});
+✅ Why?
+✔ Prevents duplicate save attempts.
+✔ Gives clear feedback that saving is in progress.
+
+✅ Priority 4: Improve Task Duplication Prevention
+📌 Current Issue:
+
+If a user adds the same task twice, it gets duplicated instead of being updated.
+🔧 Fix: Prevent Duplicates When Adding New Tasks 📌 Modify app.py
+
+python
+Copy
+Edit
+@app.route('/api/tasks', methods=['POST'])
+@login_required
+def add_task():
+    """Prevent duplicate tasks and update existing ones instead of creating a new entry."""
+    data = request.json
+    if not data.get('title') or not data.get('category_id'):
+        return jsonify({'error': 'Title and category are required'}), 400
+
+    existing_task = Task.query.filter_by(title=data['title'], user_id=current_user.id).first()
+    if existing_task:
+        existing_task.description = data.get('description', existing_task.description)
+        db.session.commit()
+        return jsonify({'message': 'Task updated successfully', 'task_id': existing_task.id}), 200
+
+    new_task = Task(
+        title=data['title'],
+        description=data.get('description', ''),
+        category_id=data['category_id'],
+        user_id=current_user.id
+    )
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify({'message': 'Task added successfully', 'task_id': new_task.id}), 201
+✅ Why?
+✔ Prevents duplicate tasks being created by mistake.
+✔ If a task already exists, it gets updated instead.
