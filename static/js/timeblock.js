@@ -2,6 +2,27 @@ let hasUnsavedChanges = false;
 let autoSaveTimeout;
 const AUTO_SAVE_DELAY = 3000; // 3-second delay after last change
 
+// Update current time display
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+    });
+    document.getElementById('currentTime').textContent = timeString;
+}
+
+function updateLastSavedTime() {
+    const now = new Date();
+    document.getElementById('lastSaved').textContent =
+        `Last saved: ${now.toLocaleTimeString()}`;
+}
+
+// Update time every minute
+setInterval(updateCurrentTime, 60000);
+updateCurrentTime(); // Initial update
+
 function triggerAutoSave() {
     clearTimeout(autoSaveTimeout);
     hasUnsavedChanges = true;
@@ -228,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
             saveData();
         });
     });
-
 
     // Handle quick task creation
     document.getElementById('saveQuickTask')?.addEventListener('click', function() {
