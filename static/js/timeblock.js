@@ -1,6 +1,6 @@
 let hasUnsavedChanges = false;
 let autoSaveTimeout;
-const AUTO_SAVE_DELAY = 3000; // 3-second delay after last change
+const AUTO_SAVE_DELAY = 10000; // 10-second delay after last change
 
 // Update current time display
 function updateCurrentTime() {
@@ -19,8 +19,8 @@ function updateLastSavedTime() {
         `Last saved: ${now.toLocaleTimeString()}`;
 }
 
-// Update time every minute
-setInterval(updateCurrentTime, 60000);
+// Update time every 5 minutes instead of every minute
+setInterval(updateCurrentTime, 300000); // 5 minutes
 updateCurrentTime(); // Initial update
 
 function toggleSaveButton(state) {
@@ -557,14 +557,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Backup auto-save every 30 seconds
+        // Backup auto-save every 2 minutes instead of 30 seconds
         setInterval(async () => {
             try {
                 await saveData();
             } catch (error) {
                 console.error('Periodic auto-save failed:', error);
             }
-        }, 30000);
+        }, 120000);
 
         // Load existing templates
         async function loadTemplates() {

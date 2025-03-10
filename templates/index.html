@@ -417,12 +417,12 @@ function updateTimeIndicator() {
     }
 }
 
-// Update time every minute
-setInterval(updateCurrentTime, 60000);
+// Update time every 5 minutes
+setInterval(updateCurrentTime, 300000);
 updateCurrentTime(); // Initial update
 
-// Update indicator every minute
-setInterval(updateTimeIndicator, 60000); // Changed to update every minute for smoother movement
+// Update indicator every 5 minutes
+setInterval(updateTimeIndicator, 300000);
 updateTimeIndicator(); // Initial update
 
 // Also update indicator when changing dates
