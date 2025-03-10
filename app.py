@@ -7,11 +7,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
-from nylas_auth import nylas_auth # Added import for Nylas auth blueprint
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__) # Added logger for error handling
+logger = logging.getLogger(__name__)
 
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
@@ -37,11 +36,10 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Import routes after app initialization to avoid circular imports
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate # Added NavLink and DayTemplate imports
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
-app.register_blueprint(nylas_auth) # Added Nylas blueprint registration
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -421,9 +419,8 @@ def calendar_settings():
     try:
         calendars = []
         has_google_auth = hasattr(current_user, 'credentials_info') and current_user.credentials_info
-        has_nylas_auth = bool(current_user.nylas_access_token)
 
-        logger.info(f"User {current_user.id} auth status - Google: {has_google_auth}, Nylas: {has_nylas_auth}")
+        logger.info(f"User {current_user.id} auth status - Google: {has_google_auth}")
 
         # If Google Calendar is connected, fetch calendars
         if has_google_auth:
@@ -434,13 +431,6 @@ def calendar_settings():
             if not calendars:
                 logger.warning("No calendars found in response")
                 flash("No calendars found. Please ensure you've granted calendar access.", "warning")
-
-        # If neither service is connected, show appropriate message
-        if not has_google_auth and not has_nylas_auth:
-            flash("Please connect at least one calendar service to continue.", "info")
-
-        logger.debug(f"Found {len(calendars)} calendars")
-        logger.debug(f"Currently selected calendars: {current_user.selected_calendars}")
 
         return render_template('calendar_settings.html', 
                             calendars=calendars,
