@@ -23,10 +23,13 @@ google_auth = Blueprint("google_auth", __name__)
 
 def get_callback_url():
     """Get the appropriate callback URL based on the current request."""
-    protocol = "https" if request.host.endswith('.replit.app') else request.scheme
+    # For development environment, use http
+    # For production (.replit.app), use https
+    protocol = "https" if ".replit.app" in request.host else "http"
     base_url = f"{protocol}://{request.host}"
-    logger.info(f"Generated callback URL base: {base_url}")
-    return f"{base_url}/google_login/callback"
+    callback_url = f"{base_url}/google_login/callback"
+    logger.info(f"Generated callback URL: {callback_url}")
+    return callback_url
 
 @google_auth.route("/google_login")
 def login():
@@ -41,9 +44,7 @@ def login():
 
         # Get the callback URL for the current environment
         callback_url = get_callback_url()
-
-        # Log OAuth request details
-        logger.info(f"Initiating Google OAuth login with callback URL: {callback_url}")
+        logger.info(f"Starting OAuth flow with callback URL: {callback_url}")
 
         # Prepare OAuth request with required scopes
         request_uri = client.prepare_request_uri(
@@ -80,11 +81,11 @@ def callback():
         token_endpoint = google_provider_cfg["token_endpoint"]
 
         callback_url = get_callback_url()
-        logger.info(f"Processing OAuth callback at: {callback_url}")
+        logger.info(f"Processing OAuth callback with URL: {callback_url}")
 
-        # Get current URL with correct protocol
+        # Get the current URL with the correct protocol
         current_url = request.url
-        if request.host.endswith('.replit.app') and current_url.startswith('http://'):
+        if ".replit.app" in request.host and current_url.startswith('http://'):
             current_url = current_url.replace('http://', 'https://')
 
         # Exchange code for token
