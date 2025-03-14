@@ -4,41 +4,34 @@ import requests
 import logging
 from typing import Optional, Tuple
 from app import db
-from flask import Blueprint, redirect, request, url_for, flash
+from flask import Blueprint, redirect, request, url_for, flash, current_app
 from flask_login import login_required, login_user, logout_user
 from models import User
 from oauthlib.oauth2 import WebApplicationClient
 
 logger = logging.getLogger(__name__)
 
-# Make credentials optional during development
+# Google OAuth config
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
-# Get the Replit domain for OAuth callback
-REPLIT_URL = "https://TimeBlocker-bdgillihan.replit.app"
-
-logger.info(f"Configured Replit URL: {REPLIT_URL}")
-
-# OAuth Setup Instructions
-print(f"""
-To make Google authentication work:
-1. Go to https://console.cloud.google.com/apis/credentials
-2. Create a new OAuth 2.0 Client ID or edit existing one
-3. Add this exact URL to Authorized redirect URIs:
-   {REPLIT_URL}/google_login/callback
-
-For detailed instructions, see:
-https://docs.replit.com/tutorials/python/authentication-with-flask
-""")
+logger.info("Initializing Google OAuth configuration")
 
 client: Optional[WebApplicationClient] = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
 google_auth = Blueprint("google_auth", __name__)
 
+def get_callback_url():
+    """Get the appropriate callback URL based on the current request."""
+    protocol = "https" if request.host.endswith('.replit.app') else request.scheme
+    base_url = f"{protocol}://{request.host}"
+    logger.info(f"Generated callback URL base: {base_url}")
+    return f"{base_url}/google_login/callback"
+
 @google_auth.route("/google_login")
 def login():
     if not GOOGLE_CLIENT_ID or not client:
+        logger.error("Google OAuth credentials not configured")
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
@@ -46,22 +39,24 @@ def login():
         google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
         authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
+        # Get the callback URL for the current environment
+        callback_url = get_callback_url()
+
         # Log OAuth request details
-        logger.info("Initiating Google OAuth login")
-        logger.debug("Requested scopes: openid, email, profile, calendar.readonly")
-        logger.info(f"Redirect URI: {REPLIT_URL}/google_login/callback")
+        logger.info(f"Initiating Google OAuth login with callback URL: {callback_url}")
 
         # Prepare OAuth request with required scopes
         request_uri = client.prepare_request_uri(
             authorization_endpoint,
-            redirect_uri=f"{REPLIT_URL}/google_login/callback",
+            redirect_uri=callback_url,
             scope=[
                 "openid",
                 "email",
                 "profile",
-                "https://www.googleapis.com/auth/calendar.readonly"  # Full URL for Calendar scope
+                "https://www.googleapis.com/auth/calendar.readonly"
             ],
         )
+
         logger.debug(f"Generated OAuth request URI: {request_uri}")
         return redirect(request_uri)
     except Exception as e:
@@ -84,16 +79,22 @@ def callback():
         google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
         token_endpoint = google_provider_cfg["token_endpoint"]
 
-        callback_uri = f"{REPLIT_URL}/google_login/callback"
-        logger.info(f"Processing OAuth callback at: {callback_uri}")
+        callback_url = get_callback_url()
+        logger.info(f"Processing OAuth callback at: {callback_url}")
+
+        # Get current URL with correct protocol
+        current_url = request.url
+        if request.host.endswith('.replit.app') and current_url.startswith('http://'):
+            current_url = current_url.replace('http://', 'https://')
 
         # Exchange code for token
         token_url, headers, body = client.prepare_token_request(
             token_endpoint,
-            authorization_response=request.url.replace("http://", "https://"),
-            redirect_url=callback_uri,
+            authorization_response=current_url,
+            redirect_url=callback_url,
             code=code,
         )
+
         # Ensure auth tuple has proper typing
         auth: Tuple[str, str] = (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
         token_response = requests.post(
