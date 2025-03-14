@@ -36,9 +36,14 @@
 </div>
 
 <div class="time-block-controls text-center mb-3">
-    <button type="button" class="btn btn-outline-secondary btn-sm add-earlier-blocks">
-        <i class="fas fa-plus"></i> Add Earlier Blocks
-    </button>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary btn-sm add-earlier-blocks">
+            <i class="fas fa-plus"></i> Add Earlier Blocks
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-sm remove-earlier-blocks">
+            <i class="fas fa-minus"></i> Remove Block
+        </button>
+    </div>
 </div>
 
 <div class="row">
@@ -219,9 +224,14 @@
 </div>
 
 <div class="time-block-controls text-center mt-3">
-    <button type="button" class="btn btn-outline-secondary btn-sm add-later-blocks">
-        <i class="fas fa-plus"></i> Add Later Blocks
-    </button>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary btn-sm add-later-blocks">
+            <i class="fas fa-plus"></i> Add Later Blocks
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-sm remove-later-blocks">
+            <i class="fas fa-minus"></i> Remove Block
+        </button>
+    </div>
 </div>
 
 <div class="row mt-4">
@@ -324,7 +334,15 @@
 }
 
 .time-block-controls button {
-    min-width: 150px;
+    min-width: 120px;
+}
+
+.time-block-controls .btn-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.time-block-controls .btn-outline-danger {
+    border-left: none;
 }
 </style>
 
@@ -522,5 +540,29 @@ function initializeTimeBlock(block) {
         }
     });
 }
+
+document.querySelector('.remove-earlier-blocks').addEventListener('click', function() {
+    const firstBlock = document.querySelector('.time-block');
+    if (firstBlock) {
+        const select = firstBlock.querySelector('.task-select');
+        if (select.value) {
+            alert('Cannot remove block with assigned task. Please clear the task first.');
+            return;
+        }
+        firstBlock.remove();
+    }
+});
+
+document.querySelector('.remove-later-blocks').addEventListener('click', function() {
+    const lastBlock = document.querySelector('.time-block:last-child');
+    if (lastBlock) {
+        const select = lastBlock.querySelector('.task-select');
+        if (select.value) {
+            alert('Cannot remove block with assigned task. Please clear the task first.');
+            return;
+        }
+        lastBlock.remove();
+    }
+});
 </script>
 {% endblock %}
