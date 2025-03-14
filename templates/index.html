@@ -255,7 +255,6 @@
     </div>
 </div>
 
-<!-- Add embedded links section after the review section -->
 <div class="row mt-4">
     <div class="col">
         <div class="card">
@@ -266,13 +265,13 @@
                 <div class="row">
                     {% for link in current_user.nav_links %}
                         {% if link.embed %}
-                        <div class="col-md-6 mb-4">
+                        <div class="{% if link.full_width %}col-12{% else %}col-md-6{% endif %} mb-4">
                             {% if link.custom_iframe_code %}
                                 {{ link.custom_iframe_code|safe }}
                             {% else %}
                             <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: {{ link.iframe_height }}px;">
                                 <iframe src="{{ link.url }}"
-                                        style="position: absolute; top: 0; left: 0; width: {{ link.iframe_width_percent }}%; height: 100%; border: 0;"
+                                        style="position: absolute; top: 0; left: 0; width: {{ link.iframe_width_percent }}%; height: 100%; border: 1px solid #ddd; border-radius: 8px;"
                                         frameborder="0"
                                         allowfullscreen>
                                 </iframe>

@@ -8,9 +8,9 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
-    nav_links = db.relationship('NavLink', backref='user', lazy=True)  # Add relationship
-    selected_calendars = db.Column(db.JSON)  # Store selected calendar IDs
-    nylas_access_token = db.Column(db.String(512))  # Add Nylas access token field
+    nav_links = db.relationship('NavLink', backref='user', lazy=True)
+    selected_calendars = db.Column(db.JSON)
+    nylas_access_token = db.Column(db.String(512))
 
 class NavLink(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -23,7 +23,8 @@ class NavLink(db.Model):
     show_in_nav = db.Column(db.Boolean, default=True)
     iframe_height = db.Column(db.Integer, default=600)
     iframe_width_percent = db.Column(db.Integer, default=100)
-    custom_iframe_code = db.Column(db.Text)  # New field for custom iframe HTML
+    custom_iframe_code = db.Column(db.Text)
+    full_width = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):
@@ -51,14 +52,14 @@ class TimeBlock(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     completed = db.Column(db.Boolean, default=False)
-    notes = db.Column(db.String(15))  # Add notes field with max 15 characters
+    notes = db.Column(db.String(15))
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     tasks = db.relationship('Task', backref='category', lazy=True)
-    color = db.Column(db.String(7), default='#6c757d')  # Default to a neutral color
+    color = db.Column(db.String(7), default='#6c757d')
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -73,7 +74,7 @@ class DayTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    priorities = db.Column(db.JSON, nullable=True)  # Store priorities as JSON
-    time_blocks = db.Column(db.JSON, nullable=True)  # Store time blocks as JSON
+    priorities = db.Column(db.JSON, nullable=True)
+    time_blocks = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref=db.backref('templates', lazy=True))

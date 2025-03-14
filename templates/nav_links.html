@@ -72,6 +72,10 @@
                                     <input type="checkbox" class="form-check-input" id="useCustomCode" name="use_custom_code">
                                     <label class="form-check-label" for="useCustomCode">Use custom iframe code</label>
                                 </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" id="fullWidth" name="full_width">
+                                    <label class="form-check-label" for="fullWidth">Full width (100% of page width)</label>
+                                </div>
                                 <div id="standardSettings">
                                     <div class="row">
                                         <div class="col-md-6">
@@ -313,7 +317,8 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         url: document.getElementById('linkUrl').value,
         icon_class: document.getElementById('iconClass').value,
         embed: document.getElementById('embedLink').checked,
-        show_in_nav: document.getElementById('showInNav').checked
+        show_in_nav: document.getElementById('showInNav').checked,
+        full_width: document.getElementById('fullWidth').checked
     };
 
     if (useCustomCode) {
