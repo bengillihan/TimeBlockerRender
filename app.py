@@ -1,10 +1,12 @@
 import os
 import logging
 import pytz
+import secrets
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
+from functools import wraps
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, current_user, login_required
+from flask_login import LoginManager, current_user, login_required, login_user
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
 
@@ -467,7 +469,9 @@ def health_check():
 def nav_links():
     """Show navigation links management page."""
     nav_links = NavLink.query.filter_by(user_id=current_user.id).order_by(NavLink.order).all()
-    return render_template('nav_links.html', nav_links=nav_links)
+    return render_template('nav_links.html', 
+                         nav_links=nav_links,
+                         embed_base_url=request.host_url.rstrip('/') + '/embed')
 
 @app.route('/api/nav_links', methods=['POST'])
 @login_required
@@ -686,6 +690,74 @@ def apply_template():
         db.session.rollback()
         logger.error(f"Error applying template: {str(e)}")
         return jsonify({'error': 'Failed to apply template'}), 500
+
+def generate_embed_token(user_id):
+    """Generate a secure token for embedded views."""
+    token = secrets.token_urlsafe(32)
+    # Store token in session with expiry
+    if 'embed_tokens' not in session:
+        session['embed_tokens'] = {}
+    session['embed_tokens'][token] = {
+        'user_id': user_id,
+        'expires': (datetime.utcnow() + timedelta(hours=24)).timestamp()
+    }
+    return token
+
+def validate_embed_token(token):
+    """Validate an embed token and return the associated user_id."""
+    if not token or 'embed_tokens' not in session:
+        return None
+
+    token_data = session['embed_tokens'].get(token)
+    if not token_data:
+        return None
+
+    # Check if token has expired
+    if datetime.utcnow().timestamp() > token_data['expires']:
+        del session['embed_tokens'][token]
+        return None
+
+    return token_data['user_id']
+
+def embed_auth_required(f):
+    """Decorator for routes that need embed authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.args.get('token')
+        user_id = validate_embed_token(token)
+        if not user_id:
+            return jsonify({'error': 'Invalid or expired token'}), 401
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Log in the user for this request
+        login_user(user)
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/embed/generate_token')
+@login_required
+def generate_embed_token_route():
+    """Generate a new embed token for the current user."""
+    token = generate_embed_token(current_user.id)
+    return jsonify({'token': token})
+
+@app.route('/embed/<path:subpath>')
+@embed_auth_required
+def embedded_view(subpath):
+    """Handle embedded views with token authentication."""
+    if subpath == 'tasks':
+        return render_template('tasks.html', 
+                            categories=Category.query.filter_by(user_id=current_user.id).all(),
+                            embedded=True)
+    elif subpath == 'calendar':
+        return render_template('calendar.html',
+                            embedded=True)
+    else:
+        return 'Invalid embed path', 404
+
 
 with app.app_context():
     db.create_all()

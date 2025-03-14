@@ -7,16 +7,14 @@
             <h2>Navigation Links</h2>
             <p class="text-muted">Customize your navigation bar links.</p>
             <div class="alert alert-info">
-                <h6>🗓️ Calendar Embedding Tips:</h6>
+                <h6>🔗 Embedding Tips:</h6>
                 <ul class="mb-0">
-                    <li><strong>Office 365 Calendar:</strong>
+                    <li><strong>Secure Embedding:</strong>
                         <ol>
-                            <li>Go to Outlook Calendar</li>
-                            <li>Click "Settings" (gear icon) > "View all Outlook settings"</li>
-                            <li>Go to "Calendar" > "Shared calendars"</li>
-                            <li>Under "Publish a calendar", select your calendar</li>
-                            <li>Click "Publish" and choose "Can view all details"</li>
-                            <li>Copy the IframePub URL (ends with "...&embed=true")</li>
+                            <li>Click "Generate Embed Code" for a link you want to embed</li>
+                            <li>Copy the generated iframe code</li>
+                            <li>Paste it where you want to embed the content</li>
+                            <li>The embed token will expire after 24 hours</li>
                         </ol>
                     </li>
                     <li><strong>Custom Iframe Code:</strong>
@@ -45,7 +43,7 @@
                         <div class="mb-3">
                             <label for="linkUrl" class="form-label">URL</label>
                             <input type="url" class="form-control" id="linkUrl" name="url" required>
-                            <small class="text-muted">For calendars, use the embed URL from your calendar settings</small>
+                            <small class="text-muted">For embedding internal pages, use paths like '/tasks' or '/calendar'</small>
                         </div>
                         <div class="mb-3">
                             <label for="iconClass" class="form-label">Icon (Optional)</label>
@@ -122,18 +120,28 @@
                             </div>
                             <div class="iframe-settings" style="{% if not link.embed %}display: none;{% endif %}">
                                 {% if not link.custom_iframe_code %}
-                                <input type="number" class="form-control form-control-sm iframe-height me-2" 
-                                       style="width: 80px;"
-                                       value="{{ link.iframe_height }}"
-                                       min="200" max="2000"
-                                       data-link-id="{{ link.id }}"
-                                       placeholder="Height">
-                                <input type="number" class="form-control form-control-sm iframe-width me-2" 
-                                       style="width: 70px;"
-                                       value="{{ link.iframe_width_percent }}"
-                                       min="10" max="100"
-                                       data-link-id="{{ link.id }}"
-                                       placeholder="Width %">
+                                    {% if link.url.startswith('/') %}
+                                    <button class="btn btn-sm btn-outline-primary me-2 generate-embed-code"
+                                            data-link-id="{{ link.id }}"
+                                            data-link-path="{{ link.url }}"
+                                            data-height="{{ link.iframe_height }}"
+                                            data-width="{{ link.iframe_width_percent }}">
+                                        Generate Embed Code
+                                    </button>
+                                    {% else %}
+                                    <input type="number" class="form-control form-control-sm iframe-height me-2" 
+                                           style="width: 80px;"
+                                           value="{{ link.iframe_height }}"
+                                           min="200" max="2000"
+                                           data-link-id="{{ link.id }}"
+                                           placeholder="Height">
+                                    <input type="number" class="form-control form-control-sm iframe-width me-2" 
+                                           style="width: 70px;"
+                                           value="{{ link.iframe_width_percent }}"
+                                           min="10" max="100"
+                                           data-link-id="{{ link.id }}"
+                                           placeholder="Width %">
+                                    {% endif %}
                                 {% else %}
                                 <button class="btn btn-sm btn-outline-info me-2 view-iframe-code"
                                         data-bs-toggle="modal" 
@@ -226,6 +234,25 @@
     </div>
 </div>
 
+<!-- Generated Embed Code Modal -->
+<div class="modal fade" id="generatedEmbedCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generated Embed Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Copy this code to embed the content. The token will expire after 24 hours.</p>
+                <pre><code id="generatedEmbedCode"></code></pre>
+                <button class="btn btn-primary mt-2" onclick="copyEmbedCode()">
+                    <i class="fas fa-copy"></i> Copy Code
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -238,6 +265,44 @@ document.getElementById('useCustomCode').addEventListener('change', function() {
     document.getElementById('standardSettings').style.display = this.checked ? 'none' : 'block';
     document.getElementById('customCodeSettings').style.display = this.checked ? 'block' : 'none';
 });
+
+// Generate embed code
+document.querySelectorAll('.generate-embed-code').forEach(button => {
+    button.addEventListener('click', async function() {
+        const linkId = this.dataset.linkId;
+        const path = this.dataset.linkPath;
+        const height = this.dataset.height;
+        const width = this.dataset.width;
+
+        try {
+            const response = await fetch('/embed/generate_token');
+            const data = await response.json();
+
+            if (response.ok) {
+                const embedUrl = `${window.location.origin}/embed${path}?token=${data.token}`;
+                const iframeCode = `<iframe src="${embedUrl}" width="${width}%" height="${height}" frameborder="0" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>`;
+
+                document.getElementById('generatedEmbedCode').textContent = iframeCode;
+                new bootstrap.Modal(document.getElementById('generatedEmbedCodeModal')).show();
+            } else {
+                alert('Failed to generate embed code. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+});
+
+function copyEmbedCode() {
+    const code = document.getElementById('generatedEmbedCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        alert('Embed code copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy code:', err);
+        alert('Failed to copy code. Please copy manually.');
+    });
+}
 
 document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -283,6 +348,35 @@ document.querySelectorAll('.view-iframe-code').forEach(button => {
     button.addEventListener('click', function() {
         const code = this.dataset.iframeCode;
         document.getElementById('iframeCodeDisplay').textContent = code;
+    });
+});
+
+// Event listener for embed and nav toggles
+document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', async function() {
+        const linkId = this.dataset.linkId;
+        const isEmbed = this.classList.contains('embed-toggle');
+
+        try {
+            const response = await fetch(`/api/nav_links/${linkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    [isEmbed ? 'embed' : 'show_in_nav']: this.checked
+                })
+            });
+
+            if (!response.ok) {
+                alert('Failed to update setting. Please try again.');
+                this.checked = !this.checked; // Revert the checkbox
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            this.checked = !this.checked; // Revert the checkbox
+        }
     });
 });
 
