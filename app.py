@@ -281,6 +281,7 @@ def task_operations(task_id):
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
 def save_daily_plan():
+    """Update user's daily plan."""
     data = request.json
     # Convert date to Pacific time
     date = datetime.strptime(data['date'], '%Y-%m-%d').date()
@@ -325,6 +326,7 @@ def save_daily_plan():
         TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
         for block_data in data.get('time_blocks', []):
             if block_data.get('start_time'):
+                # Allow any valid time, even if it's before the default start time
                 time_block = TimeBlock(
                     daily_plan_id=daily_plan.id,
                     start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
