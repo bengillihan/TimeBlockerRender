@@ -267,13 +267,17 @@
                     {% for link in current_user.nav_links %}
                         {% if link.embed %}
                         <div class="col-md-6 mb-4">
+                            {% if link.custom_iframe_code %}
+                                {{ link.custom_iframe_code|safe }}
+                            {% else %}
                             <div class="embed-responsive" style="position: relative; overflow: hidden; padding-top: {{ link.iframe_height }}px;">
                                 <iframe src="{{ link.url }}"
-                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                                        style="position: absolute; top: 0; left: 0; width: {{ link.iframe_width_percent }}%; height: 100%; border: 0;"
                                         frameborder="0"
                                         allowfullscreen>
                                 </iframe>
                             </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                     {% endfor %}
