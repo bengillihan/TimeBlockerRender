@@ -35,6 +35,12 @@
     </div>
 </div>
 
+<div class="time-block-controls text-center mb-3">
+    <button type="button" class="btn btn-outline-secondary btn-sm add-earlier-blocks">
+        <i class="fas fa-plus"></i> Add Earlier Blocks
+    </button>
+</div>
+
 <div class="row">
     <div class="col-md-4">
         <div class="card mb-4">
@@ -212,6 +218,12 @@
     </div>
 </div>
 
+<div class="time-block-controls text-center mt-3">
+    <button type="button" class="btn btn-outline-secondary btn-sm add-later-blocks">
+        <i class="fas fa-plus"></i> Add Later Blocks
+    </button>
+</div>
+
 <div class="row mt-4">
     <div class="col">
         <div class="card">
@@ -279,7 +291,6 @@
     </div>
 </div>
 
-<!-- Add CSS for time indicator -->
 <style>
 .time-indicator {
     position: absolute;
@@ -304,6 +315,16 @@
 
 #timeBlocks {
     position: relative;
+}
+
+.time-block-controls {
+    padding: 10px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 4px;
+}
+
+.time-block-controls button {
+    min-width: 150px;
 }
 </style>
 
@@ -390,5 +411,116 @@ document.getElementById('datePicker').addEventListener('change', updateTimeIndic
 document.getElementById('prevDay').addEventListener('click', updateTimeIndicator);
 document.getElementById('nextDay').addEventListener('click', updateTimeIndicator);
 document.getElementById('todayBtn').addEventListener('click', updateTimeIndicator);
+
+
+document.querySelector('.add-earlier-blocks').addEventListener('click', function() {
+    const firstBlock = document.querySelector('.time-block');
+    if (firstBlock) {
+        const currentTime = firstBlock.dataset.time;
+        const [hours, minutes] = currentTime.split(':').map(Number);
+
+        // Calculate new time (15 minutes earlier)
+        let newMinutes = minutes - 15;
+        let newHours = hours;
+
+        if (newMinutes < 0) {
+            newMinutes = 45;
+            newHours--;
+        }
+
+        if (newHours >= 0) {  // Don't go before midnight
+            const newTimeString = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+
+            // Clone the first block and update its time
+            const newBlock = firstBlock.cloneNode(true);
+            newBlock.dataset.time = newTimeString;
+            newBlock.querySelector('.time-label').textContent = newTimeString;
+
+            // Clear any selected task
+            const select = newBlock.querySelector('.task-select');
+            select.value = '';
+
+            // Insert the new block at the beginning
+            firstBlock.parentNode.insertBefore(newBlock, firstBlock);
+
+            // Reinitialize event listeners for the new block
+            initializeTimeBlock(newBlock);
+        }
+    }
+});
+
+document.querySelector('.add-later-blocks').addEventListener('click', function() {
+    const lastBlock = document.querySelector('.time-block:last-child');
+    if (lastBlock) {
+        const currentTime = lastBlock.dataset.time;
+        const [hours, minutes] = currentTime.split(':').map(Number);
+
+        // Calculate new time (15 minutes later)
+        let newMinutes = minutes + 15;
+        let newHours = hours;
+
+        if (newMinutes >= 60) {
+            newMinutes = 0;
+            newHours++;
+        }
+
+        if (newHours < 24) {  // Don't go past midnight
+            const newTimeString = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+
+            // Clone the last block and update its time
+            const newBlock = lastBlock.cloneNode(true);
+            newBlock.dataset.time = newTimeString;
+            newBlock.querySelector('.time-label').textContent = newTimeString;
+
+            // Clear any selected task
+            const select = newBlock.querySelector('.task-select');
+            select.value = '';
+
+            // Add the new block at the end
+            lastBlock.parentNode.appendChild(newBlock);
+
+            // Reinitialize event listeners for the new block
+            initializeTimeBlock(newBlock);
+        }
+    }
+});
+
+// Function to initialize event listeners for a time block
+function initializeTimeBlock(block) {
+    // Re-initialize select change handler
+    const select = block.querySelector('.task-select');
+    select.addEventListener('change', function() {
+        const notesInput = this.parentElement.querySelector('.task-notes');
+        notesInput.style.display = this.value ? 'inline-block' : 'none';
+        notesInput.value = '';
+
+        if (this.value === 'new') {
+            // Handle new task creation
+            const modal = new bootstrap.Modal(document.getElementById('addTaskModal'));
+            modal.show();
+        }
+    });
+
+    // Re-initialize copy buttons
+    block.querySelector('.copy-up').addEventListener('click', function() {
+        const prevBlock = block.previousElementSibling;
+        if (prevBlock) {
+            const prevSelect = prevBlock.querySelector('.task-select');
+            const currentSelect = block.querySelector('.task-select');
+            prevSelect.value = currentSelect.value;
+            prevSelect.dispatchEvent(new Event('change'));
+        }
+    });
+
+    block.querySelector('.copy-down').addEventListener('click', function() {
+        const nextBlock = block.nextElementSibling;
+        if (nextBlock) {
+            const nextSelect = nextBlock.querySelector('.task-select');
+            const currentSelect = block.querySelector('.task-select');
+            nextSelect.value = currentSelect.value;
+            nextSelect.dispatchEvent(new Event('change'));
+        }
+    });
+}
 </script>
 {% endblock %}
