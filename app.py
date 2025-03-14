@@ -75,6 +75,10 @@ def index():
         date=date
     ).first()
 
+    # Get user's preferred start and end times, or use defaults
+    day_start = current_user.day_start_time or datetime.strptime('09:00', '%H:%M').time()
+    day_end = current_user.day_end_time or datetime.strptime('17:00', '%H:%M').time()
+
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
 
@@ -162,7 +166,9 @@ def index():
                          brain_dump=brain_dump,
                          productivity_rating=productivity_rating,
                          calendar_events=calendar_events,
-                         has_google_calendar=has_google_calendar)
+                         has_google_calendar=has_google_calendar,
+                         day_start=day_start,
+                         day_end=day_end)
 
 @app.route('/login')
 def login():
@@ -763,6 +769,33 @@ def embedded_view(subpath):
     else:
         return 'Invalid embed path', 404
 
+
+# Add these routes after the existing routes
+@app.route('/time-preferences')
+@login_required
+def time_preferences():
+    """Show time preferences page."""
+    return render_template('time_preferences.html')
+
+@app.route('/api/time-preferences', methods=['POST'])
+@login_required
+def update_time_preferences():
+    """Update user's time preferences."""
+    data = request.json
+    try:
+        # Parse and validate the times
+        start_time = datetime.strptime(data['day_start_time'], '%H:%M').time()
+        end_time = datetime.strptime(data['day_end_time'], '%H:%M').time()
+
+        # Update user preferences
+        current_user.day_start_time = start_time
+        current_user.day_end_time = end_time
+        db.session.commit()
+
+        return jsonify({'message': 'Preferences updated successfully'})
+    except Exception as e:
+        logger.error(f"Error updating time preferences: {str(e)}")
+        return jsonify({'error': 'Failed to update preferences'}), 500
 
 with app.app_context():
     db.create_all()
