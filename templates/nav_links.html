@@ -122,6 +122,12 @@
                                        {% if link.show_in_nav %}checked{% endif %}>
                                 <label class="form-check-label">Show in Nav</label>
                             </div>
+                            <div class="form-check me-2">
+                                <input type="checkbox" class="form-check-input full-width-toggle" 
+                                       data-link-id="{{ link.id }}" 
+                                       {% if link.full_width %}checked{% endif %}>
+                                <label class="form-check-label">Full Width</label>
+                            </div>
                             <div class="iframe-settings" style="{% if not link.embed %}display: none;{% endif %}">
                                 {% if not link.custom_iframe_code %}
                                     {% if link.url.startswith('/') %}
@@ -161,7 +167,8 @@
                                         data-link-name="{{ link.name }}"
                                         data-link-url="{{ link.url }}"
                                         data-link-icon="{{ link.icon_class }}"
-                                        data-custom-code="{{ link.custom_iframe_code }}">
+                                        data-custom-code="{{ link.custom_iframe_code }}"
+                                        data-full-width="{{ link.full_width }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger delete-link">
@@ -212,6 +219,12 @@
                     <div class="mb-3">
                         <label for="editCustomIframeCode" class="form-label">Custom Iframe Code</label>
                         <textarea class="form-control" id="editCustomIframeCode" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="editFullWidth">
+                            <label class="form-check-label" for="editFullWidth">Full width</label>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -356,6 +369,34 @@ document.querySelectorAll('.view-iframe-code').forEach(button => {
     });
 });
 
+// Event listener for full-width toggle
+document.querySelectorAll('.full-width-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', async function() {
+        const linkId = this.dataset.linkId;
+
+        try {
+            const response = await fetch(`/api/nav_links/${linkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    full_width: this.checked
+                })
+            });
+
+            if (!response.ok) {
+                alert('Failed to update full-width setting. Please try again.');
+                this.checked = !this.checked; // Revert the checkbox
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            this.checked = !this.checked; // Revert the checkbox
+        }
+    });
+});
+
 // Event listener for embed and nav toggles
 document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
     checkbox.addEventListener('change', async function() {
@@ -393,12 +434,14 @@ document.querySelectorAll('.edit-link').forEach(button => {
         const linkUrl = this.dataset.linkUrl;
         const linkIcon = this.dataset.linkIcon;
         const customCode = this.dataset.customCode;
+        const fullWidth = this.dataset.fullWidth === 'true'; //Corrected to lowercase 'true'
 
         document.getElementById('editLinkId').value = linkId;
         document.getElementById('editLinkName').value = linkName;
         document.getElementById('editLinkUrl').value = linkUrl;
         document.getElementById('editIconClass').value = linkIcon;
         document.getElementById('editCustomIframeCode').value = customCode || '';
+        document.getElementById('editFullWidth').checked = fullWidth;
     });
 });
 
@@ -408,7 +451,8 @@ document.getElementById('saveEditLink').addEventListener('click', async function
         name: document.getElementById('editLinkName').value,
         url: document.getElementById('editLinkUrl').value,
         icon_class: document.getElementById('editIconClass').value,
-        custom_iframe_code: document.getElementById('editCustomIframeCode').value
+        custom_iframe_code: document.getElementById('editCustomIframeCode').value,
+        full_width: document.getElementById('editFullWidth').checked
     };
 
     try {
