@@ -699,12 +699,12 @@ def apply_template():
 def generate_embed_token(user_id):
     """Generate a secure token for embedded views."""
     token = secrets.token_urlsafe(32)
-    # Store token in session with expiry
+    # Store token in session with expiry (180 days)
     if 'embed_tokens' not in session:
         session['embed_tokens'] = {}
     session['embed_tokens'][token] = {
         'user_id': user_id,
-        'expires': (datetime.utcnow() + timedelta(hours=24)).timestamp()
+        'expires': (datetime.utcnow() + timedelta(days=180)).timestamp()
     }
     return token
 

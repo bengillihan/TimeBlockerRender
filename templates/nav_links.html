@@ -13,7 +13,7 @@
                         <ol>
                             <li>Generate an embed token from the source application</li>
                             <li>Copy the generated token and add it to your iframe URL: <code>?token=your_token_here</code></li>
-                            <li>The token will expire after 24 hours for security</li>
+                            <li>The token will remain valid for 180 days</li>
                             <li>Each application needs its own token</li>
                         </ol>
                     </li>
@@ -266,7 +266,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">Copy this code to embed the content. The token will expire after 24 hours.</p>
+                <p class="text-muted">Copy this code to embed the content. The token will expire after 180 days.</p>
                 <pre><code id="generatedEmbedCode"></code></pre>
                 <button class="btn btn-primary mt-2" onclick="copyEmbedCode()">
                     <i class="fas fa-copy"></i> Copy Code
