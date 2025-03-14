@@ -19,9 +19,10 @@ class NavLink(db.Model):
     icon_class = db.Column(db.String(50), default='fas fa-link')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     order = db.Column(db.Integer, default=0)
-    embed = db.Column(db.Boolean, default=False)  # Add embed field
-    show_in_nav = db.Column(db.Boolean, default=True)  # Add show_in_nav field
-    iframe_height = db.Column(db.Integer, default=600)  # Add iframe height field
+    embed = db.Column(db.Boolean, default=False)
+    show_in_nav = db.Column(db.Boolean, default=True)
+    iframe_height = db.Column(db.Integer, default=600)
+    iframe_width_percent = db.Column(db.Integer, default=100)  # New field for width percentage
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DailyPlan(db.Model):

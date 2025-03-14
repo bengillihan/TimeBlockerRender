@@ -71,9 +71,17 @@
                                 <input type="checkbox" class="form-check-input" id="showInNav" name="show_in_nav" checked>
                                 <label class="form-check-label" for="showInNav">Show in navigation bar</label>
                             </div>
-                            <div class="mt-2" id="iframeHeightGroup" style="display: none;">
-                                <label for="iframeHeight" class="form-label">Iframe Height (pixels)</label>
-                                <input type="number" class="form-control" id="iframeHeight" name="iframe_height" value="600" min="200" max="2000">
+                            <div class="mt-2" id="iframeSettings" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="iframeHeight" class="form-label">Height (pixels)</label>
+                                        <input type="number" class="form-control" id="iframeHeight" name="iframe_height" value="600" min="200" max="2000">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="iframeWidth" class="form-label">Width (%)</label>
+                                        <input type="number" class="form-control" id="iframeWidth" name="iframe_width_percent" value="100" min="10" max="100">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Link</button>
@@ -102,11 +110,20 @@
                                        {% if link.show_in_nav %}checked{% endif %}>
                                 <label class="form-check-label">Show in Nav</label>
                             </div>
-                            <input type="number" class="form-control form-control-sm iframe-height" 
-                                   style="width: 100px; {% if not link.embed %}display: none;{% endif %}"
-                                   value="{{ link.iframe_height }}"
-                                   min="200" max="2000"
-                                   data-link-id="{{ link.id }}">
+                            <div class="iframe-settings" style="{% if not link.embed %}display: none;{% endif %}">
+                                <input type="number" class="form-control form-control-sm iframe-height me-2" 
+                                       style="width: 80px;"
+                                       value="{{ link.iframe_height }}"
+                                       min="200" max="2000"
+                                       data-link-id="{{ link.id }}"
+                                       placeholder="Height">
+                                <input type="number" class="form-control form-control-sm iframe-width me-2" 
+                                       style="width: 70px;"
+                                       value="{{ link.iframe_width_percent }}"
+                                       min="10" max="100"
+                                       data-link-id="{{ link.id }}"
+                                       placeholder="Width %">
+                            </div>
                             <div class="btn-group ms-2">
                                 <button class="btn btn-sm btn-outline-secondary edit-link" data-bs-toggle="modal" data-bs-target="#editLinkModal" 
                                         data-link-id="{{ link.id }}"
@@ -160,7 +177,7 @@
                             <option value="fas fa-folder">📁 Folder</option>
                         </select>
                     </div>
-                    </form>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -174,7 +191,7 @@
 {% block scripts %}
 <script>
 document.getElementById('embedLink').addEventListener('change', function() {
-    document.getElementById('iframeHeightGroup').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('iframeSettings').style.display = this.checked ? 'block' : 'none';
 });
 
 document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
@@ -186,7 +203,8 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
         icon_class: document.getElementById('iconClass').value,
         embed: document.getElementById('embedLink').checked,
         show_in_nav: document.getElementById('showInNav').checked,
-        iframe_height: parseInt(document.getElementById('iframeHeight').value)
+        iframe_height: parseInt(document.getElementById('iframeHeight').value),
+        iframe_width_percent: parseInt(document.getElementById('iframeWidth').value)
     };
 
     try {
@@ -209,17 +227,18 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
     }
 });
 
+// Update the embed-toggle event listener to show/hide both height and width inputs
 document.querySelectorAll('.embed-toggle').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
-        const heightInput = this.closest('.d-flex').querySelector('.iframe-height');
-        heightInput.style.display = this.checked ? 'inline-block' : 'none';
+        const settings = this.closest('.d-flex').querySelector('.iframe-settings');
+        settings.style.display = this.checked ? 'flex' : 'none';
     });
 });
 
-document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
-    checkbox.addEventListener('change', async function() {
+// Add event listener for width input changes
+document.querySelectorAll('.iframe-width').forEach(input => {
+    input.addEventListener('change', async function() {
         const linkId = this.dataset.linkId;
-        const isEmbed = this.classList.contains('embed-toggle');
         try {
             const response = await fetch(`/api/nav_links/${linkId}`, {
                 method: 'PUT',
@@ -227,18 +246,18 @@ document.querySelectorAll('.embed-toggle, .nav-toggle').forEach(checkbox => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    [isEmbed ? 'embed' : 'show_in_nav']: this.checked
+                    iframe_width_percent: parseInt(this.value)
                 })
             });
 
             if (!response.ok) {
-                alert('Failed to update setting. Please try again.');
-                this.checked = !this.checked; // Revert the checkbox
+                alert('Failed to update iframe width. Please try again.');
+                this.value = this.defaultValue;
             }
         } catch (error) {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
-            this.checked = !this.checked; // Revert the checkbox
+            this.value = this.defaultValue;
         }
     });
 });
@@ -268,6 +287,7 @@ document.querySelectorAll('.iframe-height').forEach(input => {
         }
     });
 });
+
 
 // Edit link functionality
 document.querySelectorAll('.edit-link').forEach(button => {
