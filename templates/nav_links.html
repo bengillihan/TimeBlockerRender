@@ -19,13 +19,11 @@
                             <li>Copy the IframePub URL (ends with "...&embed=true")</li>
                         </ol>
                     </li>
-                    <li><strong>Notion:</strong> 
-                        For embedding without showing in navigation:
+                    <li><strong>Custom Iframe Code:</strong>
                         <ol>
-                            <li>Share your Notion page and make it public</li>
-                            <li>Click "Share" > "Copy link"</li>
-                            <li>Add "?pvs=4" at the end of the URL for better embedding</li>
-                            <li>Check "Embed only" to hide from navigation</li>
+                            <li>Copy your embed code from the source website</li>
+                            <li>Paste it in the "Custom Iframe Code" field</li>
+                            <li>The code should look like: <code>&lt;iframe src="..." width="100%" height="600" ...&gt;</code></li>
                         </ol>
                     </li>
                 </ul>
@@ -65,21 +63,33 @@
                         <div class="mb-3">
                             <div class="form-check mb-2">
                                 <input type="checkbox" class="form-check-input" id="embedLink" name="embed">
-                                <label class="form-check-label" for="embedLink">Embed this link at the bottom of the page</label>
+                                <label class="form-check-label" for="embedLink">Embed this link</label>
                             </div>
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="showInNav" name="show_in_nav" checked>
                                 <label class="form-check-label" for="showInNav">Show in navigation bar</label>
                             </div>
-                            <div class="mt-2" id="iframeSettings" style="display: none;">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label for="iframeHeight" class="form-label">Height (pixels)</label>
-                                        <input type="number" class="form-control" id="iframeHeight" name="iframe_height" value="600" min="200" max="2000">
+                            <div class="mt-2" id="embedSettings" style="display: none;">
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="useCustomCode" name="use_custom_code">
+                                    <label class="form-check-label" for="useCustomCode">Use custom iframe code</label>
+                                </div>
+                                <div id="standardSettings">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="iframeHeight" class="form-label">Height (pixels)</label>
+                                            <input type="number" class="form-control" id="iframeHeight" name="iframe_height" value="600" min="200" max="2000">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="iframeWidth" class="form-label">Width (%)</label>
+                                            <input type="number" class="form-control" id="iframeWidth" name="iframe_width_percent" value="100" min="10" max="100">
+                                        </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="iframeWidth" class="form-label">Width (%)</label>
-                                        <input type="number" class="form-control" id="iframeWidth" name="iframe_width_percent" value="100" min="10" max="100">
+                                </div>
+                                <div id="customCodeSettings" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="customIframeCode" class="form-label">Custom Iframe Code</label>
+                                        <textarea class="form-control" id="customIframeCode" name="custom_iframe_code" rows="3" placeholder="<iframe src='...' width='100%' height='600' frameborder='0'></iframe>"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -111,6 +121,7 @@
                                 <label class="form-check-label">Show in Nav</label>
                             </div>
                             <div class="iframe-settings" style="{% if not link.embed %}display: none;{% endif %}">
+                                {% if not link.custom_iframe_code %}
                                 <input type="number" class="form-control form-control-sm iframe-height me-2" 
                                        style="width: 80px;"
                                        value="{{ link.iframe_height }}"
@@ -123,13 +134,22 @@
                                        min="10" max="100"
                                        data-link-id="{{ link.id }}"
                                        placeholder="Width %">
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-info me-2 view-iframe-code"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#viewIframeCodeModal"
+                                        data-iframe-code="{{ link.custom_iframe_code }}">
+                                    View Code
+                                </button>
+                                {% endif %}
                             </div>
                             <div class="btn-group ms-2">
                                 <button class="btn btn-sm btn-outline-secondary edit-link" data-bs-toggle="modal" data-bs-target="#editLinkModal" 
                                         data-link-id="{{ link.id }}"
                                         data-link-name="{{ link.name }}"
                                         data-link-url="{{ link.url }}"
-                                        data-link-icon="{{ link.icon_class }}">
+                                        data-link-icon="{{ link.icon_class }}"
+                                        data-custom-code="{{ link.custom_iframe_code }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger delete-link">
@@ -177,6 +197,10 @@
                             <option value="fas fa-folder">📁 Folder</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="editCustomIframeCode" class="form-label">Custom Iframe Code</label>
+                        <textarea class="form-control" id="editCustomIframeCode" rows="3"></textarea>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -186,26 +210,53 @@
         </div>
     </div>
 </div>
+
+<!-- View Iframe Code Modal -->
+<div class="modal fade" id="viewIframeCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Iframe Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="iframeCodeDisplay"></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.getElementById('embedLink').addEventListener('change', function() {
-    document.getElementById('iframeSettings').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('embedSettings').style.display = this.checked ? 'block' : 'none';
+});
+
+document.getElementById('useCustomCode').addEventListener('change', function() {
+    document.getElementById('standardSettings').style.display = this.checked ? 'none' : 'block';
+    document.getElementById('customCodeSettings').style.display = this.checked ? 'block' : 'none';
 });
 
 document.getElementById('addLinkForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const useCustomCode = document.getElementById('useCustomCode').checked;
     const formData = {
         name: document.getElementById('linkName').value,
         url: document.getElementById('linkUrl').value,
         icon_class: document.getElementById('iconClass').value,
         embed: document.getElementById('embedLink').checked,
-        show_in_nav: document.getElementById('showInNav').checked,
-        iframe_height: parseInt(document.getElementById('iframeHeight').value),
-        iframe_width_percent: parseInt(document.getElementById('iframeWidth').value)
+        show_in_nav: document.getElementById('showInNav').checked
     };
+
+    if (useCustomCode) {
+        formData.custom_iframe_code = document.getElementById('customIframeCode').value;
+    } else {
+        formData.iframe_height = parseInt(document.getElementById('iframeHeight').value);
+        formData.iframe_width_percent = parseInt(document.getElementById('iframeWidth').value);
+    }
 
     try {
         const response = await fetch('/api/nav_links', {
@@ -227,67 +278,13 @@ document.getElementById('addLinkForm').addEventListener('submit', async function
     }
 });
 
-// Update the embed-toggle event listener to show/hide both height and width inputs
-document.querySelectorAll('.embed-toggle').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        const settings = this.closest('.d-flex').querySelector('.iframe-settings');
-        settings.style.display = this.checked ? 'flex' : 'none';
+// View iframe code button handler
+document.querySelectorAll('.view-iframe-code').forEach(button => {
+    button.addEventListener('click', function() {
+        const code = this.dataset.iframeCode;
+        document.getElementById('iframeCodeDisplay').textContent = code;
     });
 });
-
-// Add event listener for width input changes
-document.querySelectorAll('.iframe-width').forEach(input => {
-    input.addEventListener('change', async function() {
-        const linkId = this.dataset.linkId;
-        try {
-            const response = await fetch(`/api/nav_links/${linkId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    iframe_width_percent: parseInt(this.value)
-                })
-            });
-
-            if (!response.ok) {
-                alert('Failed to update iframe width. Please try again.');
-                this.value = this.defaultValue;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-            this.value = this.defaultValue;
-        }
-    });
-});
-
-document.querySelectorAll('.iframe-height').forEach(input => {
-    input.addEventListener('change', async function() {
-        const linkId = this.dataset.linkId;
-        try {
-            const response = await fetch(`/api/nav_links/${linkId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    iframe_height: parseInt(this.value)
-                })
-            });
-
-            if (!response.ok) {
-                alert('Failed to update iframe height. Please try again.');
-                this.value = this.defaultValue; // Revert to previous value
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-            this.value = this.defaultValue; // Revert to previous value
-        }
-    });
-});
-
 
 // Edit link functionality
 document.querySelectorAll('.edit-link').forEach(button => {
@@ -296,11 +293,13 @@ document.querySelectorAll('.edit-link').forEach(button => {
         const linkName = this.dataset.linkName;
         const linkUrl = this.dataset.linkUrl;
         const linkIcon = this.dataset.linkIcon;
+        const customCode = this.dataset.customCode;
 
         document.getElementById('editLinkId').value = linkId;
         document.getElementById('editLinkName').value = linkName;
         document.getElementById('editLinkUrl').value = linkUrl;
         document.getElementById('editIconClass').value = linkIcon;
+        document.getElementById('editCustomIframeCode').value = customCode || '';
     });
 });
 
@@ -309,7 +308,8 @@ document.getElementById('saveEditLink').addEventListener('click', async function
     const formData = {
         name: document.getElementById('editLinkName').value,
         url: document.getElementById('editLinkUrl').value,
-        icon_class: document.getElementById('editIconClass').value
+        icon_class: document.getElementById('editIconClass').value,
+        custom_iframe_code: document.getElementById('editCustomIframeCode').value
     };
 
     try {

@@ -490,7 +490,8 @@ def add_nav_link():
         embed=data.get('embed', False),
         show_in_nav=data.get('show_in_nav', True),
         iframe_height=data.get('iframe_height', 600),
-        iframe_width_percent=data.get('iframe_width_percent', 100)  # Add width percentage
+        iframe_width_percent=data.get('iframe_width_percent', 100),
+        custom_iframe_code=data.get('custom_iframe_code')
     )
     db.session.add(link)
     db.session.commit()
@@ -503,7 +504,8 @@ def add_nav_link():
         'embed': link.embed,
         'show_in_nav': link.show_in_nav,
         'iframe_height': link.iframe_height,
-        'iframe_width_percent': link.iframe_width_percent
+        'iframe_width_percent': link.iframe_width_percent,
+        'custom_iframe_code': link.custom_iframe_code
     })
 
 @app.route('/api/nav_links/<int:link_id>', methods=['PUT', 'DELETE'])
@@ -530,8 +532,10 @@ def nav_link_operations(link_id):
         link.icon_class = data['icon_class']
     if 'iframe_height' in data:
         link.iframe_height = data['iframe_height']
-    if 'iframe_width_percent' in data:  # Add width percentage handling
+    if 'iframe_width_percent' in data:
         link.iframe_width_percent = data['iframe_width_percent']
+    if 'custom_iframe_code' in data:
+        link.custom_iframe_code = data['custom_iframe_code']
 
     db.session.commit()
     return jsonify({
@@ -542,7 +546,8 @@ def nav_link_operations(link_id):
         'embed': link.embed,
         'show_in_nav': link.show_in_nav,
         'iframe_height': link.iframe_height,
-        'iframe_width_percent': link.iframe_width_percent
+        'iframe_width_percent': link.iframe_width_percent,
+        'custom_iframe_code': link.custom_iframe_code
     })
 
 @app.route('/api/templates', methods=['POST'])
