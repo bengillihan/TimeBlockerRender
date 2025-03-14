@@ -12,31 +12,45 @@
                     <form id="timePreferencesForm">
                         <div class="mb-3">
                             <label for="dayStartTime" class="form-label">Day Start Time</label>
-                            <input type="time" class="form-control" id="dayStartTime" name="day_start_time" 
-                                   value="{{ current_user.day_start_time.strftime('%H:%M') }}" required>
-                            <small class="text-muted">Choose when your day typically starts</small>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="dayStartTime" name="day_start_time" 
+                                       value="{{ current_user.day_start_time.strftime('%H:%M') }}" required
+                                       step="300">
+                                <small class="text-muted d-block w-100 mt-2">
+                                    Use arrow keys to adjust time in 5-minute increments
+                                </small>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="dayEndTime" class="form-label">Day End Time</label>
-                            <input type="time" class="form-control" id="dayEndTime" name="day_end_time" 
-                                   value="{{ current_user.day_end_time.strftime('%H:%M') }}" required>
-                            <small class="text-muted">Choose when your day typically ends</small>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="dayEndTime" name="day_end_time" 
+                                       value="{{ current_user.day_end_time.strftime('%H:%M') }}" required
+                                       step="300">
+                                <small class="text-muted d-block w-100 mt-2">
+                                    Use arrow keys to adjust time in 5-minute increments
+                                </small>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-primary">Save Preferences</button>
+                            <span id="savedStatus" class="text-success" style="display: none;">
+                                <i class="fas fa-check"></i> Changes saved
+                            </span>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.getElementById('timePreferencesForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const formData = {
         day_start_time: document.getElementById('dayStartTime').value,
         day_end_time: document.getElementById('dayEndTime').value
@@ -52,8 +66,11 @@ document.getElementById('timePreferencesForm').addEventListener('submit', async 
         });
 
         if (response.ok) {
-            alert('Time preferences saved successfully!');
-            window.location.reload();
+            const savedStatus = document.getElementById('savedStatus');
+            savedStatus.style.display = 'inline';
+            setTimeout(() => {
+                savedStatus.style.display = 'none';
+            }, 3000);
         } else {
             alert('Failed to save preferences. Please try again.');
         }
@@ -61,6 +78,34 @@ document.getElementById('timePreferencesForm').addEventListener('submit', async 
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
     }
+});
+
+// Handle arrow key navigation for time inputs
+document.querySelectorAll('input[type="time"]').forEach(input => {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+
+            const currentTime = this.value;
+            const [hours, minutes] = currentTime.split(':').map(Number);
+            const totalMinutes = hours * 60 + minutes;
+
+            // Adjust by 5 minutes
+            const adjustment = e.key === 'ArrowUp' ? 5 : -5;
+            let newTotalMinutes = totalMinutes + adjustment;
+
+            // Ensure we stay within 24 hours
+            if (newTotalMinutes < 0) newTotalMinutes += 24 * 60;
+            if (newTotalMinutes >= 24 * 60) newTotalMinutes -= 24 * 60;
+
+            // Convert back to hours and minutes
+            const newHours = Math.floor(newTotalMinutes / 60);
+            const newMinutes = newTotalMinutes % 60;
+
+            // Format the time with leading zeros
+            this.value = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+        }
+    });
 });
 </script>
 {% endblock %}
