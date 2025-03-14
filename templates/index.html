@@ -112,9 +112,7 @@
                         <h6 class="text-muted mb-2">Early Morning</h6>
                         {% for hour in range(5, 12) %}
                             {% for minute in [0, 15, 30, 45] %}
-                                {% if hour == 5 and minute < 30 %}
-                                    {% continue %}
-                                {% endif %}
+                                {% if not (hour == 5 and minute < 30) %}
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
@@ -155,6 +153,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                {% endif %}
                             {% endfor %}
                         {% endfor %}
                     </div>
