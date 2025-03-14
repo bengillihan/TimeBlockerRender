@@ -11,17 +11,24 @@
                 <ul class="mb-0">
                     <li><strong>Secure Embedding:</strong>
                         <ol>
-                            <li>Click "Generate Embed Code" for a link you want to embed</li>
-                            <li>Copy the generated iframe code</li>
-                            <li>Paste it where you want to embed the content</li>
-                            <li>The embed token will expire after 24 hours</li>
+                            <li>Generate an embed token by clicking "Generate Embed Code"</li>
+                            <li>Copy the generated iframe code which includes the secure token</li>
+                            <li>The embedded content will be pre-authenticated - no need to sign in again</li>
+                            <li>Tokens expire after 24 hours for security</li>
                         </ol>
                     </li>
-                    <li><strong>Custom Iframe Code:</strong>
+                    <li><strong>Embedding Internal Pages:</strong>
                         <ol>
-                            <li>Copy your embed code from the source website</li>
+                            <li>For internal pages like Tasks or Calendar, use paths like '/tasks' or '/calendar'</li>
+                            <li>These will automatically use secure token authentication</li>
+                            <li>The content will be pre-authenticated using your account</li>
+                        </ol>
+                    </li>
+                    <li><strong>External Content:</strong>
+                        <ol>
+                            <li>For external websites, use their provided embed code</li>
                             <li>Paste it in the "Custom Iframe Code" field</li>
-                            <li>The code should look like: <code>&lt;iframe src="..." width="100%" height="600" ...&gt;</code></li>
+                            <li>Note: External sign-in may not work in iframes due to security restrictions</li>
                         </ol>
                     </li>
                 </ul>
@@ -434,7 +441,7 @@ document.querySelectorAll('.edit-link').forEach(button => {
         const linkUrl = this.dataset.linkUrl;
         const linkIcon = this.dataset.linkIcon;
         const customCode = this.dataset.customCode;
-        const fullWidth = this.dataset.fullWidth === 'true'; //Corrected to lowercase 'true'
+        const fullWidth = this.dataset.fullWidth === 'true';
 
         document.getElementById('editLinkId').value = linkId;
         document.getElementById('editLinkName').value = linkName;
