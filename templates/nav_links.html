@@ -9,19 +9,18 @@
             <div class="alert alert-info">
                 <h6>🔗 Embedding Tips:</h6>
                 <ul class="mb-0">
-                    <li><strong>Secure Embedding:</strong>
+                    <li><strong>Cross-Application Embedding:</strong>
                         <ol>
-                            <li>Generate an embed token by clicking "Generate Embed Code"</li>
-                            <li>Copy the generated iframe code which includes the secure token</li>
-                            <li>The embedded content will be pre-authenticated - no need to sign in again</li>
-                            <li>Tokens expire after 24 hours for security</li>
+                            <li>Generate an embed token from the source application</li>
+                            <li>Copy the generated token and add it to your iframe URL: <code>?token=your_token_here</code></li>
+                            <li>The token will expire after 24 hours for security</li>
+                            <li>Each application needs its own token</li>
                         </ol>
                     </li>
-                    <li><strong>Embedding Internal Pages:</strong>
+                    <li><strong>Internal Pages:</strong>
                         <ol>
                             <li>For internal pages like Tasks or Calendar, use paths like '/tasks' or '/calendar'</li>
-                            <li>These will automatically use secure token authentication</li>
-                            <li>The content will be pre-authenticated using your account</li>
+                            <li>Click "Generate Embed Code" to get a pre-authenticated iframe</li>
                         </ol>
                     </li>
                     <li><strong>External Content:</strong>
