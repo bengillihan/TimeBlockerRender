@@ -26,9 +26,15 @@ app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Disable resource-intensive event system
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
+    "pool_recycle": 300,  # Recycle connections after 5 minutes
+    "pool_pre_ping": True,  # Check connection validity before using it
+    "pool_size": 3,  # Lower limit on max connections
+    "max_overflow": 2,  # Reduce connections over pool_size 
+    "pool_timeout": 30,  # Seconds to wait before timing out
+    "connect_args": {"client_encoding": "utf8"},
+    "echo": False,  # Disable SQL query logging to reduce overhead
 }
 
 # Initialize extensions
@@ -37,11 +43,30 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Set shorter session lifetime (1 hour) to reduce idle connections
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+
 # Import routes after app initialization to avoid circular imports
 from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
+
+# Set session to permanent but with defined lifetime
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    # Marks the user's session as active to prevent premature disconnect
+    if current_user.is_authenticated:
+        session.modified = True
+
+# Ensure database connections are properly closed after each request
+@app.teardown_request
+def cleanup_request(exception=None):
+    db.session.close()
+    if exception:
+        db.session.rollback()
+        logger.error(f"Request exception: {str(exception)}")
 
 @login_manager.user_loader
 def load_user(user_id):
