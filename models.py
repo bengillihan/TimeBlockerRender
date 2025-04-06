@@ -12,8 +12,8 @@ class User(UserMixin, db.Model):
     selected_calendars = db.Column(db.JSON)
     nylas_access_token = db.Column(db.String(512))
     # Add day start/end time preferences
-    day_start_time = db.Column(db.Time, default=datetime.strptime('09:00', '%H:%M').time())
-    day_end_time = db.Column(db.Time, default=datetime.strptime('17:00', '%H:%M').time())
+    day_start_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time())
+    day_end_time = db.Column(db.Time, default=datetime.strptime('16:30', '%H:%M').time())
 
 class NavLink(db.Model):
     id = db.Column(db.Integer, primary_key=True)
