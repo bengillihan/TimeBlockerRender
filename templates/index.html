@@ -80,8 +80,8 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Today's Priorities</h5>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#taskSelectorModal">
-                    <i class="fas fa-plus"></i> Add from Tasks
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#todoSelectorModal">
+                    <i class="fas fa-plus"></i> Add from ToDos
                 </button>
             </div>
             <div class="card-body">
@@ -94,7 +94,7 @@
                                        {% if i < priorities|length and priorities[i].completed %}checked{% endif %}>
                             </div>
                             <input type="text" class="form-control priority-input {% if i < priorities|length and priorities[i].completed %}completed{% endif %}"
-                                   placeholder="Priority {{ i + 1 }} or select from your tasks"
+                                   placeholder="Priority {{ i + 1 }} or select from your todos"
                                    value="{{ priorities[i].content if i < priorities|length else '' }}">
                         </div>
                     </li>
@@ -323,37 +323,116 @@
     </div>
 </div>
 
-<!-- Add Task Modal -->
-<div class="modal fade" id="addTaskModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- ToDo Selector Modal -->
+<div class="modal fade" id="todoSelectorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add New Task</h5>
+                <h5 class="modal-title">Add ToDo to Priorities</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="quickTaskForm">
-                    <div class="mb-3">
-                        <label for="taskTitle" class="form-label">Task Title</label>
-                        <input type="text" class="form-control" id="taskTitle" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="taskDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="taskDescription" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="taskCategory" class="form-label">Category</label>
-                        <select class="form-select" id="taskCategory" required>
-                            {% for category in categories %}
-                            <option value="{{ category.id }}">{{ category.name }}</option>
+                <div class="row">
+                    {% for role in all_roles %}
+                    <div class="col-md-6 mb-3">
+                        <h6 style="color: {{ role.color }}">
+                            <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
+                            {{ role.name }}
+                        </h6>
+                        <div class="list-group">
+                            {% for todo in all_todos %}
+                                {% if todo.role_id == role.id and not todo.completed %}
+                                <button type="button" class="list-group-item list-group-item-action todo-selector-item" 
+                                        data-todo-title="{{ todo.title }}" 
+                                        data-todo-id="{{ todo.id }}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ todo.title }}</h6>
+                                            {% if todo.description %}
+                                            <p class="mb-1 text-muted">{{ todo.description[:50] }}{% if todo.description|length > 50 %}...{% endif %}</p>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                Priority: {{ todo.priority|title }}
+                                                {% if todo.due_date %}
+                                                | Due: {{ todo.due_date.strftime('%m/%d') }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </button>
+                                {% endif %}
                             {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add ToDo Modal -->
+<div class="modal fade" id="addTodoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New ToDo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTodoForm">
+                    <div class="mb-3">
+                        <label for="todoTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="todoTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="todoDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoRole" class="form-label">Role</label>
+                        <select class="form-select" id="todoRole" name="role_id">
+                            <option value="">Select a role</option>
+                            {% for role in all_roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoPriority" class="form-label">Priority</label>
+                        <select class="form-select" id="todoPriority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoDueDate" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="todoDueDate" name="due_date">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="todoRecurring" name="is_recurring">
+                        <label class="form-check-label" for="todoRecurring">
+                            Recurring ToDo
+                        </label>
+                    </div>
+                    <div class="mb-3" id="recurrenceRuleDiv" style="display: none;">
+                        <label for="todoRecurrenceRule" class="form-label">Recurrence Rule</label>
+                        <select class="form-select" id="todoRecurrenceRule" name="recurrence_rule">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
                         </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveQuickTask">Save Task</button>
+                <button type="button" class="btn btn-primary" onclick="saveTodo()">Save ToDo</button>
             </div>
         </div>
     </div>
@@ -737,6 +816,100 @@ async function importTodos() {
         } catch (error) {
             console.error('Error importing todos:', error);
             alert('Failed to import todos');
+        }
+    }
+}
+
+// ToDo selector functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle todo selection for priorities
+    document.querySelectorAll('.todo-selector-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const todoTitle = this.dataset.todoTitle;
+            const todoId = this.dataset.todoId;
+            
+            // Find the first empty priority input
+            const priorityInputs = document.querySelectorAll('.priority-input');
+            let emptyInput = null;
+            
+            for (let input of priorityInputs) {
+                if (!input.value.trim()) {
+                    emptyInput = input;
+                    break;
+                }
+            }
+            
+            if (emptyInput) {
+                emptyInput.value = todoTitle;
+                emptyInput.dataset.todoId = todoId;
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('todoSelectorModal'));
+                modal.hide();
+                
+                // Show success message
+                if (typeof showToast === 'function') {
+                    showToast('ToDo added to priorities', 'success');
+                }
+            } else {
+                alert('All priority slots are filled. Please clear one first.');
+            }
+        });
+    });
+    
+    // Add save functionality for priorities
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            savePriorities();
+        });
+    }
+});
+
+async function savePriorities() {
+    const priorityInputs = document.querySelectorAll('.priority-input');
+    const priorities = [];
+    
+    priorityInputs.forEach((input, index) => {
+        if (input.value.trim()) {
+            const checkbox = input.parentElement.querySelector('.priority-checkbox');
+            priorities.push({
+                content: input.value.trim(),
+                order: index,
+                completed: checkbox ? checkbox.checked : false,
+                todo_id: input.dataset.todoId || null
+            });
+        }
+    });
+    
+    try {
+        const response = await fetch('/save-daily-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                priorities: priorities,
+                date: document.getElementById('datePicker').value
+            })
+        });
+        
+        if (response.ok) {
+            const lastSavedElement = document.getElementById('lastSaved');
+            if (lastSavedElement) {
+                const now = new Date();
+                lastSavedElement.textContent = `Last saved: ${now.toLocaleTimeString()}`;
+            }
+            if (typeof showToast === 'function') {
+                showToast('Priorities saved successfully', 'success');
+            }
+        } else {
+            throw new Error('Failed to save priorities');
+        }
+    } catch (error) {
+        console.error('Error saving priorities:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to save priorities', 'error');
         }
     }
 }
