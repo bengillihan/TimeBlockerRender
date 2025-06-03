@@ -220,7 +220,8 @@ def index():
                          day_start=day_start,
                          day_end=day_end,
                          available_tasks=available_tasks,
-                         all_open_tasks=all_open_tasks)
+                         all_open_tasks=all_open_tasks,
+                         today=date)
 
 @app.route('/login')
 def login():
