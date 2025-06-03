@@ -285,9 +285,9 @@
                                                 <small class="text-muted">
                                                     <i class="fas fa-calendar-alt me-1"></i>
                                                     Due: {{ task.due_date.strftime('%m/%d') }}
-                                                    {% if task.due_date < today %}
+                                                    {% if task.due_date.date() < today %}
                                                     <span class="badge bg-danger ms-1">Overdue</span>
-                                                    {% elif task.due_date == today %}
+                                                    {% elif task.due_date.date() == today %}
                                                     <span class="badge bg-warning ms-1">Due Today</span>
                                                     {% endif %}
                                                 </small>
