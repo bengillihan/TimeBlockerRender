@@ -255,6 +255,71 @@
     </div>
 </div>
 
+<!-- Open Tasks Section -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Open Tasks</h5>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='/tasks'">
+                    <i class="fas fa-plus"></i> Add New Task
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for role in [{'id': 1, 'name': 'APS', 'color': '#007bff'}, {'id': 2, 'name': 'Home', 'color': '#28a745'}, {'id': 3, 'name': 'Church', 'color': '#6f42c1'}] %}
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 h-100" style="border-color: {{ role.color }}!important;">
+                            <h6 class="mb-3" style="color: {{ role.color }}">
+                                <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
+                                {{ role.name }}
+                            </h6>
+                            <div class="task-list">
+                                {% for task in all_open_tasks %}
+                                    {% if task.role_id == role.id %}
+                                    <div class="task-item mb-2 p-2 bg-light rounded">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold">{{ task.title }}</div>
+                                                {% if task.due_date %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-alt me-1"></i>
+                                                    Due: {{ task.due_date.strftime('%m/%d') }}
+                                                    {% if task.due_date < today %}
+                                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                                    {% elif task.due_date == today %}
+                                                    <span class="badge bg-warning ms-1">Due Today</span>
+                                                    {% endif %}
+                                                </small>
+                                                {% endif %}
+                                                {% if task.is_recurring %}
+                                                <small class="badge bg-secondary ms-1">
+                                                    <i class="fas fa-repeat"></i>
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                            <div class="task-actions">
+                                                <span class="badge bg-{{ task.get_priority_color() }}">{{ task.priority }}</span>
+                                            </div>
+                                        </div>
+                                        {% if task.description %}
+                                        <div class="mt-1">
+                                            <small class="text-muted">{{ task.description[:60] }}{% if task.description|length > 60 %}...{% endif %}</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-4">
     <div class="col">
         <div class="card">

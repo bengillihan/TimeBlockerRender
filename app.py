@@ -122,6 +122,15 @@ def index():
         Task.priority.desc(),
         Task.due_date.asc()
     ).limit(20).all()  # Limit to top 20 available tasks
+    
+    # Get all open tasks for the open tasks section, sorted by due date
+    all_open_tasks = Task.query.filter(
+        Task.user_id == current_user.id,
+        Task.completed == False
+    ).order_by(
+        Task.due_date.asc().nullslast(),  # Due date ascending, nulls last
+        Task.priority.desc()
+    ).all()
 
     # Get calendar events for the selected date
     calendar_events = []
@@ -210,7 +219,8 @@ def index():
                          has_google_calendar=has_google_calendar,
                          day_start=day_start,
                          day_end=day_end,
-                         available_tasks=available_tasks)
+                         available_tasks=available_tasks,
+                         all_open_tasks=all_open_tasks)
 
 @app.route('/login')
 def login():
