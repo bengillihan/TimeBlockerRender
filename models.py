@@ -1,11 +1,12 @@
 from datetime import datetime
 from app import db
 from flask_login import UserMixin
+from sqlalchemy import Index
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
     nav_links = db.relationship('NavLink', backref='user', lazy=True)
@@ -15,6 +16,8 @@ class User(UserMixin, db.Model):
     day_start_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time())
     day_end_time = db.Column(db.Time, default=datetime.strptime('16:30', '%H:%M').time())
     roles = db.relationship('Role', backref='user', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class NavLink(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,35 +70,46 @@ class Category(db.Model):
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     time_blocks = db.relationship('TimeBlock', backref='task', lazy=True)
     
     # Enhanced task tracking fields
-    due_date = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(20), default='pending')  # pending, in_progress, completed, blocked
+    due_date = db.Column(db.DateTime, nullable=True, index=True)
+    status = db.Column(db.String(20), default='pending', index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=True)
-    is_recurring = db.Column(db.Boolean, default=False)
-    recurrence_rule = db.Column(db.String(100), nullable=True)  # For storing cron-like rules
-    priority = db.Column(db.String(10), default='medium')  # low, medium, high, urgent
-    completed = db.Column(db.Boolean, default=False)
+    is_recurring = db.Column(db.Boolean, default=False, index=True)
+    recurrence_rule = db.Column(db.String(100), nullable=True)
+    next_occurrence = db.Column(db.DateTime, nullable=True, index=True)  # New field for recurring tasks
+    priority = db.Column(db.String(10), default='medium', index=True)
+    completed = db.Column(db.Boolean, default=False, index=True)
     completed_at = db.Column(db.DateTime, nullable=True)
     estimated_minutes = db.Column(db.Integer, nullable=True)
     actual_minutes = db.Column(db.Integer, nullable=True)
     notes = db.Column(db.Text)
-    tags = db.Column(db.JSON)  # Store array of tags
-    dependencies = db.Column(db.JSON)  # Store array of task IDs this task depends on
+    tags = db.Column(db.JSON)
+    dependencies = db.Column(db.JSON)
     
     # Progress tracking
-    progress_percentage = db.Column(db.Integer, default=0)  # 0-100
+    progress_percentage = db.Column(db.Integer, default=0)
     last_worked_on = db.Column(db.DateTime, nullable=True)
     
     # Subtasks relationship
     parent_task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     subtasks = db.relationship('Task', backref=db.backref('parent_task', remote_side=[id]), lazy=True)
+    
+    # Add buffer time for time blocks
+    buffer_minutes = db.Column(db.Integer, default=0)
+    
+    # Template flag
+    is_template = db.Column(db.Boolean, default=False)
+    
+    # Analytics fields
+    estimated_vs_actual_ratio = db.Column(db.Float, nullable=True)
+    completion_rate = db.Column(db.Float, nullable=True)
     
     def get_total_time_spent(self):
         """Calculate total time spent on this task from time blocks"""
@@ -110,6 +124,16 @@ class Task(db.Model):
             # Each time block represents 15 minutes
             total_minutes += 15
         return total_minutes
+    
+    def update_analytics(self):
+        """Update task analytics"""
+        if self.estimated_minutes and self.actual_minutes:
+            self.estimated_vs_actual_ratio = self.actual_minutes / self.estimated_minutes
+        
+        # Calculate completion rate based on subtasks
+        if self.subtasks:
+            completed_subtasks = sum(1 for subtask in self.subtasks if subtask.completed)
+            self.completion_rate = (completed_subtasks / len(self.subtasks)) * 100
     
     def get_status_color(self):
         """Return Bootstrap color class for task status"""
@@ -172,19 +196,26 @@ class DayTemplate(db.Model):
 
 class ToDo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=True)
-    due_date = db.Column(db.DateTime, nullable=True)
-    priority = db.Column(db.String(10), default='medium')  # low, medium, high, urgent
-    status = db.Column(db.String(20), default='todo')  # todo, in_progress, completed
-    is_recurring = db.Column(db.Boolean, default=False)
-    recurrence_rule = db.Column(db.String(100), nullable=True)  # FREQ=WEEKLY, etc.
-    completed = db.Column(db.Boolean, default=False)
+    due_date = db.Column(db.DateTime, nullable=True, index=True)
+    priority = db.Column(db.String(10), default='medium', index=True)
+    status = db.Column(db.String(20), default='todo', index=True)
+    is_recurring = db.Column(db.Boolean, default=False, index=True)
+    recurrence_rule = db.Column(db.String(100), nullable=True)
+    next_occurrence = db.Column(db.DateTime, nullable=True, index=True)  # New field for recurring todos
+    completed = db.Column(db.Boolean, default=False, index=True)
     completed_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Template flag
+    is_template = db.Column(db.Boolean, default=False)
+    
+    # Analytics fields
+    completion_rate = db.Column(db.Float, nullable=True)
     
     user = db.relationship('User', backref=db.backref('todos', lazy=True))
     assigned_role = db.relationship('Role', backref=db.backref('todos', lazy=True))
@@ -213,3 +244,13 @@ class ToDo(db.Model):
         if not self.due_date or self.completed:
             return False
         return self.due_date.date() < datetime.now().date()
+
+# Add indexes for frequently queried fields
+Index('idx_daily_plan_user_date', DailyPlan.user_id, DailyPlan.date)
+Index('idx_task_user_completed', Task.user_id, Task.completed)
+Index('idx_task_user_due_date', Task.user_id, Task.due_date)
+Index('idx_todo_user_completed', ToDo.user_id, ToDo.completed)
+Index('idx_todo_user_due_date', ToDo.user_id, ToDo.due_date)
+Index('idx_timeblock_daily_plan', TimeBlock.daily_plan_id)
+Index('idx_task_category', Task.category_id)
+Index('idx_task_role', Task.role_id)
