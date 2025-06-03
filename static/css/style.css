@@ -14,22 +14,24 @@
 .time-block {
     display: flex;
     align-items: center;
-    border: 1px solid var(--bs-border-color);
-    padding: 1px;
-    min-height: 24px; 
+    border: 1px solid #e0e0e0;
+    padding: 2px;
+    min-height: 28px; 
     cursor: move;
     position: relative;
     transition: background-color 0.15s ease-in-out;
+    background-color: #fafafa;
 }
 
 .time-block:hover {
-    background-color: var(--bs-secondary-bg);
+    background-color: #f0f0f0;
 }
 
 .time-label {
-    width: 48px; 
-    font-size: 0.75em;
-    color: var(--bs-secondary);
+    width: 50px; 
+    font-size: 0.8em;
+    color: #333;
+    font-weight: 500;
 }
 
 .time-content {
@@ -48,6 +50,7 @@
     min-width: 100px; 
     font-size: 0.85em;
     padding: 0 2px;
+    color: #333;
 }
 
 .task-notes {
