@@ -20,11 +20,11 @@
     cursor: move;
     position: relative;
     transition: background-color 0.15s ease-in-out;
-    background-color: #fafafa;
+    background-color: #f8f9ff;
 }
 
 .time-block:hover {
-    background-color: #f0f0f0;
+    background-color: #f0f2ff;
 }
 
 .time-label {
