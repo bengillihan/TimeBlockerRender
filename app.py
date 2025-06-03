@@ -1253,7 +1253,7 @@ def create_todo():
 @app.route('/api/todos/<int:todo_id>/complete', methods=['POST'])
 @login_required
 def complete_todo(todo_id):
-    """Mark a todo as completed."""
+    """Mark a todo as completed and create next occurrence if recurring."""
     todo = db.session.query(ToDo).filter(
         ToDo.id == todo_id,
         ToDo.user_id == current_user.id
@@ -1263,16 +1263,36 @@ def complete_todo(todo_id):
         return jsonify({'success': False, 'message': 'Todo not found'}), 404
     
     try:
+        # Mark current todo as completed
         todo.completed = True
         todo.completed_at = datetime.utcnow()
         todo.status = 'completed'
         todo.updated_at = datetime.utcnow()
         
+        # If it's recurring, create the next occurrence
+        if todo.is_recurring and todo.recurrence_rule:
+            next_due_date = calculate_next_due_date(todo.due_date, todo.recurrence_rule)
+            
+            if next_due_date:
+                new_todo = ToDo(
+                    title=todo.title,
+                    description=todo.description,
+                    user_id=todo.user_id,
+                    role_id=todo.role_id,
+                    due_date=next_due_date,
+                    priority=todo.priority,
+                    status='todo',
+                    is_recurring=True,
+                    recurrence_rule=todo.recurrence_rule,
+                    completed=False
+                )
+                db.session.add(new_todo)
+        
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': 'Todo marked as completed'
+            'message': 'Todo marked as completed' + (' and next occurrence created' if todo.is_recurring else '')
         })
         
     except Exception as e:
@@ -1282,6 +1302,31 @@ def complete_todo(todo_id):
             'success': False,
             'message': 'Failed to complete todo'
         }), 500
+
+def calculate_next_due_date(current_due_date, recurrence_rule):
+    """Calculate the next due date based on recurrence rule."""
+    if not current_due_date or not recurrence_rule:
+        return None
+    
+    try:
+        from dateutil.relativedelta import relativedelta
+        
+        # Parse recurrence rule (simplified for common patterns)
+        if 'FREQ=DAILY' in recurrence_rule:
+            return current_due_date + relativedelta(days=1)
+        elif 'FREQ=WEEKLY' in recurrence_rule:
+            return current_due_date + relativedelta(weeks=1)
+        elif 'FREQ=MONTHLY' in recurrence_rule:
+            if 'INTERVAL=6' in recurrence_rule:
+                return current_due_date + relativedelta(months=6)
+            else:
+                return current_due_date + relativedelta(months=1)
+        else:
+            # Default to weekly if unknown rule
+            return current_due_date + relativedelta(weeks=1)
+    except Exception as e:
+        logger.error(f"Error calculating next due date: {str(e)}")
+        return None
 
 @app.route('/api/import-todos', methods=['POST'])
 @login_required
