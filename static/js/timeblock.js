@@ -285,6 +285,36 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
+        // Handle task suggestion clicks for daily priorities
+        document.querySelectorAll('.task-suggestion').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskTitle = this.dataset.taskTitle;
+                const taskPriority = this.dataset.taskPriority;
+                const taskRole = this.dataset.taskRole;
+                
+                // Find first empty priority slot
+                const priorityInputs = document.querySelectorAll('.priority-input');
+                for (let input of priorityInputs) {
+                    if (!input.value.trim()) {
+                        const formattedTask = taskRole ? 
+                            `[${taskRole}] ${taskTitle}` : 
+                            taskTitle;
+                        input.value = formattedTask;
+                        
+                        // Add visual feedback
+                        this.classList.add('btn-success');
+                        this.innerHTML = '<i class="fas fa-check"></i> Added';
+                        setTimeout(() => {
+                            this.style.display = 'none';
+                        }, 1000);
+                        
+                        saveData();
+                        break;
+                    }
+                }
+            });
+        });
+
         // Handle quick task creation
         document.getElementById('saveQuickTask')?.addEventListener('click', function () {
             const taskTitle = document.getElementById('taskTitle');
