@@ -123,93 +123,82 @@
             </div>
             <div class="card-body">
                 <div id="timeBlocks" class="time-blocks">
-                    {% set start_hour = current_user.day_start_time.hour %}
-                    {% set start_minute = current_user.day_start_time.minute %}
-                    {% set end_hour = current_user.day_end_time.hour %}
-                    {% set end_minute = current_user.day_end_time.minute %}
-                    
-                    {% set total_minutes = (end_hour * 60 + end_minute) - (start_hour * 60 + start_minute) %}
-                    {% set half_minutes = total_minutes // 2 %}
-                    {% set mid_time_minutes = start_hour * 60 + start_minute + half_minutes %}
-                    {% set mid_hour = mid_time_minutes // 60 %}
-                    {% set mid_minute = mid_time_minutes % 60 %}
-
-                    <!-- First Half -->
+                    <!-- Morning Hours -->
                     <div class="time-block-column">
                         <h6 class="text-muted mb-2">Morning</h6>
-                        {% set current_minutes = start_hour * 60 + start_minute %}
-                        {% while current_minutes < mid_time_minutes %}
-                            {% set hour = current_minutes // 60 %}
-                            {% set minute = current_minutes % 60 %}
-                            {% set current_time = '%02d:%02d'|format(hour, minute) %}
-                            {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
-                            <div class="time-block" data-time="{{ current_time }}">
-                                <div class="time-label">{{ current_time }}</div>
-                                <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
-                                     {% if saved_block and saved_block.task_id and categories %}
-                                     style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
-                                     {% endif %}>
-                                    <select class="task-select">
-                                        <option value="">Select a task</option>
-                                        {% for category in categories %}
-                                            <optgroup label="{{ category.name }}">
-                                                {% for task in category.tasks %}
-                                                    <option value="{{ task.id }}"
-                                                            data-category-color="{{ category.color }}"
-                                                            {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                        {{ task.title }}
-                                                    </option>
-                                                {% endfor %}
-                                            </optgroup>
-                                        {% endfor %}
-                                    </select>
-                                    <input type="text" class="task-notes"
-                                           placeholder="Notes..."
-                                           maxlength="15"
-                                           value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                        {% for hour in range(current_user.day_start_time.hour, current_user.day_start_time.hour + ((current_user.day_end_time.hour - current_user.day_start_time.hour) // 2)) %}
+                            {% for minute in [0, 15, 30, 45] %}
+                                {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                                {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                                <div class="time-block" data-time="{{ current_time }}">
+                                    <div class="time-label">{{ current_time }}</div>
+                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
+                                         {% if saved_block and saved_block.task_id and categories %}
+                                         style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                         {% endif %}>
+                                        <select class="task-select">
+                                            <option value="">Select a task</option>
+                                            {% for category in categories %}
+                                                <optgroup label="{{ category.name }}">
+                                                    {% for task in category.tasks %}
+                                                        <option value="{{ task.id }}"
+                                                                data-category-color="{{ category.color }}"
+                                                                {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                            {{ task.title }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </optgroup>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" class="task-notes"
+                                               placeholder="Notes..."
+                                               maxlength="15"
+                                               value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                                    </div>
                                 </div>
-                            </div>
-                            {% set current_minutes = current_minutes + 15 %}
-                        {% endwhile %}
+                            {% endfor %}
+                        {% endfor %}
                     </div>
 
-                    <!-- Second Half -->
+                    <!-- Afternoon Hours -->
                     <div class="time-block-column">
                         <h6 class="text-muted mb-2">Afternoon</h6>
-                        {% set current_minutes = mid_time_minutes %}
-                        {% while current_minutes <= end_hour * 60 + end_minute %}
-                            {% set hour = current_minutes // 60 %}
-                            {% set minute = current_minutes % 60 %}
-                            {% set current_time = '%02d:%02d'|format(hour, minute) %}
-                            {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
-                            <div class="time-block" data-time="{{ current_time }}">
-                                <div class="time-label">{{ current_time }}</div>
-                                <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
-                                     {% if saved_block and saved_block.task_id and categories %}
-                                     style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
-                                     {% endif %}>
-                                    <select class="task-select">
-                                        <option value="">Select a task</option>
-                                        {% for category in categories %}
-                                            <optgroup label="{{ category.name }}">
-                                                {% for task in category.tasks %}
-                                                    <option value="{{ task.id }}"
-                                                            data-category-color="{{ category.color }}"
-                                                            {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                        {{ task.title }}
-                                                    </option>
+                        {% set mid_hour = current_user.day_start_time.hour + ((current_user.day_end_time.hour - current_user.day_start_time.hour) // 2) %}
+                        {% for hour in range(mid_hour, current_user.day_end_time.hour + 1) %}
+                            {% for minute in [0, 15, 30, 45] %}
+                                {% if hour < current_user.day_end_time.hour or (hour == current_user.day_end_time.hour and minute <= current_user.day_end_time.minute) %}
+                                    {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                                    {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                                    <div class="time-block" data-time="{{ current_time }}">
+                                        <div class="time-label">{{ current_time }}</div>
+                                        <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
+                                             {% if saved_block and saved_block.task_id and categories %}
+                                             style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                             {% endif %}>
+                                            <select class="task-select">
+                                                <option value="">Select a task</option>
+                                                {% for category in categories %}
+                                                    <optgroup label="{{ category.name }}">
+                                                        {% for task in category.tasks %}
+                                                            <option value="{{ task.id }}"
+                                                                    data-category-color="{{ category.color }}"
+                                                                    {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                                {{ task.title }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </optgroup>
                                                 {% endfor %}
-                                            </optgroup>
-                                        {% endfor %}
-                                    </select>
-                                    <input type="text" class="task-notes"
-                                           placeholder="Notes..."
-                                           maxlength="15"
-                                           value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
-                                </div>
-                            </div>
-                            {% set current_minutes = current_minutes + 15 %}
-                        {% endwhile %}
+                                            </select>
+                                            <input type="text" class="task-notes"
+                                                   placeholder="Notes..."
+                                                   maxlength="15"
+                                                   value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
