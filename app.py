@@ -140,6 +140,10 @@ def index():
         ToDo.due_date.asc().nullslast(),
         ToDo.priority.desc()
     ).all()
+    
+    # Get all roles for filtering
+    from models import Role
+    all_roles = db.session.query(Role).filter(Role.user_id == current_user.id).all()
 
     # Get calendar events for the selected date
     calendar_events = []
@@ -1171,6 +1175,221 @@ def update_time_preferences():
     except Exception as e:
         logger.error(f"Error updating time preferences: {str(e)}")
         return jsonify({'error': 'Failed to update preferences'}), 500
+
+# ToDo Management Endpoints
+@app.route('/api/todos', methods=['GET'])
+@login_required
+def get_todos():
+    """Get all todos for the current user."""
+    todos = db.session.query(ToDo).filter(
+        ToDo.user_id == current_user.id,
+        ToDo.completed == False
+    ).order_by(
+        ToDo.due_date.asc().nullslast(),
+        ToDo.priority.desc()
+    ).all()
+    
+    todo_list = []
+    for todo in todos:
+        todo_data = {
+            'id': todo.id,
+            'title': todo.title,
+            'description': todo.description,
+            'priority': todo.priority,
+            'status': todo.status,
+            'due_date': todo.due_date.isoformat() if todo.due_date else None,
+            'is_recurring': todo.is_recurring,
+            'recurrence_rule': todo.recurrence_rule,
+            'role_id': todo.role_id,
+            'role_name': todo.assigned_role.name if todo.assigned_role else None,
+            'is_overdue': todo.is_overdue(),
+            'created_at': todo.created_at.isoformat()
+        }
+        todo_list.append(todo_data)
+    
+    return jsonify({'todos': todo_list})
+
+@app.route('/api/todos', methods=['POST'])
+@login_required
+def create_todo():
+    """Create a new todo."""
+    data = request.get_json()
+    
+    try:
+        # Parse due date if provided
+        due_date = None
+        if data.get('due_date'):
+            due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+        
+        todo = ToDo(
+            title=data['title'],
+            description=data.get('description', ''),
+            user_id=current_user.id,
+            role_id=data.get('role_id'),
+            due_date=due_date,
+            priority=data.get('priority', 'medium'),
+            status=data.get('status', 'todo'),
+            is_recurring=data.get('is_recurring', False),
+            recurrence_rule=data.get('recurrence_rule')
+        )
+        
+        db.session.add(todo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo created successfully',
+            'todo_id': todo.id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating todo: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to create todo'
+        }), 500
+
+@app.route('/api/todos/<int:todo_id>/complete', methods=['POST'])
+@login_required
+def complete_todo(todo_id):
+    """Mark a todo as completed."""
+    todo = db.session.query(ToDo).filter(
+        ToDo.id == todo_id,
+        ToDo.user_id == current_user.id
+    ).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    try:
+        todo.completed = True
+        todo.completed_at = datetime.utcnow()
+        todo.status = 'completed'
+        todo.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo marked as completed'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error completing todo: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to complete todo'
+        }), 500
+
+@app.route('/api/import-todos', methods=['POST'])
+@login_required
+def import_todos():
+    """Import todos from the provided list."""
+    from models import Role
+    
+    # Get or create roles
+    aps_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'APS').first()
+    if not aps_role:
+        aps_role = Role(name='APS', user_id=current_user.id, color='#007bff', description='APS work tasks')
+        db.session.add(aps_role)
+        db.session.flush()
+    
+    home_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'Home').first()
+    if not home_role:
+        home_role = Role(name='Home', user_id=current_user.id, color='#28a745', description='Personal tasks')
+        db.session.add(home_role)
+        db.session.flush()
+    
+    church_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'Church').first()
+    if not church_role:
+        church_role = Role(name='Church', user_id=current_user.id, color='#6f42c1', description='Church tasks')
+        db.session.add(church_role)
+        db.session.flush()
+    
+    # Todo items from the document
+    todo_items = [
+        {"title": "SSO Entra with QuickBase", "priority": "medium", "due_date": "2025-05-22", "role": "APS"},
+        {"title": "Linkedin Post Complete", "priority": "low", "due_date": "2025-05-31", "role": "Home", "recurring": True, "recurrence": "FREQ=WEEKLY"},
+        {"title": "Setup PC to transfer images from S3, resize, and transfer to Sharepoint", "priority": "medium", "due_date": "2025-05-31", "role": "APS", "description": "Fotosizer resize"},
+        {"title": "Brett's Request for C&D Pos Report", "priority": "medium", "due_date": "2025-06-05", "role": "APS"},
+        {"title": "Daily Doctrine for the Week PP", "priority": "medium", "due_date": "2025-06-05", "role": "Home", "recurring": True, "recurrence": "FREQ=WEEKLY"},
+        {"title": "Prep for Budget Presentation", "priority": "medium", "due_date": "2025-06-06", "role": "Church"},
+        {"title": "Bible Biography PP", "priority": "medium", "due_date": "2025-06-07", "role": "Home", "recurring": True, "recurrence": "FREQ=WEEKLY"},
+        {"title": "Test Sharepoint shortcut on PC once setup", "priority": "medium", "due_date": "2025-06-07", "role": "APS"},
+        {"title": "Review EPM Monthly Report Process", "priority": "medium", "due_date": "2025-06-12", "role": "APS"},
+        {"title": "Add July Tozer", "priority": "low", "due_date": "2025-06-14", "role": "Home"},
+        {"title": "Add July Drucker", "priority": "low", "due_date": "2025-06-14", "role": "Home"},
+        {"title": "Prep Agendas and Schedule Meeting with Jeff", "priority": "medium", "due_date": "2025-06-24", "role": "Church", "recurring": True, "recurrence": "FREQ=MONTHLY"},
+        {"title": "Checkin", "priority": "medium", "due_date": "2025-07-10", "role": "Home", "recurring": True, "recurrence": "FREQ=MONTHLY"},
+        {"title": "Add August Drucker", "priority": "low", "due_date": "2025-07-14", "role": "Home"},
+        {"title": "Add August Tozer", "priority": "low", "due_date": "2025-07-14", "role": "Home"},
+        {"title": "Add Sept Tozer", "priority": "low", "due_date": "2025-08-14", "role": "Home"},
+        {"title": "Add Sept Drucker", "priority": "low", "due_date": "2025-08-14", "role": "Home"},
+        {"title": "Add Oct Tozer", "priority": "low", "due_date": "2025-09-14", "role": "Home"},
+        {"title": "Add Oct Drucker", "priority": "low", "due_date": "2025-09-14", "role": "Home"},
+        {"title": "Tech Wage Review", "priority": "low", "due_date": "2025-09-15", "role": "APS", "recurring": True, "recurrence": "FREQ=MONTHLY;INTERVAL=6"},
+        {"title": "Add Nov Drucker", "priority": "low", "due_date": "2025-10-14", "role": "Home"},
+        {"title": "Add Nov Tozer", "priority": "low", "due_date": "2025-10-14", "role": "Home"},
+        {"title": "Add Jan Drucker", "priority": "low", "due_date": "2025-11-14", "role": "Home"},
+        {"title": "Add Dec Drucker", "priority": "low", "due_date": "2025-11-14", "role": "Home"},
+        {"title": "Add Dec Tozer", "priority": "low", "due_date": "2025-11-14", "role": "Home"},
+        {"title": "Add Jan Tozer", "priority": "low", "due_date": "2025-12-14", "role": "Home"},
+        {"title": "Jason S Vendor Contacts", "priority": "medium", "role": "APS", "description": "Planning"},
+        {"title": "Sales by market on PowerBI", "priority": "medium", "role": "APS", "description": "Development"},
+        {"title": "Service New Orders Box", "priority": "medium", "role": "APS", "description": "Development"}
+    ]
+    
+    try:
+        role_map = {
+            'APS': aps_role.id,
+            'Home': home_role.id,
+            'Church': church_role.id
+        }
+        
+        for item in todo_items:
+            # Skip if todo already exists
+            existing = db.session.query(ToDo).filter(
+                ToDo.user_id == current_user.id,
+                ToDo.title == item['title']
+            ).first()
+            
+            if existing:
+                continue
+            
+            due_date = None
+            if item.get('due_date'):
+                due_date = datetime.strptime(item['due_date'], '%Y-%m-%d')
+            
+            todo = ToDo(
+                title=item['title'],
+                description=item.get('description', ''),
+                user_id=current_user.id,
+                role_id=role_map.get(item['role']),
+                due_date=due_date,
+                priority=item['priority'],
+                status='todo',
+                is_recurring=item.get('recurring', False),
+                recurrence_rule=item.get('recurrence')
+            )
+            
+            db.session.add(todo)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todos imported successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error importing todos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to import todos'
+        }), 500
 
 with app.app_context():
     db.create_all()

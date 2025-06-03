@@ -255,58 +255,70 @@
     </div>
 </div>
 
-<!-- Open Tasks Section -->
+<!-- ToDos Section -->
 <div class="row mt-4">
     <div class="col">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Open Tasks</h5>
-                <button class="btn btn-primary btn-sm" onclick="window.location.href='/tasks'">
-                    <i class="fas fa-plus"></i> Add New Task
-                </button>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>ToDos
+                </h5>
+                <div>
+                    <button class="btn btn-success btn-sm me-2" onclick="importTodos()">
+                        <i class="fas fa-download"></i> Import ToDos
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showAddTodoModal()">
+                        <i class="fas fa-plus"></i> Add New ToDo
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
-                    {% for role in [{'id': 1, 'name': 'APS', 'color': '#007bff'}, {'id': 2, 'name': 'Home', 'color': '#28a745'}, {'id': 3, 'name': 'Church', 'color': '#6f42c1'}] %}
+                    {% for role in all_roles %}
                     <div class="col-md-4">
                         <div class="border rounded p-3 h-100" style="border-color: {{ role.color }}!important;">
                             <h6 class="mb-3" style="color: {{ role.color }}">
                                 <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
                                 {{ role.name }}
                             </h6>
-                            <div class="task-list">
-                                {% for task in all_open_tasks %}
-                                    {% if task.role_id == role.id %}
-                                    <div class="task-item mb-3 p-3 bg-white border rounded shadow-sm">
+                            <div class="todo-list" id="todo-list-{{ role.id }}">
+                                {% for todo in all_todos %}
+                                    {% if todo.role_id == role.id %}
+                                    <div class="todo-item mb-3 p-3 bg-white border rounded shadow-sm" data-todo-id="{{ todo.id }}">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="flex-grow-1">
-                                                <div class="fw-bold fs-6 text-dark mb-1">{{ task.title }}</div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <input type="checkbox" class="form-check-input me-2 todo-checkbox" 
+                                                           data-todo-id="{{ todo.id }}" 
+                                                           onchange="toggleTodoComplete({{ todo.id }}, this.checked)">
+                                                    <div class="fw-bold fs-6 text-dark">{{ todo.title }}</div>
+                                                </div>
                                                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                    {% if task.due_date %}
+                                                    {% if todo.due_date %}
                                                     <span class="text-muted fs-7">
                                                         <i class="fas fa-calendar-alt me-1"></i>
-                                                        Due: {{ task.due_date.strftime('%m/%d/%Y') }}
+                                                        Due: {{ todo.due_date.strftime('%m/%d/%Y') }}
                                                     </span>
-                                                    {% if task.due_date.date() < today %}
+                                                    {% if todo.due_date.date() < today %}
                                                     <span class="badge bg-danger">Overdue</span>
-                                                    {% elif task.due_date.date() == today %}
+                                                    {% elif todo.due_date.date() == today %}
                                                     <span class="badge bg-warning text-dark">Due Today</span>
                                                     {% endif %}
                                                     {% endif %}
-                                                    {% if task.is_recurring %}
+                                                    {% if todo.is_recurring %}
                                                     <span class="badge bg-info">
                                                         <i class="fas fa-repeat me-1"></i>Recurring
                                                     </span>
                                                     {% endif %}
                                                 </div>
                                             </div>
-                                            <div class="task-actions">
-                                                <span class="badge bg-{{ task.get_priority_color() }} fs-7">{{ task.priority|title }}</span>
+                                            <div class="todo-actions">
+                                                <span class="badge bg-{{ todo.get_priority_color() }} fs-7">{{ todo.priority|title }}</span>
                                             </div>
                                         </div>
-                                        {% if task.description %}
+                                        {% if todo.description %}
                                         <div class="mt-2 pt-2 border-top">
-                                            <div class="text-muted fs-7">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</div>
+                                            <div class="text-muted fs-7">{{ todo.description[:80] }}{% if todo.description|length > 80 %}...{% endif %}</div>
                                         </div>
                                         {% endif %}
                                     </div>
@@ -652,5 +664,191 @@ document.querySelector('.remove-later-blocks').addEventListener('click', functio
         lastBlock.remove();
     }
 });
+
+// ToDo Management Functions
+function showAddTodoModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addTodoModal'));
+    modal.show();
+    
+    // Show/hide recurrence rule based on checkbox
+    document.getElementById('todoRecurring').addEventListener('change', function() {
+        const recurrenceDiv = document.getElementById('recurrenceRuleDiv');
+        recurrenceDiv.style.display = this.checked ? 'block' : 'none';
+    });
+}
+
+async function saveTodo() {
+    const form = document.getElementById('addTodoForm');
+    const formData = new FormData(form);
+    
+    const todoData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        role_id: formData.get('role_id') ? parseInt(formData.get('role_id')) : null,
+        priority: formData.get('priority'),
+        due_date: formData.get('due_date') || null,
+        is_recurring: document.getElementById('todoRecurring').checked,
+        recurrence_rule: document.getElementById('todoRecurring').checked ? formData.get('recurrence_rule') : null
+    };
+    
+    try {
+        const response = await fetch('/api/todos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(todoData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addTodoModal'));
+            modal.hide();
+            form.reset();
+            location.reload(); // Refresh to show new todo
+        } else {
+            alert('Error creating todo: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error saving todo:', error);
+        alert('Failed to save todo');
+    }
+}
+
+async function toggleTodoComplete(todoId, completed) {
+    if (completed) {
+        try {
+            const response = await fetch(`/api/todos/${todoId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Remove the todo item from the list
+                const todoElement = document.querySelector(`[data-todo-id="${todoId}"]`);
+                if (todoElement) {
+                    todoElement.style.transition = 'opacity 0.3s ease';
+                    todoElement.style.opacity = '0.5';
+                    setTimeout(() => {
+                        todoElement.remove();
+                    }, 300);
+                }
+            } else {
+                alert('Error completing todo: ' + result.message);
+                // Uncheck the checkbox if there was an error
+                const checkbox = document.querySelector(`input[data-todo-id="${todoId}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error completing todo:', error);
+            alert('Failed to complete todo');
+            // Uncheck the checkbox if there was an error
+            const checkbox = document.querySelector(`input[data-todo-id="${todoId}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        }
+    }
+}
+
+async function importTodos() {
+    if (confirm('This will import your current todo items. Continue?')) {
+        try {
+            const response = await fetch('/api/import-todos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Todos imported successfully!');
+                location.reload(); // Refresh to show imported todos
+            } else {
+                alert('Error importing todos: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error importing todos:', error);
+            alert('Failed to import todos');
+        }
+    }
+}
 </script>
+
+<!-- Add ToDo Modal -->
+<div class="modal fade" id="addTodoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New ToDo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTodoForm">
+                    <div class="mb-3">
+                        <label for="todoTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="todoTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="todoDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoRole" class="form-label">Role</label>
+                        <select class="form-select" id="todoRole" name="role_id">
+                            <option value="">Select Role</option>
+                            {% for role in all_roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoPriority" class="form-label">Priority</label>
+                        <select class="form-select" id="todoPriority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="todoDueDate" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="todoDueDate" name="due_date">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="todoRecurring" name="is_recurring">
+                            <label class="form-check-label" for="todoRecurring">
+                                Recurring
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="recurrenceRuleDiv" style="display: none;">
+                        <label for="todoRecurrenceRule" class="form-label">Recurrence Rule</label>
+                        <select class="form-select" id="todoRecurrenceRule" name="recurrence_rule">
+                            <option value="FREQ=DAILY">Daily</option>
+                            <option value="FREQ=WEEKLY">Weekly</option>
+                            <option value="FREQ=MONTHLY">Monthly</option>
+                            <option value="FREQ=MONTHLY;INTERVAL=6">Every 6 Months</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveTodo()">Save ToDo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
