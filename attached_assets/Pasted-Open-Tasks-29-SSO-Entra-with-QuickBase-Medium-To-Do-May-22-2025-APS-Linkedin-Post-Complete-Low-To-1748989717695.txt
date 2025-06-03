@@ -1,0 +1,200 @@
+Open Tasks (29)
+SSO Entra with QuickBase
+Medium
+To Do
+May 22, 2025
+APS
+Linkedin Post Complete
+Low
+Today
+May 31, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Setup PC to transfer images from S3, resize, and transfer to Sharepoint
+Medium
+In Progress
+Fotosizer resize
+
+May 31, 2025
+APS
+Brett's Request for C&D Pos Report
+Medium
+To Do
+Jun 05, 2025
+APS
+Daily Doctrine for the Week PP
+Medium
+To Do
+Jun 05, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Prep for Budget Presentation
+Medium
+To Do
+Jun 06, 2025
+Church
+Bible Biography PP
+Medium
+To Do
+Jun 07, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Test Sharepoint shortcut on PC once setup
+Medium
+In Progress
+Jun 07, 2025
+APS
+Review EPM Monthly Report Process
+Medium
+To Do
+Jun 12, 2025
+APS
+Add July Tozer
+Low
+To Do
+Jun 14, 2025
+Home
+Add July Drucker
+Low
+To Do
+Jun 14, 2025
+Home
+Prep Agendas and Schedule Meeting with Jeff
+Medium
+To Do
+Jun 24, 2025
+Church
+Recurring
+Recurrence: FREQ=MONTHLY
+Checkin
+Medium
+To Do
+Jul 10, 2025
+Home
+Recurring
+Recurrence: FREQ=MONTHLY
+Add August Drucker
+Low
+To Do
+Jul 14, 2025
+Home
+Add August Tozer
+Low
+To Do
+Jul 14, 2025
+Home
+Add Sept Tozer
+Low
+To Do
+Aug 14, 2025
+Home
+Add Sept Drucker
+Low
+To Do
+Aug 14, 2025
+Home
+Add Oct Tozer
+Low
+To Do
+Sep 14, 2025
+Home
+Add Oct Drucker
+Low
+To Do
+Sep 14, 2025
+Home
+Tech Wage Review
+Low
+To Do
+Sep 15, 2025
+APS
+Recurring
+Recurrence: FREQ=MONTHLY;INTERVAL=6
+Add Nov Drucker
+Low
+To Do
+Oct 14, 2025
+Home
+Add Nov Tozer
+Low
+To Do
+Oct 14, 2025
+Home
+Add Jan Drucker
+Low
+To Do
+Nov 14, 2025
+Home
+Add Dec Drucker
+Low
+To Do
+Nov 14, 2025
+Home
+Add Dec Tozer
+Low
+To Do
+Nov 14, 2025
+Home
+Add Jan Tozer
+Low
+To Do
+Dec 14, 2025
+Home
+Jason S Vendor Contacts
+Medium
+To Do
+Planning
+Sales by market on PowerBI
+Medium
+To Do
+Development
+Service New Orders Box
+Medium
+To Do
+Development
+Recurring Tasks (6)
+Linkedin Post Complete
+Low
+Today
+May 31, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Daily Doctrine for the Week PP
+Medium
+To Do
+Jun 05, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Bible Biography PP
+Medium
+To Do
+Jun 07, 2025
+Home
+Recurring
+Recurrence: FREQ=WEEKLY
+Prep Agendas and Schedule Meeting with Jeff
+Medium
+To Do
+Jun 24, 2025
+Church
+Recurring
+Recurrence: FREQ=MONTHLY
+Checkin
+Medium
+To Do
+Jul 10, 2025
+Home
+Recurring
+Recurrence: FREQ=MONTHLY
+Tech Wage Review
+Low
+To Do
+Sep 15, 2025
+APS
+Recurring
+Recurrence: FREQ=MONTHLY;INTERVAL=6
