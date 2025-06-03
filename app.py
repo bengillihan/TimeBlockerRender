@@ -244,13 +244,58 @@ def category_operations(category_id):
 @login_required
 def manage_tasks():
     if request.method == 'GET':
-        tasks = Task.query.filter_by(user_id=current_user.id).all()
+        # Get query parameters for filtering
+        status = request.args.get('status')
+        priority = request.args.get('priority')
+        role_id = request.args.get('role_id')
+        category_id = request.args.get('category_id')
+        overdue_only = request.args.get('overdue') == 'true'
+        
+        query = Task.query.filter_by(user_id=current_user.id)
+        
+        if status:
+            query = query.filter(Task.status == status)
+        if priority:
+            query = query.filter(Task.priority == priority)
+        if role_id:
+            query = query.filter(Task.role_id == role_id)
+        if category_id:
+            query = query.filter(Task.category_id == category_id)
+        if overdue_only:
+            query = query.filter(Task.due_date < datetime.utcnow(), Task.completed == False)
+        
+        tasks = query.order_by(Task.created_at.desc()).all()
+        
         return jsonify([{
             'id': task.id,
             'title': task.title,
             'description': task.description,
             'category_id': task.category_id,
-            'color': task.category.color
+            'category_name': task.category.name,
+            'category_color': task.category.color,
+            'due_date': task.due_date.isoformat() if task.due_date else None,
+            'status': task.status,
+            'status_color': task.get_status_color(),
+            'role_id': task.role_id,
+            'role_name': task.assigned_role.name if task.assigned_role else None,
+            'is_recurring': task.is_recurring,
+            'recurrence_rule': task.recurrence_rule,
+            'priority': task.priority,
+            'priority_color': task.get_priority_color(),
+            'completed': task.completed,
+            'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+            'estimated_minutes': task.estimated_minutes,
+            'actual_minutes': task.actual_minutes,
+            'total_time_spent': task.get_total_time_spent(),
+            'notes': task.notes,
+            'tags': task.tags or [],
+            'dependencies': task.dependencies or [],
+            'progress_percentage': task.progress_percentage,
+            'last_worked_on': task.last_worked_on.isoformat() if task.last_worked_on else None,
+            'parent_task_id': task.parent_task_id,
+            'subtask_count': len(task.subtasks),
+            'is_overdue': task.is_overdue(),
+            'created_at': task.created_at.isoformat()
         } for task in tasks])
 
     data = request.json
@@ -259,11 +304,27 @@ def manage_tasks():
         return jsonify({'error': 'Title and category are required'}), 400
 
     try:
+        # Parse due_date if provided
+        due_date = None
+        if data.get('due_date'):
+            due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+        
         task = Task(
             title=data['title'],
             description=data.get('description', ''),
             category_id=data['category_id'],
-            user_id=current_user.id
+            user_id=current_user.id,
+            due_date=due_date,
+            status=data.get('status', 'pending'),
+            role_id=data.get('role_id'),
+            is_recurring=data.get('is_recurring', False),
+            recurrence_rule=data.get('recurrence_rule'),
+            priority=data.get('priority', 'medium'),
+            estimated_minutes=data.get('estimated_minutes'),
+            notes=data.get('notes', ''),
+            tags=data.get('tags', []),
+            dependencies=data.get('dependencies', []),
+            parent_task_id=data.get('parent_task_id')
         )
         db.session.add(task)
         db.session.commit()
@@ -273,11 +334,28 @@ def manage_tasks():
             'title': task.title,
             'description': task.description,
             'category_id': task.category_id,
-            'color': task.category.color
+            'category_name': task.category.name,
+            'category_color': task.category.color,
+            'due_date': task.due_date.isoformat() if task.due_date else None,
+            'status': task.status,
+            'status_color': task.get_status_color(),
+            'role_id': task.role_id,
+            'is_recurring': task.is_recurring,
+            'recurrence_rule': task.recurrence_rule,
+            'priority': task.priority,
+            'priority_color': task.get_priority_color(),
+            'completed': task.completed,
+            'estimated_minutes': task.estimated_minutes,
+            'notes': task.notes,
+            'tags': task.tags or [],
+            'dependencies': task.dependencies or [],
+            'progress_percentage': task.progress_percentage,
+            'parent_task_id': task.parent_task_id,
+            'created_at': task.created_at.isoformat()
         })
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error creating task: {str(e)}")
+        logger.error(f"Error creating task: {str(e)}")
         return jsonify({'error': 'Failed to create task'}), 500
 
 @app.route('/api/tasks/<int:task_id>', methods=['PUT', 'DELETE'])
@@ -291,10 +369,45 @@ def task_operations(task_id):
         return '', 204
 
     data = request.json
+    
+    # Update basic fields
     task.title = data.get('title', task.title)
     task.description = data.get('description', task.description)
     task.category_id = data.get('category_id', task.category_id)
+    
+    # Update enhanced tracking fields
+    if 'due_date' in data:
+        task.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00')) if data['due_date'] else None
+    
+    task.status = data.get('status', task.status)
+    task.role_id = data.get('role_id', task.role_id)
+    task.is_recurring = data.get('is_recurring', task.is_recurring)
+    task.recurrence_rule = data.get('recurrence_rule', task.recurrence_rule)
+    task.priority = data.get('priority', task.priority)
+    task.estimated_minutes = data.get('estimated_minutes', task.estimated_minutes)
+    task.actual_minutes = data.get('actual_minutes', task.actual_minutes)
+    task.notes = data.get('notes', task.notes)
+    task.tags = data.get('tags', task.tags)
+    task.dependencies = data.get('dependencies', task.dependencies)
+    task.progress_percentage = data.get('progress_percentage', task.progress_percentage)
+    task.parent_task_id = data.get('parent_task_id', task.parent_task_id)
+    
+    # Handle completion status
+    if 'completed' in data:
+        task.completed = data['completed']
+        if data['completed'] and not task.completed_at:
+            task.completed_at = datetime.utcnow()
+            task.status = 'completed'
+        elif not data['completed']:
+            task.completed_at = None
+            if task.status == 'completed':
+                task.status = 'pending'
+    
+    # Update last worked on timestamp if task is being modified
+    task.last_worked_on = datetime.utcnow()
+    
     db.session.commit()
+    
     return jsonify({
         'id': task.id,
         'title': task.title,
