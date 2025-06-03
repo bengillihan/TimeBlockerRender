@@ -107,21 +107,7 @@ def index():
     # Get categories and their tasks for the time block selector
     categories = Category.query.filter_by(user_id=current_user.id).all()
     
-    # Get available tasks for daily priorities (due today or overdue, plus high priority tasks)
-    today = date
-    available_tasks = Task.query.filter(
-        Task.user_id == current_user.id,
-        Task.completed == False
-    ).filter(
-        db.or_(
-            Task.due_date <= today,  # Due today or overdue
-            Task.priority.in_(['high', 'urgent']),  # High priority tasks
-            Task.due_date.is_(None)  # Tasks without due dates
-        )
-    ).order_by(
-        Task.priority.desc(),
-        Task.due_date.asc()
-    ).limit(20).all()  # Limit to top 20 available tasks
+
     
     # Get all open tasks for the open tasks section, sorted by due date
     all_open_tasks = Task.query.filter(
@@ -232,7 +218,6 @@ def index():
                          has_google_calendar=has_google_calendar,
                          day_start=day_start,
                          day_end=day_end,
-                         available_tasks=available_tasks,
                          all_open_tasks=all_open_tasks,
                          all_todos=all_todos,
                          all_roles=all_roles,

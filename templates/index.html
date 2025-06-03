@@ -101,23 +101,7 @@
                     {% endfor %}
                 </ul>
                 
-                {% if available_tasks %}
-                <div class="mt-3">
-                    <h6 class="text-muted mb-2">Suggested Tasks for Today:</h6>
-                    <div class="d-flex flex-wrap gap-1">
-                        {% for task in available_tasks[:8] %}
-                        <button class="btn btn-sm btn-outline-secondary task-suggestion" 
-                                data-task-title="{{ task.title }}"
-                                data-task-priority="{{ task.priority }}"
-                                data-task-role="{{ task.assigned_role.name if task.assigned_role else '' }}"
-                                title="{{ task.description or 'No description' }}">
-                            <span class="badge bg-{{ task.get_priority_color() }} me-1">{{ task.priority }}</span>
-                            {{ task.title[:30] }}{% if task.title|length > 30 %}...{% endif %}
-                        </button>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
+
             </div>
         </div>
 
