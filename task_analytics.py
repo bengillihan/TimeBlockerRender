@@ -1,0 +1,174 @@
+from datetime import datetime, timedelta
+from models import Task, TimeBlock, Category
+from sqlalchemy import func
+import json
+
+def create_task_template(title, description, category_id, estimated_minutes, buffer_minutes=0, priority='medium'):
+    """Create a task template"""
+    return {
+        'title': title,
+        'description': description,
+        'category_id': category_id,
+        'estimated_minutes': estimated_minutes,
+        'buffer_minutes': buffer_minutes,
+        'priority': priority,
+        'is_template': True
+    }
+
+def suggest_time_blocks(task, day_start, day_end, existing_blocks):
+    """Suggest optimal time blocks for a task based on user's preferences and existing blocks"""
+    # Convert times to datetime for easier comparison
+    day_start_dt = datetime.combine(datetime.today(), day_start)
+    day_end_dt = datetime.combine(datetime.today(), day_end)
+    
+    # Get user's most productive hours from analytics
+    productive_hours = get_productive_hours(task.user_id)
+    
+    # Calculate total blocks needed
+    total_minutes = task.estimated_minutes + task.buffer_minutes
+    blocks_needed = (total_minutes + 14) // 15  # Round up to nearest 15 minutes
+    
+    # Find available time slots
+    available_slots = []
+    current_time = day_start_dt
+    
+    while current_time < day_end_dt:
+        # Check if this time slot is available
+        slot_end = current_time + timedelta(minutes=15)
+        if not any(
+            block['start_time'] <= current_time.time() < block['end_time']
+            for block in existing_blocks
+        ):
+            # Check if this is a productive hour
+            hour_score = productive_hours.get(current_time.hour, 0.5)
+            
+            available_slots.append({
+                'start_time': current_time.time(),
+                'end_time': slot_end.time(),
+                'score': hour_score
+            })
+        
+        current_time = slot_end
+    
+    # Sort slots by productivity score
+    available_slots.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Return top N slots where N is the number of blocks needed
+    return available_slots[:blocks_needed]
+
+def get_productive_hours(user_id):
+    """Get user's most productive hours based on task completion data"""
+    from app import db
+    
+    # Query completed tasks and their time blocks
+    completed_tasks = Task.query.filter(
+        Task.user_id == user_id,
+        Task.completed == True
+    ).join(TimeBlock).all()
+    
+    # Count completions by hour
+    hour_counts = {}
+    for task in completed_tasks:
+        for block in task.time_blocks:
+            if block.completed:
+                hour = block.start_time.hour
+                hour_counts[hour] = hour_counts.get(hour, 0) + 1
+    
+    # Normalize scores
+    max_count = max(hour_counts.values()) if hour_counts else 1
+    return {hour: count/max_count for hour, count in hour_counts.items()}
+
+def apply_task_template(template, user_id, due_date=None):
+    """Create a new task from a template"""
+    task = Task(
+        title=template['title'],
+        description=template['description'],
+        category_id=template['category_id'],
+        user_id=user_id,
+        estimated_minutes=template['estimated_minutes'],
+        buffer_minutes=template['buffer_minutes'],
+        priority=template['priority'],
+        due_date=due_date
+    )
+    return task
+
+def get_task_templates(user_id):
+    """Get all task templates for a user"""
+    return Task.query.filter_by(
+        user_id=user_id,
+        is_template=True
+    ).all()
+
+def calculate_task_dependencies(task):
+    """Calculate and update task dependencies"""
+    if not task.dependencies:
+        return
+    
+    # Get all dependent tasks
+    dependent_tasks = Task.query.filter(
+        Task.id.in_(task.dependencies)
+    ).all()
+    
+    # Check if all dependencies are completed
+    all_completed = all(dep.completed for dep in dependent_tasks)
+    
+    # Update task status based on dependencies
+    if not all_completed and task.status != 'blocked':
+        task.status = 'blocked'
+    elif all_completed and task.status == 'blocked':
+        task.status = 'pending'
+
+def get_task_analytics(user_id):
+    """Get detailed task analytics"""
+    from app import db
+    from sqlalchemy import case, extract
+    
+    # Get task completion rates by category
+    category_stats = db.session.query(
+        Category.name,
+        func.count(Task.id).label('total'),
+        func.sum(case((Task.completed == True, 1), else_=0)).label('completed')
+    ).join(Task).filter(
+        Task.user_id == user_id
+    ).group_by(Category.name).all()
+    
+    # Get time estimation accuracy
+    estimation_stats = db.session.query(
+        func.avg(
+            case(
+                (Task.actual_minutes.isnot(None) & Task.estimated_minutes.isnot(None),
+                 func.abs(Task.actual_minutes - Task.estimated_minutes) / Task.estimated_minutes),
+                else_=None
+            )
+        ).label('avg_error')
+    ).filter(
+        Task.user_id == user_id,
+        Task.completed == True
+    ).scalar()
+    
+    # Get productivity by time of day
+    time_stats = db.session.query(
+        extract('hour', TimeBlock.start_time).label('hour'),
+        func.count(TimeBlock.id).label('total_blocks'),
+        func.sum(case((TimeBlock.completed == True, 1), else_=0)).label('completed_blocks')
+    ).join(Task).filter(
+        Task.user_id == user_id
+    ).group_by('hour').all()
+    
+    return {
+        'category_stats': [
+            {
+                'category': name,
+                'completion_rate': (completed / total * 100) if total > 0 else 0
+            }
+            for name, total, completed in category_stats
+        ],
+        'estimation_accuracy': (1 - estimation_stats) * 100 if estimation_stats else None,
+        'time_stats': [
+            {
+                'hour': hour,
+                'productivity': (completed / total * 100) if total > 0 else 0
+            }
+            for hour, total, completed in time_stats
+        ]
+    }

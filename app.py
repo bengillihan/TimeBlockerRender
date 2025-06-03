@@ -9,6 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
+from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -42,6 +43,9 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Initialize cache
+init_cache(app)
 
 # Set shorter session lifetime (1 hour) to reduce idle connections
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)

@@ -23,4 +23,5 @@ dependencies = [
     "twilio>=9.4.6",
     "nylas>=6.8.0",
     "python-dateutil>=2.9.0.post0",
+    "flask-caching>=2.3.1",
 ]
