@@ -277,34 +277,36 @@
                             <div class="task-list">
                                 {% for task in all_open_tasks %}
                                     {% if task.role_id == role.id %}
-                                    <div class="task-item mb-2 p-2 bg-light rounded">
-                                        <div class="d-flex justify-content-between align-items-start">
+                                    <div class="task-item mb-3 p-3 bg-white border rounded shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="flex-grow-1">
-                                                <div class="fw-semibold">{{ task.title }}</div>
-                                                {% if task.due_date %}
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar-alt me-1"></i>
-                                                    Due: {{ task.due_date.strftime('%m/%d') }}
+                                                <div class="fw-bold fs-6 text-dark mb-1">{{ task.title }}</div>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    {% if task.due_date %}
+                                                    <span class="text-muted fs-7">
+                                                        <i class="fas fa-calendar-alt me-1"></i>
+                                                        Due: {{ task.due_date.strftime('%m/%d/%Y') }}
+                                                    </span>
                                                     {% if task.due_date.date() < today %}
-                                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                                    <span class="badge bg-danger">Overdue</span>
                                                     {% elif task.due_date.date() == today %}
-                                                    <span class="badge bg-warning ms-1">Due Today</span>
+                                                    <span class="badge bg-warning text-dark">Due Today</span>
                                                     {% endif %}
-                                                </small>
-                                                {% endif %}
-                                                {% if task.is_recurring %}
-                                                <small class="badge bg-secondary ms-1">
-                                                    <i class="fas fa-repeat"></i>
-                                                </small>
-                                                {% endif %}
+                                                    {% endif %}
+                                                    {% if task.is_recurring %}
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-repeat me-1"></i>Recurring
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                             <div class="task-actions">
-                                                <span class="badge bg-{{ task.get_priority_color() }}">{{ task.priority }}</span>
+                                                <span class="badge bg-{{ task.get_priority_color() }} fs-7">{{ task.priority|title }}</span>
                                             </div>
                                         </div>
                                         {% if task.description %}
-                                        <div class="mt-1">
-                                            <small class="text-muted">{{ task.description[:60] }}{% if task.description|length > 60 %}...{% endif %}</small>
+                                        <div class="mt-2 pt-2 border-top">
+                                            <div class="text-muted fs-7">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</div>
                                         </div>
                                         {% endif %}
                                     </div>
