@@ -169,3 +169,47 @@ class DayTemplate(db.Model):
     time_blocks = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref=db.backref('templates', lazy=True))
+
+class ToDo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=True)
+    due_date = db.Column(db.DateTime, nullable=True)
+    priority = db.Column(db.String(10), default='medium')  # low, medium, high, urgent
+    status = db.Column(db.String(20), default='todo')  # todo, in_progress, completed
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurrence_rule = db.Column(db.String(100), nullable=True)  # FREQ=WEEKLY, etc.
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('todos', lazy=True))
+    assigned_role = db.relationship('Role', backref=db.backref('todos', lazy=True))
+    
+    def get_priority_color(self):
+        """Return Bootstrap color class for todo priority"""
+        colors = {
+            'low': 'secondary',
+            'medium': 'warning',
+            'high': 'orange',
+            'urgent': 'danger'
+        }
+        return colors.get(self.priority, 'secondary')
+    
+    def get_status_color(self):
+        """Return Bootstrap color class for todo status"""
+        colors = {
+            'todo': 'secondary',
+            'in_progress': 'primary',
+            'completed': 'success'
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def is_overdue(self):
+        """Check if todo is overdue"""
+        if not self.due_date or self.completed:
+            return False
+        return self.due_date.date() < datetime.now().date()

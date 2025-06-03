@@ -47,7 +47,7 @@ login_manager.login_view = 'login'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 # Import routes after app initialization to avoid circular imports
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate, ToDo
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
@@ -130,6 +130,15 @@ def index():
     ).order_by(
         Task.due_date.asc().nullslast(),  # Due date ascending, nulls last
         Task.priority.desc()
+    ).all()
+    
+    # Get all open todos sorted by due date
+    all_todos = db.session.query(ToDo).filter(
+        ToDo.user_id == current_user.id,
+        ToDo.completed == False
+    ).order_by(
+        ToDo.due_date.asc().nullslast(),
+        ToDo.priority.desc()
     ).all()
 
     # Get calendar events for the selected date
@@ -221,6 +230,8 @@ def index():
                          day_end=day_end,
                          available_tasks=available_tasks,
                          all_open_tasks=all_open_tasks,
+                         all_todos=all_todos,
+                         all_roles=all_roles,
                          today=date)
 
 @app.route('/login')
