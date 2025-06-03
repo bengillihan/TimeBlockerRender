@@ -1,0 +1,282 @@
+// Keyboard shortcuts and UI enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize keyboard shortcuts
+    initKeyboardShortcuts();
+    
+    // Initialize drag and drop
+    initDragAndDrop();
+    
+    // Initialize quick add
+    initQuickAdd();
+    
+    // Initialize dark mode
+    initDarkMode();
+});
+
+// Keyboard shortcuts
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.altKey) {
+            switch (e.key.toLowerCase()) {
+                case 'n':
+                    e.preventDefault();
+                    document.getElementById('newTaskBtn').click();
+                    break;
+                case 't':
+                    e.preventDefault();
+                    document.getElementById('newTodoBtn').click();
+                    break;
+                case 'q':
+                    e.preventDefault();
+                    document.getElementById('quickAddBtn').click();
+                    break;
+                case 's':
+                    e.preventDefault();
+                    document.getElementById('saveBtn').click();
+                    break;
+                case 'd':
+                    e.preventDefault();
+                    toggleDarkMode();
+                    break;
+            }
+        }
+    });
+}
+
+// Drag and drop functionality
+function initDragAndDrop() {
+    const timeBlocks = document.querySelectorAll('.time-block');
+    const timeSlots = document.querySelectorAll('.time-slot');
+    
+    timeBlocks.forEach(block => {
+        block.setAttribute('draggable', true);
+        
+        block.addEventListener('dragstart', (e) => {
+            block.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', block.id);
+        });
+        
+        block.addEventListener('dragend', () => {
+            block.classList.remove('dragging');
+        });
+    });
+    
+    timeSlots.forEach(slot => {
+        slot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            slot.classList.add('drag-over');
+        });
+        
+        slot.addEventListener('dragleave', () => {
+            slot.classList.remove('drag-over');
+        });
+        
+        slot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            const blockId = e.dataTransfer.getData('text/plain');
+            const block = document.getElementById(blockId);
+            const container = slot.querySelector('.time-block-container');
+            
+            if (block && container) {
+                container.appendChild(block);
+                updateTimeBlock(blockId, slot.dataset.time);
+            }
+        });
+    });
+}
+
+// Quick add functionality
+function initQuickAdd() {
+    const quickAddBtn = document.getElementById('quickAddBtn');
+    const quickAddModal = document.getElementById('quickAddModal');
+    const quickAddForm = document.getElementById('quickAddForm');
+    
+    if (quickAddBtn && quickAddModal) {
+        quickAddBtn.addEventListener('click', () => {
+            quickAddModal.classList.add('show');
+        });
+        
+        quickAddModal.addEventListener('click', (e) => {
+            if (e.target === quickAddModal) {
+                quickAddModal.classList.remove('show');
+            }
+        });
+        
+        quickAddForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(quickAddForm);
+            const data = {
+                type: formData.get('type'),
+                title: formData.get('title'),
+                description: formData.get('description'),
+                due_date: formData.get('due_date'),
+                priority: formData.get('priority')
+            };
+            
+            try {
+                const response = await fetch(`/api/${data.type}s`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to create ${data.type}`);
+                }
+                
+                quickAddModal.classList.remove('show');
+                quickAddForm.reset();
+                showToast(`${data.type} created successfully`, 'success');
+                location.reload();
+            } catch (error) {
+                console.error(`Error creating ${data.type}:`, error);
+                showToast(`Failed to create ${data.type}`, 'error');
+            }
+        });
+    }
+}
+
+// Dark mode functionality
+function initDarkMode() {
+    const darkMode = localStorage.getItem('darkMode') === 'true';
+    if (darkMode) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+}
+
+function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('darkMode', !isDark);
+}
+
+// Time block position update
+async function updateTimeBlock(blockId, newTime) {
+    try {
+        const response = await fetch(`/api/time-blocks/${blockId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ start_time: newTime })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update time block');
+        }
+        
+        showToast('Time block updated successfully', 'success');
+    } catch (error) {
+        console.error('Error updating time block:', error);
+        showToast('Failed to update time block', 'error');
+    }
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    const container = document.querySelector('.toast-container') || (() => {
+        const div = document.createElement('div');
+        div.className = 'toast-container';
+        document.body.appendChild(div);
+        return div;
+    })();
+    
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Add CSS for enhancements
+const style = document.createElement('style');
+style.textContent = `
+    /* Dark mode styles */
+    .dark-mode {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .dark-mode .card {
+        background-color: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .dark-mode .modal-content {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    /* Drag and drop styles */
+    .time-block {
+        cursor: move;
+        transition: transform 0.2s;
+    }
+    
+    .time-block.dragging {
+        opacity: 0.5;
+        transform: scale(1.05);
+    }
+    
+    .time-slot.drag-over {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    /* Quick add styles */
+    .quick-add-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+    
+    .quick-add-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .quick-add-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        width: 90%;
+        max-width: 500px;
+    }
+    
+    .dark-mode .quick-add-content {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    /* Dark mode toggle button */
+    #darkModeBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #ffffff;
+        border: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        z-index: 1000;
+    }
+    
+    .dark-mode #darkModeBtn {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+`;
+document.head.appendChild(style); 

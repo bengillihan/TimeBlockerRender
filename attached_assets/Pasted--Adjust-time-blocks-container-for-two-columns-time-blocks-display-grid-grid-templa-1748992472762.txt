@@ -1,0 +1,442 @@
+/* Adjust time blocks container for two columns */
+.time-blocks {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.time-block-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.time-block {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--bs-border-color);
+    padding: 1px;
+    min-height: 24px; 
+    cursor: move;
+    position: relative;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.time-block:hover {
+    background-color: var(--bs-secondary-bg);
+}
+
+.time-label {
+    width: 48px; 
+    font-size: 0.75em;
+    color: var(--bs-secondary);
+}
+
+.time-content {
+    flex-grow: 1;
+    min-height: 20px; 
+    border-radius: 3px;
+    padding: 1px;
+    display: flex;
+    align-items: center;
+}
+
+.task-select {
+    border: none;
+    background: transparent;
+    width: 100%;
+    min-width: 100px; 
+    font-size: 0.85em;
+    padding: 0 2px;
+}
+
+.task-notes {
+    font-size: 0.8em;
+    padding: 1px 4px;
+    border-radius: 2px;
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    width: 80px; 
+}
+
+.task-notes:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+}
+
+.time-content.has-task {
+    border-left-width: 3px;
+    border-left-style: solid;
+}
+
+.time-content.dragging {
+    opacity: 0.5;
+}
+
+.task-controls {
+    display: none;
+    margin-left: 2px;
+}
+
+.time-content.has-task .task-controls {
+    display: flex;
+    gap: 1px;
+}
+
+.task-control-btn {
+    padding: 0;
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+    line-height: 1;
+    border-radius: 2px;
+}
+
+.drag-handle {
+    cursor: move;
+    padding: 0 4px;
+    color: var(--bs-secondary);
+    opacity: 0.5;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.time-block:hover .drag-handle {
+    opacity: 1;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: rgba(0, 0, 0, 0.1);
+    border: 2px dashed var(--bs-border-color);
+}
+
+.sortable-chosen {
+    background: var(--bs-secondary-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rating {
+    display: flex;
+    gap: 10px;
+    flex-direction: row-reverse;
+}
+
+.rating input {
+    display: none;
+}
+
+.rating label {
+    cursor: pointer;
+    color: var(--bs-secondary);
+}
+
+.rating input:checked ~ label {
+    color: var(--bs-warning);
+}
+
+.rating label:hover,
+.rating label:hover ~ label {
+    color: var(--bs-warning);
+}
+
+.rating:hover input:checked ~ label:hover ~ label {
+    color: var(--bs-secondary);
+}
+
+.priority-input.completed {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* Dark mode styles */
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --card-bg: #2d2d2d;
+    --border-color: #404040;
+    --hover-color: #3d3d3d;
+}
+
+[data-theme="dark"] body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .navbar {
+    background-color: var(--card-bg) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Time blocks styles */
+.time-blocks-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.time-slot {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.5rem;
+    position: relative;
+}
+
+.time-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.time-block {
+    background-color: #007bff;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    cursor: move;
+    transition: transform 0.2s ease;
+}
+
+.time-block:hover {
+    transform: translateY(-2px);
+}
+
+.time-block.dragging {
+    opacity: 0.5;
+}
+
+/* Task and Todo styles */
+.task-item,
+.todo-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.task-item:hover,
+.todo-item:hover {
+    transform: translateX(4px);
+}
+
+.task-meta,
+.todo-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.due-date {
+    color: #666;
+}
+
+/* Quick Add Modal styles */
+.quick-add-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.quick-add-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-add-content {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 1000;
+}
+
+.dark-mode-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .time-blocks-container {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-add-content {
+        margin: 1rem;
+        padding: 1rem;
+    }
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Priority badge colors */
+.badge.bg-low {
+    background-color: #6c757d;
+}
+
+.badge.bg-medium {
+    background-color: #17a2b8;
+}
+
+.badge.bg-high {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge.bg-urgent {
+    background-color: #dc3545;
+}
+
+/* Drag and drop styles */
+.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff;
+}
+
+/* Loading indicator */
+.loading {
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+}
+
+.toast {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease;
+}
+
+.toast.success {
+    border-left: 4px solid #28a745;
+}
+
+.toast.error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast.info {
+    border-left: 4px solid #17a2b8;
+}
+
+/* Keyboard shortcut hints */
+[data-shortcut] {
+    position: relative;
+}
+
+[data-shortcut]::after {
+    content: attr(data-shortcut);
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+[data-shortcut]:hover::after {
+    opacity: 1;
+}
