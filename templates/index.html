@@ -125,23 +125,21 @@
                 <div id="timeBlocks" class="time-blocks">
                     <!-- Morning Hours (5:00 AM - 11:45 AM) -->
                     <div class="time-block-column">
-                        <h6 class="text-muted mb-2">Early Morning</h6>
+                        <h6 class="text-muted mb-2">Morning</h6>
                         {% for hour in range(5, 12) %}
                             {% for minute in [0, 15, 30, 45] %}
-                                {% if not (hour == 5 and minute < 30) %}
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
-                                    <div class="drag-handle">
-                                        <i class="fas fa-grip-vertical"></i>
-                                    </div>
                                     <div class="time-label">{{ current_time }}</div>
-                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
-                                        <select class="form-select form-select-sm task-select">
+                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
+                                         {% if saved_block and saved_block.task_id and categories %}
+                                         style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                         {% endif %}>
+                                        <select class="task-select">
                                             <option value="">Select a task</option>
-                                            <option value="new">+ Add New Task</option>
                                             {% for category in categories %}
-                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}" data-category-id="{{ category.id }}">
+                                                <optgroup label="{{ category.name }}">
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
@@ -152,24 +150,12 @@
                                                 </optgroup>
                                             {% endfor %}
                                         </select>
-                                        <input type="text" class="form-control form-control-sm task-notes"
-                                               placeholder="Add notes..."
+                                        <input type="text" class="task-notes"
+                                               placeholder="Notes..."
                                                maxlength="15"
-                                               value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}"
-                                               style="display: {% if saved_block and saved_block.task_id %}inline-block{% else %}none{% endif %};
-                                                      width: 100px;
-                                                      margin-left: 4px;">
-                                        <div class="task-controls">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-up" title="Copy Up">
-                                                <i class="fas fa-arrow-up"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary task-control-btn copy-down" title="Copy Down">
-                                                <i class="fas fa-arrow-down"></i>
-                                            </button>
-                                        </div>
+                                               value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
                                     </div>
                                 </div>
-                                {% endif %}
                             {% endfor %}
                         {% endfor %}
                     </div>
@@ -182,16 +168,15 @@
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                                 <div class="time-block" data-time="{{ current_time }}">
-                                    <div class="drag-handle">
-                                        <i class="fas fa-grip-vertical"></i>
-                                    </div>
                                     <div class="time-label">{{ current_time }}</div>
-                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}">
-                                        <select class="form-select form-select-sm task-select">
+                                    <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
+                                         {% if saved_block and saved_block.task_id and categories %}
+                                         style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                         {% endif %}>
+                                        <select class="task-select">
                                             <option value="">Select a task</option>
-                                            <option value="new">+ Add New Task</option>
                                             {% for category in categories %}
-                                                <optgroup label="{{ category.name }}" data-color="{{ category.color }}" data-category-id="{{ category.id }}">
+                                                <optgroup label="{{ category.name }}">
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
