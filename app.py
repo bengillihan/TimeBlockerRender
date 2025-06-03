@@ -205,6 +205,12 @@ def tasks():
     categories = Category.query.filter_by(user_id=current_user.id).all()
     return render_template('tasks.html', categories=categories)
 
+@app.route('/task-dashboard')
+@login_required
+def task_dashboard():
+    """Enhanced task dashboard with robust tracking features"""
+    return render_template('task_dashboard.html')
+
 @app.route('/api/categories', methods=['POST'])
 @login_required
 def add_category():
@@ -413,7 +419,197 @@ def task_operations(task_id):
         'title': task.title,
         'description': task.description,
         'category_id': task.category_id,
-        'color': task.category.color
+        'category_name': task.category.name,
+        'category_color': task.category.color,
+        'due_date': task.due_date.isoformat() if task.due_date else None,
+        'status': task.status,
+        'status_color': task.get_status_color(),
+        'role_id': task.role_id,
+        'role_name': task.assigned_role.name if task.assigned_role else None,
+        'is_recurring': task.is_recurring,
+        'recurrence_rule': task.recurrence_rule,
+        'priority': task.priority,
+        'priority_color': task.get_priority_color(),
+        'completed': task.completed,
+        'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+        'estimated_minutes': task.estimated_minutes,
+        'actual_minutes': task.actual_minutes,
+        'total_time_spent': task.get_total_time_spent(),
+        'notes': task.notes,
+        'tags': task.tags or [],
+        'dependencies': task.dependencies or [],
+        'progress_percentage': task.progress_percentage,
+        'last_worked_on': task.last_worked_on.isoformat() if task.last_worked_on else None,
+        'parent_task_id': task.parent_task_id,
+        'subtask_count': len(task.subtasks),
+        'is_overdue': task.is_overdue(),
+        'created_at': task.created_at.isoformat()
+    })
+
+# Role Management API Endpoints
+@app.route('/api/roles', methods=['GET', 'POST'])
+@login_required
+def manage_roles():
+    if request.method == 'GET':
+        roles = Role.query.filter_by(user_id=current_user.id).order_by(Role.created_at.desc()).all()
+        return jsonify([{
+            'id': role.id,
+            'name': role.name,
+            'color': role.color,
+            'description': role.description,
+            'task_count': len(role.tasks),
+            'created_at': role.created_at.isoformat()
+        } for role in roles])
+    
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Role name is required'}), 400
+    
+    try:
+        role = Role(
+            name=data['name'],
+            color=data.get('color', '#6c757d'),
+            description=data.get('description', ''),
+            user_id=current_user.id
+        )
+        db.session.add(role)
+        db.session.commit()
+        
+        return jsonify({
+            'id': role.id,
+            'name': role.name,
+            'color': role.color,
+            'description': role.description,
+            'task_count': 0,
+            'created_at': role.created_at.isoformat()
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating role: {str(e)}")
+        return jsonify({'error': 'Failed to create role'}), 500
+
+@app.route('/api/roles/<int:role_id>', methods=['PUT', 'DELETE'])
+@login_required
+def role_operations(role_id):
+    role = Role.query.filter_by(id=role_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'DELETE':
+        # Update tasks to remove role assignment before deleting role
+        Task.query.filter_by(role_id=role.id).update({'role_id': None})
+        db.session.delete(role)
+        db.session.commit()
+        return '', 204
+    
+    data = request.json
+    role.name = data.get('name', role.name)
+    role.color = data.get('color', role.color)
+    role.description = data.get('description', role.description)
+    db.session.commit()
+    
+    return jsonify({
+        'id': role.id,
+        'name': role.name,
+        'color': role.color,
+        'description': role.description,
+        'task_count': len(role.tasks),
+        'created_at': role.created_at.isoformat()
+    })
+
+# Task Analytics and Reporting Endpoints
+@app.route('/api/tasks/analytics')
+@login_required
+def task_analytics():
+    """Get task analytics and statistics"""
+    tasks = Task.query.filter_by(user_id=current_user.id).all()
+    
+    analytics = {
+        'total_tasks': len(tasks),
+        'completed_tasks': len([t for t in tasks if t.completed]),
+        'pending_tasks': len([t for t in tasks if t.status == 'pending']),
+        'in_progress_tasks': len([t for t in tasks if t.status == 'in_progress']),
+        'blocked_tasks': len([t for t in tasks if t.status == 'blocked']),
+        'overdue_tasks': len([t for t in tasks if t.is_overdue()]),
+        'priority_breakdown': {
+            'urgent': len([t for t in tasks if t.priority == 'urgent']),
+            'high': len([t for t in tasks if t.priority == 'high']),
+            'medium': len([t for t in tasks if t.priority == 'medium']),
+            'low': len([t for t in tasks if t.priority == 'low'])
+        },
+        'total_estimated_hours': sum([t.estimated_minutes or 0 for t in tasks]) / 60,
+        'total_actual_hours': sum([t.actual_minutes or 0 for t in tasks]) / 60,
+        'total_tracked_hours': sum([t.get_total_time_spent() for t in tasks]) / 60,
+        'completion_rate': (len([t for t in tasks if t.completed]) / len(tasks) * 100) if tasks else 0
+    }
+    
+    return jsonify(analytics)
+
+@app.route('/api/tasks/<int:task_id>/comments', methods=['GET', 'POST'])
+@login_required
+def task_comments(task_id):
+    task = Task.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'GET':
+        comments = TaskComment.query.filter_by(task_id=task_id).order_by(TaskComment.created_at.desc()).all()
+        return jsonify([{
+            'id': comment.id,
+            'content': comment.content,
+            'created_at': comment.created_at.isoformat()
+        } for comment in comments])
+    
+    data = request.json
+    if not data.get('content'):
+        return jsonify({'error': 'Comment content is required'}), 400
+    
+    try:
+        comment = TaskComment(
+            task_id=task_id,
+            user_id=current_user.id,
+            content=data['content']
+        )
+        db.session.add(comment)
+        db.session.commit()
+        
+        return jsonify({
+            'id': comment.id,
+            'content': comment.content,
+            'created_at': comment.created_at.isoformat()
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating comment: {str(e)}")
+        return jsonify({'error': 'Failed to create comment'}), 500
+
+@app.route('/api/tasks/<int:task_id>/progress', methods=['PUT'])
+@login_required
+def update_task_progress(task_id):
+    task = Task.query.filter_by(id=task_id, user_id=current_user.id).first_or_404()
+    
+    data = request.json
+    progress = data.get('progress_percentage', 0)
+    
+    if not 0 <= progress <= 100:
+        return jsonify({'error': 'Progress must be between 0 and 100'}), 400
+    
+    task.progress_percentage = progress
+    task.last_worked_on = datetime.utcnow()
+    
+    # Auto-update status based on progress
+    if progress == 0:
+        task.status = 'pending'
+    elif progress == 100:
+        task.status = 'completed'
+        task.completed = True
+        task.completed_at = datetime.utcnow()
+    elif progress > 0:
+        task.status = 'in_progress'
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': task.id,
+        'progress_percentage': task.progress_percentage,
+        'status': task.status,
+        'last_worked_on': task.last_worked_on.isoformat()
     })
 
 @app.route('/api/daily-plan', methods=['POST'])
