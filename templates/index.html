@@ -134,15 +134,15 @@
                                     <div class="time-label">{{ current_time }}</div>
                                     <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
                                          {% if saved_block and saved_block.task_id %}
-                                         {% set task_role_color = none %}
+                                         {% set task_category_color = none %}
                                          {% for category in categories %}
                                              {% for task in category.tasks %}
                                                  {% if task.id == saved_block.task_id %}
-                                                     {% set task_role_color = task.assigned_role.color if task.assigned_role else category.color %}
+                                                     {% set task_category_color = category.color %}
                                                  {% endif %}
                                              {% endfor %}
                                          {% endfor %}
-                                         style="background-color: {{ task_role_color }}20; border-left: 4px solid {{ task_role_color }};"
+                                         style="background-color: {{ task_category_color }}20; border-left: 4px solid {{ task_category_color }};"
                                          {% endif %}>
                                         <select class="task-select">
                                             <option value="">Select a task</option>
@@ -151,10 +151,9 @@
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
-                                                                data-role-color="{{ task.assigned_role.color if task.assigned_role else category.color }}"
-                                                                data-role-name="{{ task.assigned_role.name if task.assigned_role else 'General' }}"
+                                                                data-category-name="{{ category.name }}"
                                                                 {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                            {{ task.title }}{% if task.assigned_role %} ({{ task.assigned_role.name }}){% endif %}
+                                                            {{ task.title }}
                                                         </option>
                                                     {% endfor %}
                                                 </optgroup>
@@ -182,15 +181,15 @@
                                         <div class="time-label">{{ current_time }}</div>
                                         <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
                                              {% if saved_block and saved_block.task_id %}
-                                             {% set task_role_color = none %}
+                                             {% set task_category_color = none %}
                                              {% for category in categories %}
                                                  {% for task in category.tasks %}
                                                      {% if task.id == saved_block.task_id %}
-                                                         {% set task_role_color = task.assigned_role.color if task.assigned_role else category.color %}
+                                                         {% set task_category_color = category.color %}
                                                      {% endif %}
                                                  {% endfor %}
                                              {% endfor %}
-                                             style="background-color: {{ task_role_color }}20; border-left: 4px solid {{ task_role_color }};"
+                                             style="background-color: {{ task_category_color }}20; border-left: 4px solid {{ task_category_color }};"
                                              {% endif %}>
                                             <select class="task-select">
                                                 <option value="">Select a task</option>
@@ -199,10 +198,9 @@
                                                         {% for task in category.tasks %}
                                                             <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
-                                                                    data-role-color="{{ task.assigned_role.color if task.assigned_role else category.color }}"
-                                                                    data-role-name="{{ task.assigned_role.name if task.assigned_role else 'General' }}"
+                                                                    data-category-name="{{ category.name }}"
                                                                     {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                                {{ task.title }}{% if task.assigned_role %} ({{ task.assigned_role.name }}){% endif %}
+                                                                {{ task.title }}
                                                             </option>
                                                         {% endfor %}
                                                     </optgroup>
@@ -582,6 +580,46 @@ updateCurrentTime(); // Initial update
 // Update indicator every 5 minutes
 setInterval(updateTimeIndicator, 300000);
 updateTimeIndicator(); // Initial update
+
+// Initialize color coding for existing time blocks
+document.querySelectorAll('.task-select').forEach(select => {
+    // Apply initial colors for pre-selected tasks
+    if (select.value) {
+        updateTimeBlockColor(select);
+    }
+    
+    // Add change event listener
+    select.addEventListener('change', function() {
+        updateTimeBlockColor(this);
+    });
+});
+
+// Color coding function
+function updateTimeBlockColor(selectElement) {
+    const timeContent = selectElement.closest('.time-content');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        const categoryColor = selectedOption.getAttribute('data-category-color');
+        const categoryName = selectedOption.getAttribute('data-category-name');
+        
+        if (categoryColor) {
+            // Apply category-based background color with transparency and solid border
+            timeContent.style.backgroundColor = categoryColor + '20';
+            timeContent.style.borderLeft = `4px solid ${categoryColor}`;
+            timeContent.classList.add('has-task');
+            
+            // Add tooltip with category information
+            timeContent.title = `Category: ${categoryName}`;
+        }
+    } else {
+        // Reset to default styling
+        timeContent.style.backgroundColor = '';
+        timeContent.style.borderLeft = '';
+        timeContent.classList.remove('has-task');
+        timeContent.title = '';
+    }
+}
 
 // Also update indicator when changing dates
 document.getElementById('datePicker').addEventListener('change', updateTimeIndicator);

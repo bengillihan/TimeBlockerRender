@@ -270,17 +270,17 @@ function updateTimeBlockColor(selectElement) {
     const selectedOption = selectElement.options[selectElement.selectedIndex];
     
     if (selectedOption && selectedOption.value) {
-        const roleColor = selectedOption.getAttribute('data-role-color');
-        const roleName = selectedOption.getAttribute('data-role-name');
+        const categoryColor = selectedOption.getAttribute('data-category-color');
+        const categoryName = selectedOption.getAttribute('data-category-name');
         
-        if (roleColor) {
-            // Apply role-based background color with transparency and solid border
-            timeContent.style.backgroundColor = roleColor + '20';
-            timeContent.style.borderLeft = `4px solid ${roleColor}`;
+        if (categoryColor) {
+            // Apply category-based background color with transparency and solid border
+            timeContent.style.backgroundColor = categoryColor + '20';
+            timeContent.style.borderLeft = `4px solid ${categoryColor}`;
             timeContent.classList.add('has-task');
             
-            // Add tooltip with role information
-            timeContent.title = `Role: ${roleName}`;
+            // Add tooltip with category information
+            timeContent.title = `Category: ${categoryName}`;
         }
     } else {
         // Reset to default styling
