@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize dark mode
     initDarkMode();
+    
+    // Initialize role-based color coding
+    initRoleColorCoding();
 });
 
 // Keyboard shortcuts
@@ -244,6 +247,47 @@ async function saveForm(form) {
         }
     } catch (error) {
         console.error('Auto-save failed:', error);
+    }
+}
+
+// Role-based color coding
+function initRoleColorCoding() {
+    // Add event listeners to all task selects
+    document.querySelectorAll('.task-select').forEach(select => {
+        select.addEventListener('change', function() {
+            updateTimeBlockColor(this);
+        });
+        
+        // Apply initial colors if tasks are already selected
+        if (this.value) {
+            updateTimeBlockColor(this);
+        }
+    });
+}
+
+function updateTimeBlockColor(selectElement) {
+    const timeContent = selectElement.closest('.time-content');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        const roleColor = selectedOption.getAttribute('data-role-color');
+        const roleName = selectedOption.getAttribute('data-role-name');
+        
+        if (roleColor) {
+            // Apply role-based background color with transparency and solid border
+            timeContent.style.backgroundColor = roleColor + '20';
+            timeContent.style.borderLeft = `4px solid ${roleColor}`;
+            timeContent.classList.add('has-task');
+            
+            // Add tooltip with role information
+            timeContent.title = `Role: ${roleName}`;
+        }
+    } else {
+        // Reset to default styling
+        timeContent.style.backgroundColor = '';
+        timeContent.style.borderLeft = '';
+        timeContent.classList.remove('has-task');
+        timeContent.title = '';
     }
 }
 

@@ -133,8 +133,16 @@
                                 <div class="time-block" data-time="{{ current_time }}">
                                     <div class="time-label">{{ current_time }}</div>
                                     <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
-                                         {% if saved_block and saved_block.task_id and categories %}
-                                         style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                         {% if saved_block and saved_block.task_id %}
+                                         {% set task_role_color = none %}
+                                         {% for category in categories %}
+                                             {% for task in category.tasks %}
+                                                 {% if task.id == saved_block.task_id %}
+                                                     {% set task_role_color = task.assigned_role.color if task.assigned_role else category.color %}
+                                                 {% endif %}
+                                             {% endfor %}
+                                         {% endfor %}
+                                         style="background-color: {{ task_role_color }}20; border-left: 4px solid {{ task_role_color }};"
                                          {% endif %}>
                                         <select class="task-select">
                                             <option value="">Select a task</option>
@@ -143,8 +151,10 @@
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
+                                                                data-role-color="{{ task.assigned_role.color if task.assigned_role else category.color }}"
+                                                                data-role-name="{{ task.assigned_role.name if task.assigned_role else 'General' }}"
                                                                 {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                            {{ task.title }}
+                                                            {{ task.title }}{% if task.assigned_role %} ({{ task.assigned_role.name }}){% endif %}
                                                         </option>
                                                     {% endfor %}
                                                 </optgroup>
@@ -163,8 +173,7 @@
                     <!-- Afternoon Hours -->
                     <div class="time-block-column">
                         <h6 class="text-muted mb-2">Afternoon</h6>
-                        {% set mid_hour = current_user.day_start_time.hour + ((current_user.day_end_time.hour - current_user.day_start_time.hour) // 2) %}
-                        {% for hour in range(mid_hour, current_user.day_end_time.hour + 1) %}
+                        {% for hour in range(current_user.day_split_time.hour, current_user.day_end_time.hour + 1) %}
                             {% for minute in [0, 15, 30, 45] %}
                                 {% if hour < current_user.day_end_time.hour or (hour == current_user.day_end_time.hour and minute <= current_user.day_end_time.minute) %}
                                     {% set current_time = '%02d:%02d'|format(hour, minute) %}
@@ -172,8 +181,16 @@
                                     <div class="time-block" data-time="{{ current_time }}">
                                         <div class="time-label">{{ current_time }}</div>
                                         <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
-                                             {% if saved_block and saved_block.task_id and categories %}
-                                             style="border-left-color: {% for category in categories %}{% for task in category.tasks %}{% if task.id == saved_block.task_id %}{{ category.color }}{% endif %}{% endfor %}{% endfor %};"
+                                             {% if saved_block and saved_block.task_id %}
+                                             {% set task_role_color = none %}
+                                             {% for category in categories %}
+                                                 {% for task in category.tasks %}
+                                                     {% if task.id == saved_block.task_id %}
+                                                         {% set task_role_color = task.assigned_role.color if task.assigned_role else category.color %}
+                                                     {% endif %}
+                                                 {% endfor %}
+                                             {% endfor %}
+                                             style="background-color: {{ task_role_color }}20; border-left: 4px solid {{ task_role_color }};"
                                              {% endif %}>
                                             <select class="task-select">
                                                 <option value="">Select a task</option>
@@ -182,8 +199,10 @@
                                                         {% for task in category.tasks %}
                                                             <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
+                                                                    data-role-color="{{ task.assigned_role.color if task.assigned_role else category.color }}"
+                                                                    data-role-name="{{ task.assigned_role.name if task.assigned_role else 'General' }}"
                                                                     {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
-                                                                {{ task.title }}
+                                                                {{ task.title }}{% if task.assigned_role %} ({{ task.assigned_role.name }}){% endif %}
                                                             </option>
                                                         {% endfor %}
                                                     </optgroup>
