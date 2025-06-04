@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     # Add day start/end time preferences
     day_start_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time())
     day_end_time = db.Column(db.Time, default=datetime.strptime('16:30', '%H:%M').time())
+    day_split_time = db.Column(db.Time, default=datetime.strptime('12:00', '%H:%M').time())
     roles = db.relationship('Role', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

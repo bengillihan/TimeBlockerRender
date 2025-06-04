@@ -126,7 +126,7 @@
                     <!-- Morning Hours -->
                     <div class="time-block-column">
                         <h6 class="text-muted mb-2">Morning</h6>
-                        {% for hour in range(current_user.day_start_time.hour, current_user.day_start_time.hour + ((current_user.day_end_time.hour - current_user.day_start_time.hour) // 2)) %}
+                        {% for hour in range(current_user.day_start_time.hour, current_user.day_split_time.hour) %}
                             {% for minute in [0, 15, 30, 45] %}
                                 {% set current_time = '%02d:%02d'|format(hour, minute) %}
                                 {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}

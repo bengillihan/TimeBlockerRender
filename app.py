@@ -1154,10 +1154,12 @@ def update_time_preferences():
         # Parse and validate the times
         start_time = datetime.strptime(data['day_start_time'], '%H:%M').time()
         end_time = datetime.strptime(data['day_end_time'], '%H:%M').time()
+        split_time = datetime.strptime(data['day_split_time'], '%H:%M').time()
 
         # Update user preferences
         current_user.day_start_time = start_time
         current_user.day_end_time = end_time
+        current_user.day_split_time = split_time
         db.session.commit()
 
         return jsonify({'message': 'Preferences updated successfully'})
