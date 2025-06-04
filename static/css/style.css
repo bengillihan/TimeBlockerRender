@@ -30,8 +30,8 @@
 .time-label {
     width: 50px; 
     font-size: 0.8em;
-    color: #333;
-    font-weight: 500;
+    color: #000;
+    font-weight: 600;
 }
 
 .time-content {
