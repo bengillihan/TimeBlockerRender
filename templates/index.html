@@ -583,10 +583,8 @@ updateTimeIndicator(); // Initial update
 
 // Initialize color coding for existing time blocks
 document.querySelectorAll('.task-select').forEach(select => {
-    // Apply initial colors for pre-selected tasks
-    if (select.value) {
-        updateTimeBlockColor(select);
-    }
+    // Apply initial colors for both assigned and empty blocks
+    updateTimeBlockColor(select);
     
     // Add change event listener
     select.addEventListener('change', function() {
@@ -605,7 +603,7 @@ function updateTimeBlockColor(selectElement) {
         
         if (categoryColor) {
             // Apply category-based background color with transparency and solid border
-            timeContent.style.backgroundColor = categoryColor + '20';
+            timeContent.style.backgroundColor = categoryColor + '30';
             timeContent.style.borderLeft = `4px solid ${categoryColor}`;
             timeContent.classList.add('has-task');
             
@@ -613,11 +611,11 @@ function updateTimeBlockColor(selectElement) {
             timeContent.title = `Category: ${categoryName}`;
         }
     } else {
-        // Reset to default styling
-        timeContent.style.backgroundColor = '';
-        timeContent.style.borderLeft = '';
+        // Reset to empty block styling - light gray background with subtle border
+        timeContent.style.backgroundColor = '#f8f9fa';
+        timeContent.style.borderLeft = '3px solid #dee2e6';
         timeContent.classList.remove('has-task');
-        timeContent.title = '';
+        timeContent.title = 'Available time slot';
     }
 }
 
