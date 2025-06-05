@@ -30,9 +30,9 @@
 .time-label {
     width: 50px; 
     font-size: 0.8em;
-    color: #000;
+    color: #ffffff;
     font-weight: 700;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: inherit;
     padding: 2px 4px;
     border-radius: 3px;
     text-align: center;

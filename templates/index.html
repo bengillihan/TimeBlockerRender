@@ -649,6 +649,104 @@ document.getElementById('prevDay').addEventListener('click', updateTimeIndicator
 document.getElementById('nextDay').addEventListener('click', updateTimeIndicator);
 document.getElementById('todayBtn').addEventListener('click', updateTimeIndicator);
 
+// Refresh Totals Button functionality
+document.getElementById('refreshTotalsBtn').addEventListener('click', function() {
+    const button = this;
+    const icon = button.querySelector('i');
+    
+    // Show loading state
+    button.disabled = true;
+    icon.classList.remove('fa-sync-alt');
+    icon.classList.add('fa-spinner', 'fa-spin');
+    
+    // Calculate new totals
+    refreshTimeStatistics();
+    
+    // Reset button state after animation
+    setTimeout(() => {
+        button.disabled = false;
+        icon.classList.remove('fa-spinner', 'fa-spin');
+        icon.classList.add('fa-sync-alt');
+    }, 1000);
+});
+
+// Function to refresh time statistics
+function refreshTimeStatistics() {
+    const categoryStats = {};
+    let totalMinutes = 0;
+    
+    // Calculate statistics from current time blocks
+    document.querySelectorAll('.time-block').forEach(block => {
+        const select = block.querySelector('.task-select');
+        if (select && select.value) {
+            const selectedOption = select.options[select.selectedIndex];
+            const categoryName = selectedOption.getAttribute('data-category-name');
+            const categoryColor = selectedOption.getAttribute('data-category-color');
+            
+            if (categoryName && categoryColor) {
+                // Each block is 15 minutes
+                const minutes = 15;
+                totalMinutes += minutes;
+                
+                if (!categoryStats[categoryName]) {
+                    categoryStats[categoryName] = {
+                        name: categoryName,
+                        color: categoryColor,
+                        minutes: 0
+                    };
+                }
+                categoryStats[categoryName].minutes += minutes;
+            }
+        }
+    });
+    
+    // Update the statistics display
+    updateStatisticsDisplay(categoryStats, totalMinutes);
+}
+
+// Function to update the statistics display
+function updateStatisticsDisplay(categoryStats, totalMinutes) {
+    const statsBody = document.querySelector('.card-body');
+    if (!statsBody) return;
+    
+    // Update total daily hours
+    const totalElement = statsBody.querySelector('.border-bottom .h6:last-child');
+    if (totalElement) {
+        totalElement.textContent = `${(totalMinutes / 60).toFixed(1)} hrs`;
+    }
+    
+    // Clear existing category stats (except total)
+    const existingStats = statsBody.querySelectorAll('.mb-3:not(.pb-2)');
+    existingStats.forEach(stat => stat.remove());
+    
+    // Add updated category stats
+    Object.values(categoryStats).forEach(stat => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'mb-3';
+        categoryDiv.innerHTML = `
+            <h6 class="mb-2" style="color: ${stat.color}">
+                <i class="fas fa-square me-1" style="color: ${stat.color}"></i>
+                ${stat.name}
+            </h6>
+            <div class="ps-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small>Total Time</small>
+                    <small>${(stat.minutes / 60).toFixed(1)} hrs</small>
+                </div>
+            </div>
+        `;
+        statsBody.appendChild(categoryDiv);
+    });
+    
+    // Show message if no time blocks assigned
+    if (totalMinutes === 0) {
+        const noDataDiv = document.createElement('div');
+        noDataDiv.className = 'text-muted text-center py-3';
+        noDataDiv.innerHTML = '<small>No time blocks assigned yet</small>';
+        statsBody.appendChild(noDataDiv);
+    }
+}
+
 
 document.querySelector('.add-earlier-blocks').addEventListener('click', function() {
     const firstBlock = document.querySelector('.time-block');
