@@ -1145,6 +1145,74 @@ def time_preferences():
     """Show time preferences page."""
     return render_template('time_preferences.html')
 
+@app.route('/api/seven-day-stats', methods=['GET'])
+@login_required
+def get_seven_day_stats():
+    """Get 7-day time statistics for the current user."""
+    try:
+        # Calculate date range for last 7 days (including today)
+        end_date = datetime.now(pacific_tz).date()
+        start_date = end_date - timedelta(days=6)  # 6 days ago + today = 7 days
+        
+        # Query for all daily plans in the date range
+        daily_plans = DailyPlan.query.filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).all()
+        
+        # Initialize statistics
+        total_minutes = 0
+        aps_minutes = 0
+        category_stats = {}
+        
+        # Calculate statistics from time blocks
+        for plan in daily_plans:
+            for block in plan.time_blocks:
+                if block.task_id:
+                    task = Task.query.get(block.task_id)
+                    if task and task.category:
+                        # Each block is 15 minutes
+                        minutes = 15
+                        total_minutes += minutes
+                        
+                        # Check if this is APS/Work category
+                        if task.category.name.lower() in ['aps', 'work']:
+                            aps_minutes += minutes
+                        
+                        # Update category statistics
+                        category_name = task.category.name
+                        if category_name not in category_stats:
+                            category_stats[category_name] = {
+                                'name': category_name,
+                                'color': task.category.color,
+                                'minutes': 0
+                            }
+                        category_stats[category_name]['minutes'] += minutes
+        
+        # Calculate progress percentage for APS goal (32 hours = 1920 minutes)
+        aps_goal_minutes = 32 * 60  # 32 hours in minutes
+        aps_progress_percentage = min((aps_minutes / aps_goal_minutes) * 100, 100) if aps_goal_minutes > 0 else 0
+        
+        return jsonify({
+            'success': True,
+            'total_hours': round(total_minutes / 60, 1),
+            'aps_hours': round(aps_minutes / 60, 1),
+            'aps_progress_percentage': round(aps_progress_percentage, 1),
+            'category_stats': list(category_stats.values()),
+            'date_range': {
+                'start': start_date.strftime('%Y-%m-%d'),
+                'end': end_date.strftime('%Y-%m-%d')
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching 7-day stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch 7-day statistics'
+        }), 500
+
 @app.route('/api/time-preferences', methods=['POST'])
 @login_required
 def update_time_preferences():
