@@ -602,10 +602,20 @@ function updateTimeBlockColor(selectElement) {
         const categoryName = selectedOption.getAttribute('data-category-name');
         
         if (categoryColor) {
-            // Apply category-based background color with transparency and solid border
-            timeContent.style.backgroundColor = categoryColor + '30';
+            // Apply category color to entire time block background
+            timeContent.style.backgroundColor = categoryColor;
             timeContent.style.borderLeft = `4px solid ${categoryColor}`;
             timeContent.classList.add('has-task');
+            
+            // Make text more readable on colored background
+            timeContent.style.color = '#ffffff';
+            const select = timeContent.querySelector('.task-select');
+            const notes = timeContent.querySelector('.task-notes');
+            if (select) select.style.color = '#ffffff';
+            if (notes) {
+                notes.style.backgroundColor = 'rgba(255,255,255,0.9)';
+                notes.style.color = '#333';
+            }
             
             // Add tooltip with category information
             timeContent.title = `Category: ${categoryName}`;
@@ -614,7 +624,18 @@ function updateTimeBlockColor(selectElement) {
         // Reset to empty block styling - light gray background with subtle border
         timeContent.style.backgroundColor = '#f8f9fa';
         timeContent.style.borderLeft = '3px solid #dee2e6';
+        timeContent.style.color = '#333';
         timeContent.classList.remove('has-task');
+        
+        // Reset text colors for select and notes
+        const select = timeContent.querySelector('.task-select');
+        const notes = timeContent.querySelector('.task-notes');
+        if (select) select.style.color = '#333';
+        if (notes) {
+            notes.style.backgroundColor = '#ffffff';
+            notes.style.color = '#333';
+        }
+        
         timeContent.title = 'Available time slot';
     }
 }

@@ -47,8 +47,8 @@ login_manager.login_view = 'login'
 # Initialize cache
 init_cache(app)
 
-# Set shorter session lifetime (1 hour) to reduce idle connections
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+# Set session lifetime (8 hours) for better user experience
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
 # Import routes after app initialization to avoid circular imports
 from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate, ToDo
