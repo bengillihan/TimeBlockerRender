@@ -609,6 +609,9 @@ updateCurrentTime(); // Initial update
 setInterval(updateTimeIndicator, 300000);
 updateTimeIndicator(); // Initial update
 
+// Set user's day end time for JavaScript use
+window.userDayEndTime = '{{ current_user.day_end_time.strftime("%H:%M") if current_user.day_end_time else "16:30" }}';
+
 // Initialize color coding for existing time blocks
 document.querySelectorAll('.task-select').forEach(select => {
     // Apply initial colors for both assigned and empty blocks
@@ -617,6 +620,13 @@ document.querySelectorAll('.task-select').forEach(select => {
     // Add change event listener
     select.addEventListener('change', function() {
         updateTimeBlockColor(this);
+    });
+    
+    // Add double-click handler for task push-down
+    select.addEventListener('dblclick', function() {
+        if (this.value) {
+            pushTaskDown(this);
+        }
     });
 });
 
@@ -856,40 +866,69 @@ document.querySelector('.add-earlier-blocks').addEventListener('click', function
 });
 
 document.querySelector('.add-later-blocks').addEventListener('click', function() {
+    // Get user's day end time from the page data or use a default
+    const dayEndTime = window.userDayEndTime || '16:30'; // Default to 4:30 PM
+    const [endHours, endMinutes] = dayEndTime.split(':').map(Number);
+    
+    // Start adding blocks after the day end time
     const lastBlock = document.querySelector('.time-block:last-child');
+    let nextTime;
+    
     if (lastBlock) {
         const currentTime = lastBlock.dataset.time;
-        const [hours, minutes] = currentTime.split(':').map(Number);
-
-        // Calculate new time (15 minutes later)
-        let newMinutes = minutes + 15;
-        let newHours = hours;
-
-        if (newMinutes >= 60) {
-            newMinutes = 0;
-            newHours++;
+        const [currentHours, currentMinutes] = currentTime.split(':').map(Number);
+        
+        // If current last block is before day end time, start from day end time
+        const currentTotalMinutes = currentHours * 60 + currentMinutes;
+        const endTotalMinutes = endHours * 60 + endMinutes;
+        
+        if (currentTotalMinutes < endTotalMinutes) {
+            nextTime = dayEndTime;
+        } else {
+            // Add 15 minutes to the last block
+            let newMinutes = currentMinutes + 15;
+            let newHours = currentHours;
+            
+            if (newMinutes >= 60) {
+                newMinutes = 0;
+                newHours++;
+            }
+            
+            if (newHours >= 24) return; // Don't go past midnight
+            nextTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
         }
-
-        if (newHours < 24) {  // Don't go past midnight
-            const newTimeString = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
-
-            // Clone the last block and update its time
-            const newBlock = lastBlock.cloneNode(true);
-            newBlock.dataset.time = newTimeString;
-            newBlock.querySelector('.time-label').textContent = newTimeString;
-
-            // Clear any selected task
-            const select = newBlock.querySelector('.task-select');
-            select.value = '';
-
-            // Add the new block at the end
-            lastBlock.parentNode.appendChild(newBlock);
-
-            // Reinitialize event listeners for the new block
-            initializeTimeBlock(newBlock);
-        }
+    } else {
+        nextTime = dayEndTime;
     }
+
+    // Create new block
+    const container = document.querySelector('.time-blocks-container') || document.querySelector('[data-time]').parentNode;
+    const newBlock = createTimeBlock(nextTime);
+    container.appendChild(newBlock);
 });
+
+// Function to create a new time block
+function createTimeBlock(timeString) {
+    const template = document.querySelector('.time-block');
+    const newBlock = template.cloneNode(true);
+    
+    newBlock.dataset.time = timeString;
+    newBlock.querySelector('.time-label').textContent = timeString;
+    
+    // Clear any selected task
+    const select = newBlock.querySelector('.task-select');
+    select.value = '';
+    
+    // Clear notes
+    const notes = newBlock.querySelector('.task-notes');
+    notes.value = '';
+    notes.style.display = 'none';
+    
+    // Initialize event listeners
+    initializeTimeBlock(newBlock);
+    
+    return newBlock;
+}
 
 // Function to initialize event listeners for a time block
 function initializeTimeBlock(block) {
@@ -898,14 +937,64 @@ function initializeTimeBlock(block) {
     select.addEventListener('change', function() {
         const notesInput = this.parentElement.querySelector('.task-notes');
         notesInput.style.display = this.value ? 'inline-block' : 'none';
-        notesInput.value = '';
-
-        if (this.value === 'new') {
-            // Handle new task creation
-            const modal = new bootstrap.Modal(document.getElementById('addTaskModal'));
-            modal.show();
+        
+        // Update color coding
+        updateTimeBlockColor(this);
+    });
+    
+    // Add double-click handler for task push-down
+    select.addEventListener('dblclick', function() {
+        if (this.value) {
+            pushTaskDown(this);
         }
     });
+    
+    // Initialize color coding
+    updateTimeBlockColor(select);
+}
+
+// Function to push a task down to subsequent time blocks
+function pushTaskDown(selectElement) {
+    const currentBlock = selectElement.closest('.time-block');
+    const allBlocks = Array.from(document.querySelectorAll('.time-block'));
+    const currentIndex = allBlocks.indexOf(currentBlock);
+    
+    if (currentIndex === -1) return;
+    
+    const selectedTask = selectElement.value;
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    
+    if (!selectedTask) return;
+    
+    // Ask user how many blocks to fill
+    const blocksToFill = prompt(`How many time blocks (15-min each) do you want to fill with "${selectedOption.text}"?`, '4');
+    
+    if (!blocksToFill || isNaN(blocksToFill) || blocksToFill < 1) return;
+    
+    const numBlocks = parseInt(blocksToFill);
+    
+    // Fill the specified number of blocks starting from the next one
+    for (let i = 1; i <= numBlocks && (currentIndex + i) < allBlocks.length; i++) {
+        const nextBlock = allBlocks[currentIndex + i];
+        const nextSelect = nextBlock.querySelector('.task-select');
+        
+        // Only fill if the block is empty
+        if (!nextSelect.value) {
+            nextSelect.value = selectedTask;
+            updateTimeBlockColor(nextSelect);
+            
+            // Show notes input if task is selected
+            const notesInput = nextBlock.querySelector('.task-notes');
+            notesInput.style.display = 'inline-block';
+        }
+    }
+    
+    // Show success message
+    const filledBlocks = Math.min(numBlocks, allBlocks.length - currentIndex - 1);
+    if (filledBlocks > 0) {
+        alert(`Filled ${filledBlocks} time blocks with "${selectedOption.text}"`);
+    }
+
 
     // Re-initialize copy buttons
     block.querySelector('.copy-up').addEventListener('click', function() {
