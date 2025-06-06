@@ -50,6 +50,36 @@
     transition: all 0.2s ease;
 }
 
+/* Flexible time blocks styling */
+.flexible-blocks-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.flexible-time-block {
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.flexible-time-block:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.flexible-time-block.has-task {
+    border-left: 4px solid;
+}
+
+.flexible-task-select, .flexible-time-input {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.schedule-flexible-block:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .task-select {
     border: none;
     background: transparent;

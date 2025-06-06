@@ -260,12 +260,37 @@
 
 <div class="time-block-controls text-center mt-3">
     <div class="btn-group">
+        <button type="button" class="btn btn-outline-success btn-sm add-flexible-blocks">
+            <i class="fas fa-clock"></i> Add 10 Flexible Blocks
+        </button>
         <button type="button" class="btn btn-outline-secondary btn-sm add-later-blocks">
             <i class="fas fa-plus"></i> Add Later Blocks
         </button>
         <button type="button" class="btn btn-outline-danger btn-sm remove-later-blocks">
             <i class="fas fa-minus"></i> Remove Block
         </button>
+    </div>
+</div>
+
+<!-- Flexible Time Blocks Section -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Flexible Time Blocks
+                    <small class="text-muted">(Schedule these at any time)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="flexibleBlocks" class="flexible-blocks-container">
+                    <!-- Flexible blocks will be added here -->
+                </div>
+                <div class="text-muted text-center py-3" id="flexibleBlocksPlaceholder">
+                    <i class="fas fa-info-circle"></i> Click "Add 10 Flexible Blocks" to create unscheduled task blocks
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1050,6 +1075,157 @@ document.getElementById('restoreTodayBtn').addEventListener('click', async funct
         }
     }
 });
+
+// Flexible time blocks functionality
+document.querySelector('.add-flexible-blocks').addEventListener('click', function() {
+    const flexibleContainer = document.getElementById('flexibleBlocks');
+    const placeholder = document.getElementById('flexibleBlocksPlaceholder');
+    
+    // Hide placeholder
+    placeholder.style.display = 'none';
+    
+    // Add 10 flexible blocks
+    for (let i = 0; i < 10; i++) {
+        const flexBlock = createFlexibleTimeBlock(i + 1);
+        flexibleContainer.appendChild(flexBlock);
+    }
+    
+    // Update button text and disable
+    this.innerHTML = '<i class="fas fa-check"></i> 10 Flexible Blocks Added';
+    this.disabled = true;
+    this.classList.remove('btn-outline-success');
+    this.classList.add('btn-success');
+});
+
+function createFlexibleTimeBlock(blockNumber) {
+    const flexBlock = document.createElement('div');
+    flexBlock.className = 'flexible-time-block mb-3 p-3 border rounded';
+    flexBlock.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-1">
+                <strong>#${blockNumber}</strong>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control task-select flexible-task-select">
+                    <option value="">Select Task</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="time" class="form-control flexible-time-input" placeholder="Set time">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control task-notes" placeholder="Notes" style="display: none;">
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-sm btn-primary schedule-flexible-block" disabled>
+                    <i class="fas fa-calendar-plus"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Populate task options from existing task selects
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
+    const notesInput = flexBlock.querySelector('.task-notes');
+    
+    // Copy options from existing task select
+    const existingTaskSelect = document.querySelector('.time-block .task-select');
+    if (existingTaskSelect) {
+        taskSelect.innerHTML = existingTaskSelect.innerHTML;
+    }
+    
+    // Update block color and enable scheduling when task is selected
+    taskSelect.addEventListener('change', function() {
+        updateFlexibleBlockColor(this);
+        checkScheduleReady(flexBlock);
+        
+        // Show/hide notes input
+        if (this.value) {
+            notesInput.style.display = 'block';
+        } else {
+            notesInput.style.display = 'none';
+        }
+    });
+    
+    // Enable scheduling when time is set
+    timeInput.addEventListener('change', function() {
+        checkScheduleReady(flexBlock);
+    });
+    
+    // Schedule the block
+    scheduleBtn.addEventListener('click', function() {
+        scheduleFlexibleBlock(flexBlock);
+    });
+    
+    return flexBlock;
+}
+
+function updateFlexibleBlockColor(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const flexBlock = selectElement.closest('.flexible-time-block');
+    
+    if (selectedOption.value) {
+        const categoryColor = selectedOption.dataset.categoryColor;
+        flexBlock.style.backgroundColor = categoryColor;
+        flexBlock.style.color = 'white';
+        flexBlock.style.borderColor = categoryColor;
+    } else {
+        flexBlock.style.backgroundColor = '';
+        flexBlock.style.color = '';
+        flexBlock.style.borderColor = '';
+    }
+}
+
+function checkScheduleReady(flexBlock) {
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
+    
+    if (taskSelect.value && timeInput.value) {
+        scheduleBtn.disabled = false;
+    } else {
+        scheduleBtn.disabled = true;
+    }
+}
+
+function scheduleFlexibleBlock(flexBlock) {
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const notesInput = flexBlock.querySelector('.task-notes');
+    
+    const selectedTime = timeInput.value;
+    const taskId = taskSelect.value;
+    const notes = notesInput.value;
+    
+    // Find the corresponding time block in the schedule
+    const timeBlock = document.querySelector(`[data-time="${selectedTime}"]`);
+    
+    if (timeBlock) {
+        const scheduledTaskSelect = timeBlock.querySelector('.task-select');
+        const scheduledNotesInput = timeBlock.querySelector('.task-notes');
+        
+        // Set the task and notes in the scheduled time block
+        scheduledTaskSelect.value = taskId;
+        updateTimeBlockColor(scheduledTaskSelect);
+        
+        if (notes) {
+            scheduledNotesInput.value = notes;
+            scheduledNotesInput.style.display = 'inline-block';
+        }
+        
+        // Remove the flexible block
+        flexBlock.remove();
+        
+        // Auto-save the changes
+        autoSaveData();
+        
+        alert(`Task scheduled for ${selectedTime}`);
+    } else {
+        alert(`Time slot ${selectedTime} not found. You may need to add more time blocks first.`);
+    }
+}
 
 // Function to load 7-day statistics
 async function loadSevenDayStats() {
