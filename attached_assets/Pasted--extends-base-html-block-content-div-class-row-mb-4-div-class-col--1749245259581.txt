@@ -347,21 +347,11 @@
                                                 {% endif %}
                                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                                     {% if todo.is_recurring %}
-                                                    <span class="badge bg-info d-flex align-items-center">
-                                                        <i class="fas fa-repeat me-1"></i>
-                                                        <span class="me-1">Recurring</span>
-                                                        {% if todo.recurrence_rule %}
-                                                        <small class="text-light opacity-75">({{ todo.recurrence_rule|title }})</small>
-                                                        {% endif %}
+                                                    <span class="badge bg-info" data-bs-toggle="tooltip" title="{{ todo.recurrence_rule|recurrence_human }}">
+                                                        <i class="fas fa-repeat me-1"></i>Recurring
                                                     </span>
                                                     {% endif %}
                                                     <span class="badge bg-{{ todo.get_priority_color() }} fs-7">{{ todo.priority|title }}</span>
-                                                    {% if todo.next_occurrence %}
-                                                    <span class="badge bg-secondary">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        Next: {{ todo.next_occurrence.strftime('%m/%d') }}
-                                                    </span>
-                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
@@ -512,21 +502,12 @@
                         </label>
                     </div>
                     <div class="mb-3" id="recurrenceRuleDiv" style="display: none;">
-                        <label for="todoRecurrenceRule" class="form-label">
-                            <i class="fas fa-repeat me-1"></i>Recurrence Pattern
-                        </label>
+                        <label for="todoRecurrenceRule" class="form-label">Recurrence Rule</label>
                         <select class="form-select" id="todoRecurrenceRule" name="recurrence_rule">
-                            <option value="daily">Daily - Repeats every day</option>
-                            <option value="weekly">Weekly - Repeats every week</option>
-                            <option value="bi-weekly">Bi-weekly - Repeats every 2 weeks</option>
-                            <option value="monthly">Monthly - Repeats every month</option>
-                            <option value="quarterly">Quarterly - Repeats every 3 months</option>
-                            <option value="yearly">Yearly - Repeats every year</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
                         </select>
-                        <div class="form-text text-muted mt-2">
-                            <i class="fas fa-info-circle me-1"></i>
-                            When you complete a recurring todo, the next occurrence will be automatically created based on this pattern.
-                        </div>
                     </div>
                 </form>
             </div>
@@ -588,143 +569,6 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/timeblock.js') }}"></script>
 <script>
-// Recurring todo checkbox toggle
-document.getElementById('todoRecurring').addEventListener('change', function() {
-    const recurrenceDiv = document.getElementById('recurrenceRuleDiv');
-    if (this.checked) {
-        recurrenceDiv.style.display = 'block';
-    } else {
-        recurrenceDiv.style.display = 'none';
-    }
-});
-
-// Show add todo modal
-function showAddTodoModal() {
-    const modal = new bootstrap.Modal(document.getElementById('addTodoModal'));
-    modal.show();
-}
-
-// Save todo function
-function saveTodo() {
-    const form = document.getElementById('addTodoForm');
-    const formData = new FormData(form);
-    
-    const data = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        role_id: formData.get('role_id') || null,
-        priority: formData.get('priority'),
-        due_date: formData.get('due_date') || null,
-        is_recurring: formData.has('is_recurring'),
-        recurrence_rule: formData.get('recurrence_rule') || null
-    };
-    
-    fetch('/api/todos', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload(); // Reload to show new todo
-        } else {
-            alert('Error creating todo: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creating todo');
-    });
-}
-
-// Toggle todo completion
-function toggleTodoComplete(todoId, completed) {
-    fetch(`/api/todos/${todoId}/complete`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ completed: completed })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (completed && data.next_occurrence) {
-                // Show message about recurring todo
-                const message = `Todo completed! Next occurrence scheduled for ${new Date(data.next_occurrence).toLocaleDateString()}.`;
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
-            }
-            location.reload(); // Reload to reflect changes
-        } else {
-            alert('Error updating todo: ' + (data.message || 'Unknown error'));
-            // Revert checkbox state
-            document.querySelector(`input[data-todo-id="${todoId}"]`).checked = !completed;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error updating todo');
-        // Revert checkbox state
-        document.querySelector(`input[data-todo-id="${todoId}"]`).checked = !completed;
-    });
-}
-
-// Import todos function
-function importTodos() {
-    const todoData = prompt('Paste your todo list (one per line):');
-    if (!todoData) return;
-    
-    const todos = todoData.split('\n').filter(line => line.trim()).map(line => ({
-        title: line.trim(),
-        priority: 'medium'
-    }));
-    
-    fetch('/api/import-todos', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ todos: todos })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error importing todos: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error importing todos');
-    });
-}
-
-// Todo selector for priorities
-document.addEventListener('DOMContentLoaded', function() {
-    const todoSelectorItems = document.querySelectorAll('.todo-selector-item');
-    todoSelectorItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const todoTitle = this.dataset.todoTitle;
-            const emptyPriorityInput = document.querySelector('.priority-input[value=""]');
-            if (emptyPriorityInput) {
-                emptyPriorityInput.value = todoTitle;
-                bootstrap.Modal.getInstance(document.getElementById('todoSelectorModal')).hide();
-            } else {
-                alert('All priority slots are filled. Please clear one first.');
-            }
-        });
-    });
-});
 // Update current time display
 function updateCurrentTime() {
     const now = new Date();
@@ -1929,6 +1773,13 @@ async function savePriorities() {
         }
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 
 <!-- Add ToDo Modal -->
@@ -1982,10 +1833,9 @@ async function savePriorities() {
                     <div class="mb-3" id="recurrenceRuleDiv" style="display: none;">
                         <label for="todoRecurrenceRule" class="form-label">Recurrence Rule</label>
                         <select class="form-select" id="todoRecurrenceRule" name="recurrence_rule">
-                            <option value="FREQ=DAILY">Daily</option>
-                            <option value="FREQ=WEEKLY">Weekly</option>
-                            <option value="FREQ=MONTHLY">Monthly</option>
-                            <option value="FREQ=MONTHLY;INTERVAL=6">Every 6 Months</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
                         </select>
                     </div>
                 </form>

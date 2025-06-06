@@ -1392,22 +1392,51 @@ def calculate_next_due_date(current_due_date, recurrence_rule):
     if not current_due_date or not recurrence_rule:
         return None
     
+    # Convert to datetime if it's a date object
+    if hasattr(current_due_date, 'date'):
+        base_date = current_due_date
+    else:
+        base_date = datetime.combine(current_due_date, datetime.min.time())
+    
     try:
-        from dateutil.relativedelta import relativedelta
-        
-        # Parse recurrence rule (simplified for common patterns)
-        if 'FREQ=DAILY' in recurrence_rule:
-            return current_due_date + relativedelta(days=1)
-        elif 'FREQ=WEEKLY' in recurrence_rule:
-            return current_due_date + relativedelta(weeks=1)
-        elif 'FREQ=MONTHLY' in recurrence_rule:
-            if 'INTERVAL=6' in recurrence_rule:
-                return current_due_date + relativedelta(months=6)
-            else:
-                return current_due_date + relativedelta(months=1)
+        if recurrence_rule == 'daily':
+            return base_date + timedelta(days=1)
+        elif recurrence_rule == 'weekly':
+            return base_date + timedelta(weeks=1)
+        elif recurrence_rule == 'bi-weekly':
+            return base_date + timedelta(weeks=2)
+        elif recurrence_rule == 'monthly':
+            # Add one month (handle month overflow)
+            next_month = base_date.month + 1
+            next_year = base_date.year
+            if next_month > 12:
+                next_month = 1
+                next_year += 1
+            try:
+                return base_date.replace(year=next_year, month=next_month)
+            except ValueError:
+                # Handle edge case for dates like Feb 29
+                return base_date.replace(year=next_year, month=next_month, day=28)
+        elif recurrence_rule == 'quarterly':
+            # Add 3 months
+            next_month = base_date.month + 3
+            next_year = base_date.year
+            while next_month > 12:
+                next_month -= 12
+                next_year += 1
+            try:
+                return base_date.replace(year=next_year, month=next_month)
+            except ValueError:
+                return base_date.replace(year=next_year, month=next_month, day=28)
+        elif recurrence_rule == 'yearly':
+            try:
+                return base_date.replace(year=base_date.year + 1)
+            except ValueError:
+                # Handle Feb 29 in non-leap years
+                return base_date.replace(year=base_date.year + 1, day=28)
         else:
             # Default to weekly if unknown rule
-            return current_due_date + relativedelta(weeks=1)
+            return base_date + timedelta(weeks=1)
     except Exception as e:
         logger.error(f"Error calculating next due date: {str(e)}")
         return None
