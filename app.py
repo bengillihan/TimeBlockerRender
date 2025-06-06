@@ -644,10 +644,53 @@ def update_task_progress(task_id):
         'last_worked_on': task.last_worked_on.isoformat()
     })
 
+@app.route('/api/daily-plan/backup', methods=['GET'])
+@login_required
+def get_daily_plan_backup():
+    """Get backup data for a specific date."""
+    date_str = request.args.get('date')
+    if not date_str:
+        return jsonify({'error': 'Date parameter required'}), 400
+    
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Get all daily plans for the last 7 days for potential recovery
+        end_date = date
+        start_date = date - timedelta(days=6)
+        
+        daily_plans = DailyPlan.query.filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).order_by(DailyPlan.date.desc()).all()
+        
+        backup_data = []
+        for plan in daily_plans:
+            plan_data = {
+                'date': plan.date.strftime('%Y-%m-%d'),
+                'updated_at': plan.updated_at.isoformat(),
+                'priorities': [{'content': p.content, 'completed': p.completed} for p in plan.priorities],
+                'time_blocks': [{
+                    'start_time': block.start_time.strftime('%H:%M'),
+                    'task_id': block.task_id,
+                    'notes': block.notes
+                } for block in plan.time_blocks],
+                'brain_dump': plan.brain_dump,
+                'productivity_rating': plan.productivity_rating
+            }
+            backup_data.append(plan_data)
+        
+        return jsonify({'success': True, 'backup_data': backup_data})
+        
+    except Exception as e:
+        logger.error(f"Error getting backup data: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to get backup data'}), 500
+
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
 def save_daily_plan():
-    """Update user's daily plan."""
+    """Update user's daily plan with conflict detection."""
     data = request.json
     # Convert date to Pacific time
     date = datetime.strptime(data['date'], '%Y-%m-%d').date()
@@ -656,6 +699,17 @@ def save_daily_plan():
         user_id=current_user.id,
         date=date
     ).first()
+    
+    # Check for conflicts if plan exists
+    if daily_plan and 'last_update_check' in data:
+        last_check = datetime.fromisoformat(data['last_update_check'].replace('Z', '+00:00'))
+        if daily_plan.updated_at > last_check:
+            return jsonify({
+                'success': False,
+                'conflict': True,
+                'message': 'Data was modified on another device. Please refresh to see latest changes.',
+                'server_updated_at': daily_plan.updated_at.isoformat()
+            }), 409
 
     if not daily_plan:
         daily_plan = DailyPlan(user_id=current_user.id, date=date)

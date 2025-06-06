@@ -51,9 +51,14 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Time Statistics</h5>
-                <button id="refreshTotalsBtn" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-sync-alt"></i> Refresh Totals
-                </button>
+                <div class="btn-group">
+                    <button id="refreshTotalsBtn" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh Totals
+                    </button>
+                    <button id="recoverDataBtn" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-history"></i> Recover Data
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 {% if total_minutes > 0 %}
@@ -707,10 +712,315 @@ document.getElementById('refreshTotalsBtn').addEventListener('click', function()
     }, 1000);
 });
 
-// Load 7-day statistics on page load
+// Load 7-day statistics and setup auto-save on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadSevenDayStats();
+    setupAutoSave();
+    setupConflictDetection();
 });
+
+// Auto-save functionality
+let autoSaveInterval;
+let lastUpdateCheck = new Date().toISOString();
+
+function setupAutoSave() {
+    // Auto-save every 30 seconds
+    autoSaveInterval = setInterval(() => {
+        autoSaveData();
+    }, 30000);
+    
+    // Save on visibility change (when switching tabs/apps)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            autoSaveData();
+        }
+    });
+    
+    // Save before page unload
+    window.addEventListener('beforeunload', () => {
+        autoSaveData();
+    });
+}
+
+function setupConflictDetection() {
+    // Check for conflicts every minute
+    setInterval(() => {
+        checkForConflicts();
+    }, 60000);
+}
+
+async function autoSaveData() {
+    try {
+        const date = document.getElementById('datePicker').value;
+        const priorities = [...document.querySelectorAll('.priority-input')].map((input, index) => ({
+            content: input.value,
+            completed: input.classList.contains('completed'),
+            order: index
+        })).filter(p => p.content.trim());
+
+        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+            start_time: block.dataset.time,
+            task_id: block.querySelector('.task-select').value || null,
+            notes: block.querySelector('.task-notes').value || ''
+        }));
+
+        const brainDump = document.getElementById('brainDump').value;
+        const ratingInputs = document.querySelectorAll('input[name="rating"]:checked');
+        const productivityRating = ratingInputs.length > 0 ? parseInt(ratingInputs[0].value) : null;
+
+        const response = await fetch('/api/daily-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: date,
+                priorities: priorities,
+                time_blocks: timeBlocks,
+                brain_dump: brainDump,
+                productivity_rating: productivityRating,
+                last_update_check: lastUpdateCheck,
+                auto_save: true
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            lastUpdateCheck = new Date().toISOString();
+            showAutoSaveIndicator('✓ Auto-saved');
+        } else if (result.conflict) {
+            showConflictWarning();
+        }
+    } catch (error) {
+        console.error('Auto-save failed:', error);
+        showAutoSaveIndicator('⚠ Save failed', 'warning');
+    }
+}
+
+async function checkForConflicts() {
+    try {
+        const date = document.getElementById('datePicker').value;
+        const response = await fetch(`/api/daily-plan/backup?date=${date}`);
+        const result = await response.json();
+        
+        if (result.success && result.backup_data.length > 0) {
+            const latestPlan = result.backup_data[0];
+            const serverUpdate = new Date(latestPlan.updated_at);
+            const lastCheck = new Date(lastUpdateCheck);
+            
+            if (serverUpdate > lastCheck) {
+                showConflictWarning();
+            }
+        }
+    } catch (error) {
+        console.error('Conflict check failed:', error);
+    }
+}
+
+function showAutoSaveIndicator(message, type = 'success') {
+    let indicator = document.getElementById('autoSaveIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'autoSaveIndicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.textContent = message;
+    indicator.style.backgroundColor = type === 'warning' ? '#ffc107' : '#28a745';
+    indicator.style.opacity = '1';
+    
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+    }, 3000);
+}
+
+function showConflictWarning() {
+    const warning = document.createElement('div');
+    warning.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #dc3545;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 2000;
+        max-width: 400px;
+        text-align: center;
+    `;
+    warning.innerHTML = `
+        <h5>⚠ Data Conflict Detected</h5>
+        <p>This page was modified on another device. Please refresh to see the latest changes to avoid data loss.</p>
+        <button onclick="location.reload()" class="btn btn-light btn-sm">Refresh Page</button>
+        <button onclick="this.parentElement.remove()" class="btn btn-outline-light btn-sm ms-2">Dismiss</button>
+    `;
+    document.body.appendChild(warning);
+}
+
+// Data recovery functionality
+document.getElementById('recoverDataBtn').addEventListener('click', async function() {
+    const date = document.getElementById('datePicker').value;
+    
+    try {
+        const response = await fetch(`/api/daily-plan/backup?date=${date}`);
+        const result = await response.json();
+        
+        if (result.success && result.backup_data.length > 0) {
+            showRecoveryModal(result.backup_data);
+        } else {
+            alert('No backup data found for recovery.');
+        }
+    } catch (error) {
+        console.error('Recovery failed:', error);
+        alert('Failed to retrieve backup data.');
+    }
+});
+
+function showRecoveryModal(backupData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 90%;
+    `;
+    
+    let recoveryOptions = `
+        <h4>🔄 Data Recovery</h4>
+        <p>Select a backup to restore:</p>
+        <div class="list-group">
+    `;
+    
+    backupData.forEach((backup, index) => {
+        const date = new Date(backup.updated_at).toLocaleString();
+        const priorityCount = backup.priorities.length;
+        const blockCount = backup.time_blocks.filter(b => b.task_id).length;
+        
+        recoveryOptions += `
+            <div class="list-group-item list-group-item-action" style="cursor: pointer;" onclick="restoreBackup(${index})">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${backup.date}</h6>
+                    <small>${date}</small>
+                </div>
+                <p class="mb-1">${priorityCount} priorities, ${blockCount} scheduled blocks</p>
+                ${backup.brain_dump ? `<small>Brain dump: ${backup.brain_dump.substring(0, 50)}...</small>` : ''}
+            </div>
+        `;
+    });
+    
+    recoveryOptions += `
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+        </div>
+    `;
+    
+    modalContent.innerHTML = recoveryOptions;
+    modal.appendChild(modalContent);
+    modal.className = 'modal-backdrop';
+    document.body.appendChild(modal);
+    
+    // Store backup data globally for restoration
+    window.recoveryBackupData = backupData;
+}
+
+async function restoreBackup(backupIndex) {
+    const backup = window.recoveryBackupData[backupIndex];
+    
+    if (confirm(`Restore data from ${backup.date} (${new Date(backup.updated_at).toLocaleString()})? This will overwrite current data.`)) {
+        try {
+            // Restore priorities
+            const priorityContainer = document.querySelector('.priorities-list');
+            priorityContainer.innerHTML = '';
+            
+            backup.priorities.forEach(priority => {
+                const priorityDiv = document.createElement('div');
+                priorityDiv.className = 'input-group mb-2';
+                priorityDiv.innerHTML = `
+                    <input type="text" class="form-control priority-input ${priority.completed ? 'completed' : ''}" 
+                           value="${priority.content}" placeholder="Priority">
+                    <button class="btn btn-outline-success complete-priority" type="button">✓</button>
+                    <button class="btn btn-outline-danger remove-priority" type="button">×</button>
+                `;
+                priorityContainer.appendChild(priorityDiv);
+            });
+            
+            // Restore time blocks
+            backup.time_blocks.forEach(block => {
+                const timeBlock = document.querySelector(`[data-time="${block.start_time}"]`);
+                if (timeBlock) {
+                    const select = timeBlock.querySelector('.task-select');
+                    const notesInput = timeBlock.querySelector('.task-notes');
+                    
+                    if (block.task_id) {
+                        select.value = block.task_id;
+                        updateTimeBlockColor(select);
+                        notesInput.style.display = 'inline-block';
+                    }
+                    
+                    if (block.notes) {
+                        notesInput.value = block.notes;
+                    }
+                }
+            });
+            
+            // Restore brain dump
+            if (backup.brain_dump) {
+                document.getElementById('brainDump').value = backup.brain_dump;
+            }
+            
+            // Restore productivity rating
+            if (backup.productivity_rating) {
+                const ratingInput = document.querySelector(`input[name="rating"][value="${backup.productivity_rating}"]`);
+                if (ratingInput) {
+                    ratingInput.checked = true;
+                }
+            }
+            
+            // Close modal
+            document.querySelector('.modal-backdrop').remove();
+            
+            // Auto-save the restored data
+            await autoSaveData();
+            
+            alert(`Data restored from ${backup.date}. Your plan has been automatically saved.`);
+            
+        } catch (error) {
+            console.error('Restore failed:', error);
+            alert('Failed to restore backup data.');
+        }
+    }
+}
 
 // Function to load 7-day statistics
 async function loadSevenDayStats() {
