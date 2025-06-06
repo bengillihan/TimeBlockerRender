@@ -135,31 +135,7 @@ def index():
     from models import Role
     all_roles = db.session.query(Role).filter(Role.user_id == current_user.id).all()
 
-    # Get calendar events for the selected date
-    calendar_events = []
-    has_google_calendar = False
-    if hasattr(current_user, 'credentials_info') and current_user.credentials_info:
-        try:
-            from calendar_service import get_calendar_events
-            # Use selected calendars if available, otherwise default to primary
-            selected_calendars = current_user.selected_calendars or ['primary']
-            logger.info(f"Fetching calendar events for date: {date} with calendars: {selected_calendars}")
 
-            calendar_events = get_calendar_events(
-                current_user.credentials_info, 
-                date,
-                calendar_ids=selected_calendars
-            )
-            has_google_calendar = True
-            logger.info(f"Retrieved {len(calendar_events)} calendar events")
-            for event in calendar_events:
-                logger.debug(f"Event: {event['summary']} at {event['start_time']}")
-        except Exception as e:
-            logger.error(f"Error fetching calendar events: {str(e)}")
-            flash("Could not fetch calendar events. Please try reconnecting your Google Calendar.", "warning")
-    else:
-        logger.warning(f"User {current_user.id} is missing Google credentials")
-        has_google_calendar = False
 
     # Initialize empty lists/dicts for data
     time_blocks = []
@@ -218,8 +194,6 @@ def index():
                          priorities=priorities,
                          brain_dump=brain_dump,
                          productivity_rating=productivity_rating,
-                         calendar_events=calendar_events,
-                         has_google_calendar=has_google_calendar,
                          day_start=day_start,
                          day_end=day_end,
                          all_open_tasks=all_open_tasks,
@@ -869,43 +843,7 @@ def summary():
                          task_stats=task_stats,
                          total_minutes=total_minutes)
 
-@app.route('/calendar/settings', methods=['GET', 'POST'])
-@login_required
-def calendar_settings():
-    if request.method == 'POST':
-        selected_ids = request.json.get('calendar_ids', [])
-        logger.debug(f"Received calendar IDs to save: {selected_ids}")
 
-        # Store the selected calendars
-        current_user.selected_calendars = selected_ids
-        db.session.commit()
-        logger.info(f"Saved selected calendars for user {current_user.id}: {selected_ids}")
-        return jsonify({'status': 'success'})
-
-    try:
-        calendars = []
-        has_google_auth = hasattr(current_user, 'credentials_info') and current_user.credentials_info
-
-        logger.info(f"User {current_user.id} auth status - Google: {has_google_auth}")
-
-        # If Google Calendar is connected, fetch calendars
-        if has_google_auth:
-            logger.debug(f"Fetching calendar list for user {current_user.id}")
-            from calendar_service import get_calendar_list
-            calendars = get_calendar_list(current_user.credentials_info)
-
-            if not calendars:
-                logger.warning("No calendars found in response")
-                flash("No calendars found. Please ensure you've granted calendar access.", "warning")
-
-        return render_template('calendar_settings.html', 
-                            calendars=calendars,
-                            selected_calendars=current_user.selected_calendars or [])
-
-    except Exception as e:
-        logger.error(f"Error in calendar settings: {str(e)}")
-        flash("An error occurred while loading calendar settings. Please try again.", "error")
-        return redirect(url_for('index'))
 
 @app.route('/health')
 def health_check():
@@ -1220,9 +1158,6 @@ def embedded_view(subpath):
     if subpath == 'tasks':
         return render_template('tasks.html', 
                             categories=Category.query.filter_by(user_id=current_user.id).all(),
-                            embedded=True)
-    elif subpath == 'calendar':
-        return render_template('calendar.html',
                             embedded=True)
     else:
         return 'Invalid embed path', 404

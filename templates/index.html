@@ -347,11 +347,21 @@
                                                 {% endif %}
                                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                                     {% if todo.is_recurring %}
-                                                    <span class="badge bg-info">
-                                                        <i class="fas fa-repeat me-1"></i>Recurring
+                                                    <span class="badge bg-info d-flex align-items-center">
+                                                        <i class="fas fa-repeat me-1"></i>
+                                                        <span class="me-1">Recurring</span>
+                                                        {% if todo.recurrence_rule %}
+                                                        <small class="text-light opacity-75">({{ todo.recurrence_rule|title }})</small>
+                                                        {% endif %}
                                                     </span>
                                                     {% endif %}
                                                     <span class="badge bg-{{ todo.get_priority_color() }} fs-7">{{ todo.priority|title }}</span>
+                                                    {% if todo.next_occurrence %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        Next: {{ todo.next_occurrence.strftime('%m/%d') }}
+                                                    </span>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
