@@ -131,6 +131,16 @@ def index():
         ToDo.priority.desc()
     ).all()
     
+    # Get recurring todos specifically
+    recurring_todos = db.session.query(ToDo).filter(
+        ToDo.user_id == current_user.id,
+        ToDo.is_recurring == True,
+        ToDo.completed == False
+    ).order_by(
+        ToDo.next_occurrence.asc().nullslast(),
+        ToDo.priority.desc()
+    ).all()
+    
     # Get all roles for filtering
     from models import Role
     all_roles = db.session.query(Role).filter(Role.user_id == current_user.id).all()
@@ -199,6 +209,7 @@ def index():
                          all_open_tasks=all_open_tasks,
                          all_todos=all_todos,
                          all_roles=all_roles,
+                         recurring_todos=recurring_todos,
                          today=date)
 
 @app.route('/login')
