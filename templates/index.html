@@ -609,8 +609,9 @@ updateCurrentTime(); // Initial update
 setInterval(updateTimeIndicator, 300000);
 updateTimeIndicator(); // Initial update
 
-// Set user's day end time for JavaScript use
+// Set user's time preferences for JavaScript use
 window.userDayEndTime = '{{ current_user.day_end_time.strftime("%H:%M") if current_user.day_end_time else "16:30" }}';
+window.userDaySplitTime = '{{ current_user.day_split_time.strftime("%H:%M") if current_user.day_split_time else "12:00" }}';
 
 // Initialize color coding for existing time blocks
 document.querySelectorAll('.task-select').forEach(select => {
@@ -901,10 +902,14 @@ document.querySelector('.add-later-blocks').addEventListener('click', function()
         nextTime = dayEndTime;
     }
 
-    // Create new block
-    const container = document.querySelector('.time-blocks-container') || document.querySelector('[data-time]').parentNode;
+    // Create new block and add it to the afternoon column (since it's after day end time)
     const newBlock = createTimeBlock(nextTime);
-    container.appendChild(newBlock);
+    
+    // Always add later blocks to the afternoon column
+    const afternoonColumn = document.querySelector('.col-md-6:last-child');
+    if (afternoonColumn) {
+        afternoonColumn.appendChild(newBlock);
+    }
 });
 
 // Function to create a new time block
