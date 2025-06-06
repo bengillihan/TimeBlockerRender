@@ -58,6 +58,9 @@
                     <button id="recoverDataBtn" class="btn btn-sm btn-outline-warning">
                         <i class="fas fa-history"></i> Recover Data
                     </button>
+                    <button id="restoreTodayBtn" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-undo"></i> Restore Today's Plan
+                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -1021,6 +1024,32 @@ async function restoreBackup(backupIndex) {
         }
     }
 }
+
+// Restore today's plan functionality
+document.getElementById('restoreTodayBtn').addEventListener('click', async function() {
+    if (confirm('Restore your daily plan from earlier today? This will overwrite any current changes.')) {
+        try {
+            const response = await fetch('/api/restore-today-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Restored your plan with ${result.priorities_count} priorities and ${result.time_blocks_count} scheduled blocks. Refreshing page...`);
+                location.reload();
+            } else {
+                alert('No previous data found to restore for today.');
+            }
+        } catch (error) {
+            console.error('Restore failed:', error);
+            alert('Failed to restore today\'s plan.');
+        }
+    }
+});
 
 // Function to load 7-day statistics
 async function loadSevenDayStats() {

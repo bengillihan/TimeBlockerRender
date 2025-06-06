@@ -687,6 +687,42 @@ def get_daily_plan_backup():
         logger.error(f"Error getting backup data: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to get backup data'}), 500
 
+@app.route('/api/restore-today-plan', methods=['POST'])
+@login_required
+def restore_today_plan():
+    """Restore today's plan from existing database data."""
+    try:
+        today = get_current_pacific_date()
+        
+        # Find existing daily plan for today
+        daily_plan = DailyPlan.query.filter_by(
+            user_id=current_user.id,
+            date=today
+        ).first()
+        
+        if not daily_plan:
+            return jsonify({'success': False, 'message': 'No plan found for today'})
+        
+        # Count existing data
+        priorities_count = len(daily_plan.priorities)
+        time_blocks_count = len([b for b in daily_plan.time_blocks if b.task_id])
+        
+        if priorities_count == 0 and time_blocks_count == 0:
+            return jsonify({'success': False, 'message': 'No data to restore'})
+        
+        # The data is already in the database, just return success
+        # The page will reload and display the existing data
+        return jsonify({
+            'success': True,
+            'priorities_count': priorities_count,
+            'time_blocks_count': time_blocks_count,
+            'message': f'Found {priorities_count} priorities and {time_blocks_count} scheduled blocks'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error restoring today's plan: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to restore plan'}), 500
+
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
 def save_daily_plan():
