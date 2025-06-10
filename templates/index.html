@@ -256,6 +256,11 @@
                                                placeholder="Notes..."
                                                maxlength="15"
                                                value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                                        <div class="task-controls">
+                                            <button type="button" class="btn btn-sm task-control-btn copy-down" title="Copy task to next block">
+                                                <i class="fas fa-arrow-down"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -303,6 +308,11 @@
                                                    placeholder="Notes..."
                                                    maxlength="15"
                                                    value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                                            <div class="task-controls">
+                                                <button type="button" class="btn btn-sm task-control-btn copy-down" title="Copy task to next block">
+                                                    <i class="fas fa-arrow-down"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 {% endif %}

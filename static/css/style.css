@@ -115,21 +115,41 @@
 
 .task-controls {
     display: none;
-    margin-left: 2px;
+    margin-left: 4px;
+    align-items: center;
 }
 
 .time-content.has-task .task-controls {
     display: flex;
-    gap: 1px;
+    gap: 2px;
 }
 
 .task-control-btn {
-    padding: 0;
-    width: 14px;
-    height: 14px;
-    font-size: 9px;
+    padding: 2px 4px;
+    width: 20px;
+    height: 18px;
+    font-size: 10px;
     line-height: 1;
-    border-radius: 2px;
+    border-radius: 3px;
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.task-control-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+}
+
+.copy-down {
+    opacity: 0.7;
+}
+
+.copy-down:hover {
+    opacity: 1;
 }
 
 .drag-handle {

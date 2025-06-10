@@ -183,20 +183,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
 
-        // Add copy up/down functionality
+        // Add copy down functionality
         document.addEventListener('click', function (e) {
-            const copyUpBtn = e.target.closest('.copy-up');
             const copyDownBtn = e.target.closest('.copy-down');
 
-            if (copyUpBtn || copyDownBtn) {
+            if (copyDownBtn) {
                 const timeBlock = e.target.closest('.time-block');
                 const select = timeBlock.querySelector('.task-select');
-                const direction = copyUpBtn ? 'up' : 'down';
 
                 if (select.value) {
-                    const targetBlock = direction === 'up'
-                        ? timeBlock.previousElementSibling
-                        : timeBlock.nextElementSibling;
+                    // Find the next timeblock - could be in same column or next column
+                    let targetBlock = timeBlock.nextElementSibling;
+                    
+                    // If no next sibling in current column, try the first block in the next column
+                    if (!targetBlock) {
+                        const currentColumn = timeBlock.closest('.time-block-column');
+                        const nextColumn = currentColumn.nextElementSibling;
+                        if (nextColumn && nextColumn.classList.contains('time-block-column')) {
+                            targetBlock = nextColumn.querySelector('.time-block');
+                        }
+                    }
 
                     if (targetBlock) {
                         const targetSelect = targetBlock.querySelector('.task-select');
@@ -207,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const timeContent = targetSelect.closest('.time-content');
                         timeContent.classList.add('has-task');
                         timeContent.style.borderLeftColor = selectedOption.dataset.categoryColor;
+                        timeContent.style.backgroundColor = selectedOption.dataset.categoryColor + '20';
 
                         // Copy notes as well
                         const sourceNotes = timeBlock.querySelector('.task-notes').value;
@@ -214,9 +221,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         targetNotes.value = sourceNotes;
                         targetNotes.style.display = 'inline-block';
 
+                        // Trigger change event to ensure proper styling
+                        targetSelect.dispatchEvent(new Event('change'));
+
                         // Save changes
-                        saveData();
+                        triggerAutoSave();
+                    } else {
+                        // Show a message if there's no next block
+                        alert('No next time block available to copy to.');
                     }
+                } else {
+                    alert('Please select a task first before copying.');
                 }
             }
         });
