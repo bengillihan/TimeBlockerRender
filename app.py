@@ -806,10 +806,22 @@ def summary():
     # Initialize statistics dictionaries
     category_stats = {}
     task_stats = {}
+    daily_category_breakdown = {}
     total_minutes = 0
+
+    # Get all dates in range for consistent daily breakdown
+    all_dates = []
+    current_date = start_date
+    while current_date <= end_date:
+        all_dates.append(current_date)
+        current_date += timedelta(days=1)
 
     # Calculate statistics
     for plan in daily_plans:
+        plan_date = plan.date
+        if plan_date not in daily_category_breakdown:
+            daily_category_breakdown[plan_date] = {}
+            
         for block in plan.time_blocks:
             if block.task_id:
                 task = Task.query.get(block.task_id)
@@ -840,11 +852,30 @@ def summary():
                     category_stats[task.category_id]['minutes'] += minutes
                     category_stats[task.category_id]['days_used'].add(plan.date)
 
+                    # Update daily category breakdown
+                    if task.category_id not in daily_category_breakdown[plan_date]:
+                        daily_category_breakdown[plan_date][task.category_id] = {
+                            'name': task.category.name,
+                            'color': task.category.color,
+                            'minutes': 0
+                        }
+                    daily_category_breakdown[plan_date][task.category_id]['minutes'] += minutes
+
     # Calculate average daily hours for categories
     for cat_stats in category_stats.values():
         days_used = len(cat_stats['days_used'])
         cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
         del cat_stats['days_used']  # Remove set before passing to template
+
+    # Prepare daily breakdown for template (convert to list format)
+    daily_breakdown_list = []
+    for date in sorted(all_dates, reverse=True):  # Most recent first
+        day_data = {
+            'date': date,
+            'categories': daily_category_breakdown.get(date, {}),
+            'total_minutes': sum(cat['minutes'] for cat in daily_category_breakdown.get(date, {}).values())
+        }
+        daily_breakdown_list.append(day_data)
 
     return render_template('summary.html',
                          days=days,
@@ -852,7 +883,8 @@ def summary():
                          end_date=end_date,
                          category_stats=category_stats,
                          task_stats=task_stats,
-                         total_minutes=total_minutes)
+                         total_minutes=total_minutes,
+                         daily_breakdown=daily_breakdown_list)
 
 
 
