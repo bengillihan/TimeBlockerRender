@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, current_user, login_required, login_user
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import func
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
@@ -52,7 +52,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
 # Import routes after app initialization to avoid circular imports
 from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate, ToDo, Role, TaskComment
-# External calendar integrations removed
+from google_auth import google_auth
+
+app.register_blueprint(google_auth)
 
 # Set session to permanent but with defined lifetime
 @app.before_request
@@ -210,43 +212,9 @@ def index():
                          recurring_todos=recurring_todos,
                          today=date)
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        
-        if not username or not email:
-            flash('Please provide both username and email.', 'error')
-            return render_template('login.html')
-        
-        # Check if user exists
-        user = User.query.filter_by(username=username, email=email).first()
-        
-        if not user:
-            # Create new user
-            user = User(username=username, email=email)
-            db.session.add(user)
-            db.session.commit()
-            
-            # Create default categories for new user
-            create_default_categories(user)
-            
-            flash('Account created successfully!', 'success')
-        else:
-            flash('Welcome back!', 'success')
-        
-        login_user(user)
-        return redirect(url_for('index'))
-    
     return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('You have been logged out successfully.', 'info')
-    return redirect(url_for('login'))
 
 @app.route('/tasks')
 @login_required
