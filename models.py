@@ -10,9 +10,7 @@ class User(UserMixin, db.Model):
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
     nav_links = db.relationship('NavLink', backref='user', lazy=True)
-    selected_calendars = db.Column(db.JSON)
-    nylas_access_token = db.Column(db.String(512))
-    # Add day start/end time preferences
+    # Day start/end time preferences
     day_start_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time())
     day_end_time = db.Column(db.Time, default=datetime.strptime('16:30', '%H:%M').time())
     day_split_time = db.Column(db.Time, default=datetime.strptime('12:00', '%H:%M').time())
