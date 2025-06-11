@@ -241,6 +241,13 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out successfully.', 'info')
+    return redirect(url_for('login'))
+
 @app.route('/tasks')
 @login_required
 def tasks():
