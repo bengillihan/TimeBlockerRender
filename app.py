@@ -794,7 +794,7 @@ def summary():
     period = request.args.get('period', '7')  # Default to 7 days
     days = int(period)
     end_date = datetime.now(pacific_tz).date()
-    start_date = end_date - timedelta(days=days)
+    start_date = end_date - timedelta(days=days-1)
 
     # Query for all daily plans in the date range
     daily_plans = DailyPlan.query.filter(
