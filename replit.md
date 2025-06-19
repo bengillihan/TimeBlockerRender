@@ -103,9 +103,30 @@ Time Block Planner is a personal productivity web application that enables users
 - Automatic package installation and service restart
 - Gunicorn process management with graceful shutdowns
 
+## Deployment Strategy
+
+### Supabase Migration (Completed)
+- Successfully migrated from local PostgreSQL to Supabase cloud database
+- Application now connects to Supabase using provided DATABASE_URL
+- Created complete database schema migration script (`supabase_migration.sql`)
+- Optimized connection pooling for cloud database performance
+
+### Render Deployment (Ready)
+- Created `render.yaml` configuration for automated deployment
+- Configured Gunicorn WSGI server with 2 workers for production
+- Environment variables properly configured for cloud deployment
+- Created comprehensive deployment guide (`DEPLOYMENT_GUIDE.md`)
+
+## Migration Benefits
+- **Scalable Database**: Managed PostgreSQL with automatic backups
+- **Production Infrastructure**: Enterprise-grade hosting with automatic HTTPS
+- **Zero Downtime**: Seamless migration path from development to production
+- **Modern Architecture**: Cloud-native configuration with optimized performance
+
 ## Changelog
 
-- June 19, 2025. Initial setup
+- June 19, 2025: Successfully migrated to Supabase database and prepared for Render deployment
+- June 19, 2025: Initial setup
 
 ## User Preferences
 
