@@ -8,7 +8,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import func
+from sqlalchemy import func, text
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 
 # Configure logging
@@ -893,7 +893,7 @@ def health_check():
     """Health check endpoint to verify server status."""
     try:
         # Check if we can access the database
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         # Check if environment variables are set
         nylas_configured = bool(os.environ.get('NYLAS_CLIENT_ID') and os.environ.get('NYLAS_CLIENT_SECRET'))
         return jsonify({
@@ -1592,5 +1592,4 @@ def import_todos():
             'message': 'Failed to import todos'
         }), 500
 
-with app.app_context():
-    db.create_all()
+# Database tables will be created automatically on first request
