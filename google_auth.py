@@ -3,7 +3,7 @@ import os
 import requests
 import logging
 from typing import Optional, Tuple
-from app import db
+from app_factory import db
 from flask import Blueprint, redirect, request, url_for, flash, current_app
 from flask_login import login_required, login_user, logout_user
 from models import User
@@ -125,9 +125,14 @@ def callback():
             db.session.add(user)
             db.session.commit()
             
-            # Import the function after the models are loaded
-            from app import create_default_categories
-            create_default_categories(user)
+            # Create default categories for new users
+            from models import Category
+            default_categories = ['APS', 'Church', 'Personal']
+            for cat_name in default_categories:
+                if not Category.query.filter_by(name=cat_name, user_id=user.id).first():
+                    category = Category(name=cat_name, user_id=user.id)
+                    db.session.add(category)
+            db.session.commit()
 
         login_user(user)
 
