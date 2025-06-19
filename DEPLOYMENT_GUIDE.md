@@ -63,6 +63,7 @@ This guide will help you migrate your TimeBlocker application from Replit to Ren
 1. **Name**: `timeblocker` (or your preferred name)
 2. **Environment**: `Python 3`
 3. **Build Command**: `pip install -r requirements.txt`
+   - Note: Rename `render_requirements.txt` to `requirements.txt` before deployment
 4. **Start Command**: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --preload main:app`
 
 ### 3.3 Set Environment Variables
