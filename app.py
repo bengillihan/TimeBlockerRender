@@ -26,15 +26,24 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL")
+if database_url and database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Disable resource-intensive event system
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,  # Recycle connections after 5 minutes
     "pool_pre_ping": True,  # Check connection validity before using it
-    "pool_size": 3,  # Lower limit on max connections
-    "max_overflow": 2,  # Reduce connections over pool_size 
-    "pool_timeout": 30,  # Seconds to wait before timing out
-    "connect_args": {"client_encoding": "utf8"},
+    "pool_size": 2,  # Lower limit on max connections for cloud
+    "max_overflow": 1,  # Reduce connections over pool_size 
+    "pool_timeout": 20,  # Seconds to wait before timing out
+    "connect_args": {
+        "client_encoding": "utf8",
+        "application_name": "timeblocker_replit",
+        "connect_timeout": 10,
+        "options": "-c default_transaction_isolation=read_committed"
+    },
     "echo": False,  # Disable SQL query logging to reduce overhead
 }
 

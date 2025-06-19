@@ -32,8 +32,11 @@ This guide will help you migrate your TimeBlocker application from Replit to Ren
 ### 1.3 Get Database Connection String
 
 1. Go to Settings → Database
-2. Copy the connection string (URI format)
+2. Copy the connection string (URI format) - should look like:
+   `postgresql://postgres:[password]@db.ltrawiqehgfxmtcjoumf.supabase.co:5432/postgres`
 3. Save this for later use in Render
+
+**Note**: If you experience connection issues from Replit to Supabase (common due to IPv6 restrictions), this is normal and will be resolved when deployed to Render.
 
 ## Step 2: Update Google OAuth Configuration
 
