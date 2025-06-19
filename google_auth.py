@@ -3,7 +3,7 @@ import os
 import requests
 import logging
 from typing import Optional, Tuple
-from app_factory import db
+from app import db
 from flask import Blueprint, redirect, request, url_for, flash, current_app
 from flask_login import login_required, login_user, logout_user
 from models import User

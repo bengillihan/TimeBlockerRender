@@ -4,12 +4,11 @@ import pytz
 import secrets
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, current_user, login_required, login_user, logout_user
-from sqlalchemy.orm import DeclarativeBase
+from flask import render_template, jsonify, request, redirect, url_for, flash, session
+from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import func
-from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
+from app_factory import db
+from cache_utils import cached, invalidate_cache, get_paginated_results
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,65 +17,39 @@ logger = logging.getLogger(__name__)
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
 
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
-
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Disable resource-intensive event system
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,  # Recycle connections after 5 minutes
-    "pool_pre_ping": True,  # Check connection validity before using it
-    "pool_size": 3,  # Lower limit on max connections
-    "max_overflow": 2,  # Reduce connections over pool_size 
-    "pool_timeout": 30,  # Seconds to wait before timing out
-    "connect_args": {"client_encoding": "utf8"},
-    "echo": False,  # Disable SQL query logging to reduce overhead
-}
-
-# Initialize extensions
-db.init_app(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-# Initialize cache
-init_cache(app)
-
-# Set session lifetime (8 hours) for better user experience
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
-
-# Import routes after app initialization to avoid circular imports
+# Import models
 from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate, ToDo, Role, TaskComment
-from google_auth import google_auth
-
-app.register_blueprint(google_auth)
-
-# Set session to permanent but with defined lifetime
-@app.before_request
-def make_session_permanent():
-    session.permanent = True
-    # Marks the user's session as active to prevent premature disconnect
-    if current_user.is_authenticated:
-        session.modified = True
-
-# Ensure database connections are properly closed after each request
-@app.teardown_request
-def cleanup_request(exception=None):
-    db.session.close()
-    if exception:
-        db.session.rollback()
-        logger.error(f"Request exception: {str(exception)}")
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 def create_default_categories(user):
+    """Create default categories for new users"""
+    default_categories = ['APS', 'Church', 'Personal']
+    for cat_name in default_categories:
+        if not Category.query.filter_by(name=cat_name, user_id=user.id).first():
+            category = Category(name=cat_name, user_id=user.id)
+            db.session.add(category)
+    db.session.commit()
+
+def get_current_pacific_date():
+    return datetime.now(pacific_tz).date()
+
+def register_routes(app):
+    """Register all routes with the Flask app"""
+    
+    # Set session to permanent but with defined lifetime
+    @app.before_request
+    def make_session_permanent():
+        session.permanent = True
+        # Marks the user's session as active to prevent premature disconnect
+        if current_user.is_authenticated:
+            session.modified = True
+
+    # Ensure database connections are properly closed after each request
+    @app.teardown_request
+    def cleanup_request(exception=None):
+        db.session.close()
+        if exception:
+            db.session.rollback()
+            logger.error(f"Request exception: {str(exception)}")
     default_categories = ['APS', 'Church', 'Personal']
     for cat_name in default_categories:
         if not Category.query.filter_by(name=cat_name, user_id=user.id).first():

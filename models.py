@@ -1,5 +1,5 @@
 from datetime import datetime
-from app_factory import db
+from app import db
 from flask_login import UserMixin
 from sqlalchemy import Index
 
