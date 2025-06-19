@@ -1,0 +1,94 @@
+# TimeBlocker Migration to Render + Supabase
+
+This repository has been updated to support deployment on Render with Supabase as the database.
+
+## Quick Start
+
+### 1. Database Setup (Supabase)
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Run the SQL script in `supabase_migration.sql` in the Supabase SQL Editor
+3. Copy your database connection string from Settings → Database
+
+### 2. Deploy to Render
+1. Push this code to a GitHub repository
+2. Create a new Web Service on [render.com](https://render.com)
+3. Connect your GitHub repository
+4. Set the following environment variables:
+   - `DATABASE_URL`: Your Supabase connection string
+   - `SESSION_SECRET`: A secure random string
+   - `GOOGLE_OAUTH_CLIENT_ID`: Your Google OAuth client ID
+   - `GOOGLE_OAUTH_CLIENT_SECRET`: Your Google OAuth client secret
+   - `FLASK_ENV`: `production`
+   - `FLASK_DEBUG`: `false`
+
+### 3. Update Google OAuth
+Add your Render domain to Google OAuth redirect URIs:
+`https://your-app-name.onrender.com/google_login/callback`
+
+## Key Changes Made
+
+### New Files Added
+- `requirements.txt` - Python dependencies for Render
+- `render.yaml` - Render deployment configuration
+- `config.py` - Environment-based configuration
+- `app_factory.py` - Application factory pattern
+- `supabase_migration.sql` - Database schema for Supabase
+- `DEPLOYMENT_GUIDE.md` - Detailed deployment instructions
+
+### Modified Files
+- `main.py` - Updated to use application factory
+- `models.py` - Updated imports to use app_factory
+- `google_auth.py` - Updated imports to use app_factory
+- `app.py` - Refactored to use application factory pattern
+
+## Environment Variables
+
+Copy `env.example` to `.env` and fill in your values:
+
+```bash
+# Required
+DATABASE_URL=postgresql://postgres:password@host:5432/postgres
+SESSION_SECRET=your-secret-key
+GOOGLE_OAUTH_CLIENT_ID=your-client-id
+GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
+
+# Optional
+FLASK_ENV=production
+FLASK_DEBUG=false
+```
+
+## Local Development
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Set up environment variables (see `env.example`)
+
+3. Run the application:
+   ```bash
+   python main.py
+   ```
+
+## Production Deployment
+
+The application is configured to run on Render with:
+- Gunicorn as the WSGI server
+- PostgreSQL database via Supabase
+- Automatic HTTPS
+- Environment-based configuration
+
+## Support
+
+- See `DEPLOYMENT_GUIDE.md` for detailed instructions
+- Check Render logs for deployment issues
+- Verify Supabase connection in dashboard
+
+## Migration Notes
+
+- All existing functionality preserved
+- Database schema compatible with Supabase
+- OAuth authentication maintained
+- Session management updated for production
+- Caching configured for performance 

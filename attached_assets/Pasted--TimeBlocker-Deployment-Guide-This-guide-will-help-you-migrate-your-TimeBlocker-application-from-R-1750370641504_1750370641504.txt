@@ -1,0 +1,180 @@
+# TimeBlocker Deployment Guide
+
+This guide will help you migrate your TimeBlocker application from Replit to Render and set up Supabase as your database.
+
+## Prerequisites
+
+1. A GitHub account with your TimeBlocker code
+2. A Render account (free tier available)
+3. A Supabase account (free tier available)
+4. Google OAuth credentials (for authentication)
+
+## Step 1: Set up Supabase Database
+
+### 1.1 Create Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and sign up/login
+2. Click "New Project"
+3. Choose your organization
+4. Enter project details:
+   - Name: `timeblocker-db`
+   - Database Password: Generate a strong password
+   - Region: Choose closest to your users
+5. Click "Create new project"
+
+### 1.2 Set up Database Schema
+
+1. In your Supabase dashboard, go to the SQL Editor
+2. Copy the contents of `supabase_migration.sql`
+3. Paste and run the SQL script
+4. This will create all necessary tables and indexes
+
+### 1.3 Get Database Connection String
+
+1. Go to Settings → Database
+2. Copy the connection string (it looks like: `postgresql://postgres:[password]@[host]:5432/postgres`)
+3. Save this for later use
+
+## Step 2: Update Google OAuth Configuration
+
+### 2.1 Update OAuth Redirect URIs
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Navigate to your project → APIs & Services → Credentials
+3. Edit your OAuth 2.0 Client ID
+4. Add your Render domain to authorized redirect URIs:
+   - `https://your-app-name.onrender.com/google_login/callback`
+   - Replace `your-app-name` with your actual Render app name
+
+## Step 3: Deploy to Render
+
+### 3.1 Connect GitHub Repository
+
+1. Go to [render.com](https://render.com) and sign up/login
+2. Click "New +" → "Web Service"
+3. Connect your GitHub account
+4. Select your TimeBlocker repository
+
+### 3.2 Configure Web Service
+
+1. **Name**: `timeblocker` (or your preferred name)
+2. **Environment**: `Python 3`
+3. **Build Command**: `pip install -r requirements.txt`
+4. **Start Command**: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --preload main:app`
+
+### 3.3 Set Environment Variables
+
+Add these environment variables in Render:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `DATABASE_URL` | `postgresql://postgres:[password]@[host]:5432/postgres` | Your Supabase connection string |
+| `SESSION_SECRET` | `[generate-a-secure-random-string]` | Secret key for sessions |
+| `GOOGLE_OAUTH_CLIENT_ID` | `[your-google-client-id]` | Google OAuth client ID |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | `[your-google-client-secret]` | Google OAuth client secret |
+| `FLASK_ENV` | `production` | Environment setting |
+| `FLASK_DEBUG` | `false` | Debug mode setting |
+
+### 3.4 Deploy
+
+1. Click "Create Web Service"
+2. Render will automatically build and deploy your application
+3. Wait for the build to complete (usually 2-5 minutes)
+
+## Step 4: Test Your Deployment
+
+### 4.1 Verify Application
+
+1. Visit your Render URL (e.g., `https://timeblocker.onrender.com`)
+2. Test Google OAuth login
+3. Verify all features work correctly
+
+### 4.2 Check Database Connection
+
+1. Create a test user account
+2. Add some test data
+3. Verify data is saved in Supabase dashboard
+
+## Step 5: Custom Domain (Optional)
+
+### 5.1 Add Custom Domain
+
+1. In Render dashboard, go to your web service
+2. Click "Settings" → "Custom Domains"
+3. Add your domain and configure DNS
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Build Failures**
+   - Check that `requirements.txt` is in the root directory
+   - Verify all dependencies are listed correctly
+
+2. **Database Connection Issues**
+   - Verify `DATABASE_URL` is correct
+   - Check Supabase database is running
+   - Ensure IP allowlist includes Render's IPs
+
+3. **OAuth Issues**
+   - Verify redirect URIs are correct
+   - Check Google OAuth credentials are valid
+   - Ensure HTTPS is used for production
+
+4. **Application Errors**
+   - Check Render logs for error messages
+   - Verify environment variables are set correctly
+   - Test locally with production settings
+
+### Logs and Monitoring
+
+1. **View Logs**: In Render dashboard, go to your service → "Logs"
+2. **Monitor Performance**: Use Render's built-in monitoring
+3. **Database Monitoring**: Use Supabase dashboard for database insights
+
+## Security Considerations
+
+1. **Environment Variables**: Never commit secrets to Git
+2. **Database Security**: Use Supabase's built-in security features
+3. **HTTPS**: Render provides automatic HTTPS
+4. **Session Security**: Use strong session secrets
+
+## Performance Optimization
+
+1. **Database Indexes**: Already included in migration script
+2. **Connection Pooling**: Configured in application
+3. **Caching**: Simple cache implementation included
+4. **CDN**: Consider adding a CDN for static assets
+
+## Backup and Recovery
+
+1. **Database Backups**: Supabase provides automatic backups
+2. **Code Backups**: Use Git for version control
+3. **Environment Backup**: Document all environment variables
+
+## Maintenance
+
+1. **Regular Updates**: Keep dependencies updated
+2. **Monitoring**: Set up alerts for downtime
+3. **Backups**: Verify database backups regularly
+4. **Security**: Regularly review security settings
+
+## Support
+
+- **Render Support**: [render.com/docs](https://render.com/docs)
+- **Supabase Support**: [supabase.com/docs](https://supabase.com/docs)
+- **Flask Documentation**: [flask.palletsprojects.com](https://flask.palletsprojects.com)
+
+## Migration Checklist
+
+- [ ] Supabase project created
+- [ ] Database schema migrated
+- [ ] Google OAuth updated
+- [ ] Render service configured
+- [ ] Environment variables set
+- [ ] Application deployed
+- [ ] OAuth login tested
+- [ ] All features verified
+- [ ] Custom domain configured (optional)
+- [ ] Monitoring set up
+- [ ] Documentation updated 

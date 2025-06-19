@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""
+Data Migration Script for TimeBlocker
+This script helps migrate data from an existing database to Supabase
+"""
+
+import os
+import sys
+import psycopg2
+from datetime import datetime
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+def connect_to_source_db(source_url):
+    """Connect to the source database (e.g., Replit's database)"""
+    try:
+        engine = create_engine(source_url)
+        Session = sessionmaker(bind=engine)
+        return Session()
+    except Exception as e:
+        print(f"Error connecting to source database: {e}")
+        return None
+
+def connect_to_supabase(supabase_url):
+    """Connect to Supabase database"""
+    try:
+        engine = create_engine(supabase_url)
+        Session = sessionmaker(bind=engine)
+        return Session()
+    except Exception as e:
+        print(f"Error connecting to Supabase: {e}")
+        return None
+
+def migrate_users(source_session, target_session):
+    """Migrate user data"""
+    print("Migrating users...")
+    try:
+        # Get users from source
+        result = source_session.execute(text("SELECT * FROM user"))
+        users = result.fetchall()
+        
+        for user in users:
+            # Check if user already exists in target
+            existing = target_session.execute(
+                text("SELECT id FROM user WHERE email = :email"),
+                {"email": user.email}
+            ).first()
+            
+            if not existing:
+                target_session.execute(
+                    text("""
+                        INSERT INTO user (username, email, day_start_time, day_end_time, 
+                                        day_split_time, created_at, last_active)
+                        VALUES (:username, :email, :day_start_time, :day_end_time,
+                               :day_split_time, :created_at, :last_active)
+                    """),
+                    {
+                        "username": user.username,
+                        "email": user.email,
+                        "day_start_time": user.day_start_time,
+                        "day_end_time": user.day_end_time,
+                        "day_split_time": user.day_split_time,
+                        "created_at": user.created_at,
+                        "last_active": user.last_active
+                    }
+                )
+                print(f"Migrated user: {user.email}")
+        
+        target_session.commit()
+        print(f"Successfully migrated {len(users)} users")
+        
+    except Exception as e:
+        target_session.rollback()
+        print(f"Error migrating users: {e}")
+
+def migrate_categories(source_session, target_session):
+    """Migrate category data"""
+    print("Migrating categories...")
+    try:
+        result = source_session.execute(text("SELECT * FROM category"))
+        categories = result.fetchall()
+        
+        for category in categories:
+            target_session.execute(
+                text("""
+                    INSERT INTO category (name, user_id, color)
+                    VALUES (:name, :user_id, :color)
+                """),
+                {
+                    "name": category.name,
+                    "user_id": category.user_id,
+                    "color": category.color
+                }
+            )
+        
+        target_session.commit()
+        print(f"Successfully migrated {len(categories)} categories")
+        
+    except Exception as e:
+        target_session.rollback()
+        print(f"Error migrating categories: {e}")
+
+def migrate_tasks(source_session, target_session):
+    """Migrate task data"""
+    print("Migrating tasks...")
+    try:
+        result = source_session.execute(text("SELECT * FROM task"))
+        tasks = result.fetchall()
+        
+        for task in tasks:
+            target_session.execute(
+                text("""
+                    INSERT INTO task (title, description, category_id, user_id, role_id,
+                                    created_at, due_date, status, is_recurring, recurrence_rule,
+                                    next_occurrence, priority, completed, completed_at,
+                                    estimated_minutes, actual_minutes, notes, tags, dependencies,
+                                    progress_percentage, last_worked_on, parent_task_id,
+                                    buffer_minutes, is_template, estimated_vs_actual_ratio,
+                                    completion_rate)
+                    VALUES (:title, :description, :category_id, :user_id, :role_id,
+                           :created_at, :due_date, :status, :is_recurring, :recurrence_rule,
+                           :next_occurrence, :priority, :completed, :completed_at,
+                           :estimated_minutes, :actual_minutes, :notes, :tags, :dependencies,
+                           :progress_percentage, :last_worked_on, :parent_task_id,
+                           :buffer_minutes, :is_template, :estimated_vs_actual_ratio,
+                           :completion_rate)
+                """),
+                {
+                    "title": task.title,
+                    "description": task.description,
+                    "category_id": task.category_id,
+                    "user_id": task.user_id,
+                    "role_id": task.role_id,
+                    "created_at": task.created_at,
+                    "due_date": task.due_date,
+                    "status": task.status,
+                    "is_recurring": task.is_recurring,
+                    "recurrence_rule": task.recurrence_rule,
+                    "next_occurrence": task.next_occurrence,
+                    "priority": task.priority,
+                    "completed": task.completed,
+                    "completed_at": task.completed_at,
+                    "estimated_minutes": task.estimated_minutes,
+                    "actual_minutes": task.actual_minutes,
+                    "notes": task.notes,
+                    "tags": task.tags,
+                    "dependencies": task.dependencies,
+                    "progress_percentage": task.progress_percentage,
+                    "last_worked_on": task.last_worked_on,
+                    "parent_task_id": task.parent_task_id,
+                    "buffer_minutes": task.buffer_minutes,
+                    "is_template": task.is_template,
+                    "estimated_vs_actual_ratio": task.estimated_vs_actual_ratio,
+                    "completion_rate": task.completion_rate
+                }
+            )
+        
+        target_session.commit()
+        print(f"Successfully migrated {len(tasks)} tasks")
+        
+    except Exception as e:
+        target_session.rollback()
+        print(f"Error migrating tasks: {e}")
+
+def migrate_daily_plans(source_session, target_session):
+    """Migrate daily plan data"""
+    print("Migrating daily plans...")
+    try:
+        result = source_session.execute(text("SELECT * FROM daily_plan"))
+        daily_plans = result.fetchall()
+        
+        for plan in daily_plans:
+            target_session.execute(
+                text("""
+                    INSERT INTO daily_plan (date, user_id, productivity_rating, brain_dump,
+                                          created_at, updated_at)
+                    VALUES (:date, :user_id, :productivity_rating, :brain_dump,
+                           :created_at, :updated_at)
+                """),
+                {
+                    "date": plan.date,
+                    "user_id": plan.user_id,
+                    "productivity_rating": plan.productivity_rating,
+                    "brain_dump": plan.brain_dump,
+                    "created_at": plan.created_at,
+                    "updated_at": plan.updated_at
+                }
+            )
+        
+        target_session.commit()
+        print(f"Successfully migrated {len(daily_plans)} daily plans")
+        
+    except Exception as e:
+        target_session.rollback()
+        print(f"Error migrating daily plans: {e}")
+
+def main():
+    """Main migration function"""
+    print("TimeBlocker Data Migration Script")
+    print("=" * 40)
+    
+    # Get database URLs from environment or user input
+    source_url = os.environ.get('SOURCE_DATABASE_URL')
+    supabase_url = os.environ.get('SUPABASE_DATABASE_URL')
+    
+    if not source_url:
+        source_url = input("Enter source database URL: ")
+    
+    if not supabase_url:
+        supabase_url = input("Enter Supabase database URL: ")
+    
+    # Connect to databases
+    print("Connecting to databases...")
+    source_session = connect_to_source_db(source_url)
+    target_session = connect_to_supabase(supabase_url)
+    
+    if not source_session or not target_session:
+        print("Failed to connect to databases. Exiting.")
+        sys.exit(1)
+    
+    try:
+        # Perform migrations
+        migrate_users(source_session, target_session)
+        migrate_categories(source_session, target_session)
+        migrate_tasks(source_session, target_session)
+        migrate_daily_plans(source_session, target_session)
+        
+        print("\nMigration completed successfully!")
+        
+    except Exception as e:
+        print(f"Migration failed: {e}")
+        sys.exit(1)
+    
+    finally:
+        source_session.close()
+        target_session.close()
+
+if __name__ == "__main__":
+    main() 

@@ -1,0 +1,51 @@
+Files Created/Updated:
+1. requirements.txt
+Contains all necessary Python dependencies for Render deployment
+Includes Flask, SQLAlchemy, PostgreSQL driver, and all other required packages
+2. render.yaml
+Configuration file for Render deployment
+Defines the web service settings and environment variables
+3. supabase_migration.sql
+Complete database schema for Supabase
+Includes all tables, indexes, and foreign key relationships
+Enables Row Level Security (RLS) for Supabase
+4. config.py
+Environment-based configuration management
+Separate settings for development, production, and testing
+5. app_factory.py
+Application factory pattern for better production deployment
+Proper initialization of Flask extensions
+6. Updated main.py
+Now uses the application factory pattern
+Better suited for production deployment
+7. Updated app.py
+Refactored to work with application factory
+Routes are now registered through a function
+8. Updated models.py & google_auth.py
+Fixed imports to use app_factory instead of app
+Prevents circular import issues
+9. DEPLOYMENT_GUIDE.md
+Comprehensive step-by-step deployment guide
+Includes troubleshooting and best practices
+10. README_MIGRATION.md
+Quick start guide for the migration
+Overview of changes made
+11. env.example
+Template for environment variables
+Shows what needs to be configured
+12. migrate_data.py
+Script to help migrate existing data to Supabase
+Handles users, categories, tasks, and daily plans
+Key Changes Made:
+Application Architecture: Moved to application factory pattern for better production deployment
+Database: Configured for PostgreSQL via Supabase
+Configuration: Environment-based configuration management
+Dependencies: Standardized requirements.txt for Render
+Deployment: Render-specific configuration and deployment guide
+Next Steps:
+Set up Supabase: Create a project and run the migration SQL
+Update Google OAuth: Add your Render domain to redirect URIs
+Deploy to Render: Follow the deployment guide
+Test thoroughly: Verify all features work correctly
+Migrate data: Use the migration script if you have existing data
+The application is now ready for production deployment on Render with Supabase as the database. All the existing functionality has been preserved while making it more robust for production use.
