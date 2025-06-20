@@ -4,6 +4,7 @@ from flask_login import UserMixin
 from sqlalchemy import Index
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
@@ -23,7 +24,7 @@ class NavLink(db.Model):
     name = db.Column(db.String(50), nullable=False)
     url = db.Column(db.String(500), nullable=False)
     icon_class = db.Column(db.String(50), default='fas fa-link')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     order = db.Column(db.Integer, default=0)
     embed = db.Column(db.Boolean, default=False)
     show_in_nav = db.Column(db.Boolean, default=True)
@@ -36,7 +37,7 @@ class NavLink(db.Model):
 class DailyPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     productivity_rating = db.Column(db.Integer)
     brain_dump = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -63,7 +64,7 @@ class TimeBlock(db.Model):
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     tasks = db.relationship('Task', backref='category', lazy=True)
     color = db.Column(db.String(7), default='#6c757d')
 
@@ -72,7 +73,7 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     time_blocks = db.relationship('TimeBlock', backref='task', lazy=True)
     
@@ -163,14 +164,14 @@ class Role(db.Model):
     name = db.Column(db.String(50), nullable=False)
     color = db.Column(db.String(7), default='#6c757d')
     description = db.Column(db.Text)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     tasks = db.relationship('Task', backref='assigned_role', lazy=True)
 
 class TaskComment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     task = db.relationship('Task', backref=db.backref('comments', lazy=True))
@@ -187,7 +188,7 @@ class TaskAttachment(db.Model):
 class DayTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     priorities = db.Column(db.JSON, nullable=True)
     time_blocks = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -197,7 +198,7 @@ class ToDo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.Text)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=True)
     due_date = db.Column(db.DateTime, nullable=True, index=True)
     priority = db.Column(db.String(10), default='medium', index=True)
