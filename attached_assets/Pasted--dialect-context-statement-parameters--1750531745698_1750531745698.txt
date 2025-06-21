@@ -1,0 +1,41 @@
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column nav_link.order does not exist
+LINE 1: ...icon_class, nav_link.user_id AS nav_link_user_id, nav_link."...
+                                                             ^
+[SQL: SELECT nav_link.id AS nav_link_id, nav_link.name AS nav_link_name, nav_link.url AS nav_link_url, nav_link.icon_class AS nav_link_icon_class, nav_link.user_id AS nav_link_user_id, nav_link."order" AS nav_link_order, nav_link.embed AS nav_link_embed, nav_link.show_in_nav AS nav_link_show_in_nav, nav_link.iframe_height AS nav_link_iframe_height, nav_link.iframe_width_percent AS nav_link_iframe_width_percent, nav_link.custom_iframe_code AS nav_link_custom_iframe_code, nav_link.full_width AS nav_link_full_width, nav_link.created_at AS nav_link_created_at 
+FROM nav_link 
+WHERE %(param_1)s = nav_link.user_id]
+[parameters: {'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [21/Jun/2025:18:48:27 +0000] "GET / HTTP/1.1" 500 265 "https://accounts.google.com/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+ERROR:app:Request exception: (psycopg2.errors.UndefinedColumn) column nav_link.order does not exist
+LINE 1: ...icon_class, nav_link.user_id AS nav_link_user_id, nav_link."...
+                                                             ^
+[SQL: SELECT nav_link.id AS nav_link_id, nav_link.name AS nav_link_name, nav_link.url AS nav_link_url, nav_link.icon_class AS nav_link_icon_class, nav_link.user_id AS nav_link_user_id, nav_link."order" AS nav_link_order, nav_link.embed AS nav_link_embed, nav_link.show_in_nav AS nav_link_show_in_nav, nav_link.iframe_height AS nav_link_iframe_height, nav_link.iframe_width_percent AS nav_link_iframe_width_percent, nav_link.custom_iframe_code AS nav_link_custom_iframe_code, nav_link.full_width AS nav_link_full_width, nav_link.created_at AS nav_link_created_at 
+FROM nav_link 
+WHERE %(param_1)s = nav_link.user_id]
+[parameters: {'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
