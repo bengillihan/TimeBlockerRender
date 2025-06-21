@@ -134,6 +134,8 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 21, 2025: Removed navigation links functionality - simplified navigation to core TimeBlocker features
+- June 21, 2025: Fixed Google OAuth login errors by resolving database schema mismatches
 - June 19, 2025: Updated to use Supabase connection pooling URL for improved connectivity
 - June 19, 2025: Successfully migrated to Supabase database and prepared for Render deployment
 - June 19, 2025: Initial setup
