@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     daily_plans = db.relationship('DailyPlan', backref='user', lazy=True)
     tasks = db.relationship('Task', backref='user', lazy=True)
-    nav_links = db.relationship('NavLink', backref='user', lazy=True)
+# nav_links relationship removed
     # Day start/end time preferences
     day_start_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time())
     day_end_time = db.Column(db.Time, default=datetime.strptime('16:30', '%H:%M').time())
@@ -19,20 +19,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class NavLink(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    url = db.Column(db.String(500), nullable=False)
-    icon_class = db.Column(db.String(50), default='fas fa-link')
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    order = db.Column(db.Integer, default=0)
-    embed = db.Column(db.Boolean, default=False)
-    show_in_nav = db.Column(db.Boolean, default=True)
-    iframe_height = db.Column(db.Integer, default=600)
-    iframe_width_percent = db.Column(db.Integer, default=100)
-    custom_iframe_code = db.Column(db.Text)
-    full_width = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+# NavLink model removed - simplified navigation
 
 class DailyPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)

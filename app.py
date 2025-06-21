@@ -60,7 +60,7 @@ init_cache(app)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
 # Import routes after app initialization to avoid circular imports
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task, NavLink, DayTemplate, ToDo, Role, TaskComment
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
 from google_auth import google_auth
 
 app.register_blueprint(google_auth)
