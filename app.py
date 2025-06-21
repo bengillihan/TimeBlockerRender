@@ -733,7 +733,8 @@ def save_daily_plan():
     # Check for conflicts if plan exists
     if daily_plan and 'last_update_check' in data:
         last_check = datetime.fromisoformat(data['last_update_check'].replace('Z', '+00:00'))
-        if daily_plan.updated_at > last_check:
+        # Make both datetimes timezone-aware for comparison
+        if daily_plan.updated_at.replace(tzinfo=last_check.tzinfo if last_check.tzinfo else None) > last_check:
             return jsonify({
                 'success': False,
                 'conflict': True,
