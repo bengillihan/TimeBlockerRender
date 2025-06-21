@@ -11,7 +11,10 @@ class Config:
         "pool_size": 3,
         "max_overflow": 2,
         "pool_timeout": 30,
-        "connect_args": {"client_encoding": "utf8"},
+        "connect_args": {
+            "client_encoding": "utf8",
+            "options": "-c default_transaction_isolation=read_committed"
+        },
         "echo": False,
     }
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
@@ -27,8 +30,16 @@ class Config:
 class DevelopmentConfig(Config):
     """Development configuration"""
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///dev.db'
+    # Use SQLite for Replit development since external DB connections are blocked
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///timeblock_dev.db'
     CACHE_TYPE = "simple"
+    
+    # Override engine options for SQLite
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_recycle": -1,  # SQLite doesn't need connection recycling
+        "pool_pre_ping": False,
+        "echo": True,  # Enable SQL logging in development
+    }
 
 class ProductionConfig(Config):
     """Production configuration"""
