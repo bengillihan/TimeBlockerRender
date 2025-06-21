@@ -8,7 +8,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import func, text
+from sqlalchemy import text, func
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 
 # Configure logging
@@ -918,100 +918,7 @@ def health_check():
         }), 500
 
 
-@app.route('/nav_links')
-@login_required
-def nav_links():
-    """Show navigation links management page."""
-    nav_links = NavLink.query.filter_by(user_id=current_user.id).order_by(NavLink.order).all()
-    return render_template('nav_links.html', 
-                         nav_links=nav_links,
-                         embed_base_url=request.host_url.rstrip('/') + '/embed')
-
-@app.route('/api/nav_links', methods=['POST'])
-@login_required
-def add_nav_link():
-    """Add a new navigation link."""
-    data = request.json
-    if not data.get('name') or not data.get('url'):
-        return jsonify({'error': 'Name and URL are required'}), 400
-
-    # Get the highest order number and add 1
-    max_order = db.session.query(func.max(NavLink.order)).filter_by(user_id=current_user.id).scalar()
-    new_order = (max_order or 0) + 1
-
-    link = NavLink(
-        name=data['name'],
-        url=data['url'],
-        icon_class=data.get('icon_class', 'fas fa-link'),
-        user_id=current_user.id,
-        order=new_order,
-        embed=data.get('embed', False),
-        show_in_nav=data.get('show_in_nav', True),
-        iframe_height=data.get('iframe_height', 600),
-        iframe_width_percent=data.get('iframe_width_percent', 100),
-        custom_iframe_code=data.get('custom_iframe_code'),
-        full_width=data.get('full_width', False)
-    )
-    db.session.add(link)
-    db.session.commit()
-
-    return jsonify({
-        'id': link.id,
-        'name': link.name,
-        'url': link.url,
-        'icon_class': link.icon_class,
-        'embed': link.embed,
-        'show_in_nav': link.show_in_nav,
-        'iframe_height': link.iframe_height,
-        'iframe_width_percent': link.iframe_width_percent,
-        'custom_iframe_code': link.custom_iframe_code,
-        'full_width': link.full_width
-    })
-
-@app.route('/api/nav_links/<int:link_id>', methods=['PUT', 'DELETE'])
-@login_required
-def nav_link_operations(link_id):
-    """Update or delete a navigation link."""
-    link = NavLink.query.filter_by(id=link_id, user_id=current_user.id).first_or_404()
-
-    if request.method == 'DELETE':
-        db.session.delete(link)
-        db.session.commit()
-        return '', 204
-
-    data = request.json
-    if 'embed' in data:
-        link.embed = data['embed']
-    if 'show_in_nav' in data:
-        link.show_in_nav = data['show_in_nav']
-    if 'name' in data:
-        link.name = data['name']
-    if 'url' in data:
-        link.url = data['url']
-    if 'icon_class' in data:
-        link.icon_class = data['icon_class']
-    if 'iframe_height' in data:
-        link.iframe_height = data['iframe_height']
-    if 'iframe_width_percent' in data:
-        link.iframe_width_percent = data['iframe_width_percent']
-    if 'custom_iframe_code' in data:
-        link.custom_iframe_code = data['custom_iframe_code']
-    if 'full_width' in data:
-        link.full_width = data['full_width']
-
-    db.session.commit()
-    return jsonify({
-        'id': link.id,
-        'name': link.name,
-        'url': link.url,
-        'icon_class': link.icon_class,
-        'embed': link.embed,
-        'show_in_nav': link.show_in_nav,
-        'iframe_height': link.iframe_height,
-        'iframe_width_percent': link.iframe_width_percent,
-        'custom_iframe_code': link.custom_iframe_code,
-        'full_width': link.full_width
-    })
+# Navigation links functionality removed - simplified navigation
 
 @app.route('/api/templates', methods=['POST'])
 @login_required
