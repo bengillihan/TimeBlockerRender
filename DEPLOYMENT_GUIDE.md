@@ -72,7 +72,7 @@ Add these environment variables in Render:
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `DATABASE_URL` | `postgresql://postgres:[password]@[host]:5432/postgres` | Your Supabase connection string |
+| `DATABASE_URL` | `postgresql://postgres.ltrawiqehgfxmtcjoumf:Titus07!@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true` | Your Supabase connection pooling string |
 | `SESSION_SECRET` | `[generate-a-secure-random-string]` | Secret key for sessions |
 | `GOOGLE_OAUTH_CLIENT_ID` | `[your-google-client-id]` | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | `[your-google-client-secret]` | Google OAuth client secret |
