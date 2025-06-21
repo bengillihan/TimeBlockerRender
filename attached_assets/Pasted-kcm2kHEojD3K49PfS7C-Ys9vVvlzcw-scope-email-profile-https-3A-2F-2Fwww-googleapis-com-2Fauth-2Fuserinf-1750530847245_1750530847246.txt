@@ -1,0 +1,14 @@
+kcm2kHEojD3K49PfS7C_Ys9vVvlzcw&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&prompt=noneclientIP="24.16.109.229" requestID="ba84d781-6ec1-4041" responseTimeMS=911 responseBytes=622 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+ERROR:google_auth:Error during OAuth callback: (psycopg2.errors.UndefinedTable) relation "user" does not exist
+LINE 2: FROM "user" 
+             ^
+[SQL: SELECT "user".id AS user_id, "user".username AS user_username, "user".email AS user_email, "user".day_start_time AS user_day_start_time, "user".day_end_time AS user_day_end_time, "user".day_split_time AS user_day_split_time, "user".created_at AS user_created_at, "user".last_active AS user_last_active 
+FROM "user" 
+WHERE "user".email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'bdgillihan@gmail.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+127.0.0.1 - - [21/Jun/2025:18:32:41 +0000] "GET /google_login/callback?code=4%2F0AUJR-x6NGXK2Fg928aW3WHVc_AymjNmBzAksOtA0kcm2kHEojD3K49PfS7C_Ys9vVvlzcw&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&prompt=none HTTP/1.1" 302 189 "https://accounts.google.com/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+127.0.0.1 - - [21/Jun/2025:18:32:41 +0000] "GET / HTTP/1.1" 302 199 "https://accounts.google.com/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+127.0.0.1 - - [21/Jun/2025:18:32:41 +0000] "GET /login HTTP/1.1" 200 4138 "https://accounts.google.com/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+127.0.0.1 - - [21/Jun/2025:18:32:41 +0000] "GET /static/css/style.css HTTP/1.1" 304 0 "https://timeblocker.onrender.com/login" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"

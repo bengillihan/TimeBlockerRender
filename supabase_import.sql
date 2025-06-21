@@ -330,6 +330,12 @@ SELECT 'category', COUNT(*) FROM category
 UNION ALL
 SELECT 'role', COUNT(*) FROM role
 UNION ALL
+SELECT 'task', COUNT(*) FROM task
+UNION ALL
+SELECT 'to_do', COUNT(*) FROM to_do
+UNION ALL
 SELECT 'nav_link', COUNT(*) FROM nav_link
 UNION ALL
-SELECT 'day_template', COUNT(*) FROM day_template;
+SELECT 'day_template', COUNT(*) FROM day_template
+UNION ALL
+SELECT 'daily_plan', COUNT(*) FROM daily_plan;
