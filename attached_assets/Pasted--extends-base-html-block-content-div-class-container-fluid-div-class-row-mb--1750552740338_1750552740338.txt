@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-chart-line me-2"></i>Productivity Analytics</h2>
+            <p class="text-muted">Track your time usage patterns and get personalized insights</p>
+        </div>
+    </div>
+
+    <!-- Time Range Selector -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Time Range</h6>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="timeRange" id="7days" value="7" checked>
+                        <label class="btn btn-outline-primary" for="7days">7 Days</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="30days" value="30">
+                        <label class="btn btn-outline-primary" for="30days">30 Days</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="90days" value="90">
+                        <label class="btn btn-outline-primary" for="90days">90 Days</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Quick Actions</h6>
+                    <button class="btn btn-sm btn-success me-2" onclick="smartScheduleTodos()">
+                        <i class="fas fa-magic"></i> Smart Schedule
+                    </button>
+                    <button class="btn btn-sm btn-info me-2" onclick="getPrioritySuggestions()">
+                        <i class="fas fa-lightbulb"></i> Priority Suggestions
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="exportAnalytics()">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="totalHours">0</h4>
+                            <p class="mb-0">Total Hours</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="completionRate">0%</h4>
+                            <p class="mb-0">Completion Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="avgFocusScore">0</h4>
+                            <p class="mb-0">Avg Focus Score</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-brain fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="estimationAccuracy">0%</h4>
+                            <p class="mb-0">Time Estimation Accuracy</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-bullseye fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Category Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Productivity by Hour</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Patterns and Insights -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Daily Productivity Patterns</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyPatternChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Productivity Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div id="insightsList">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading insights...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Priority Suggestions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">Priority Suggestions</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshSuggestions()">
+                        <i class="fas fa-refresh"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="suggestionsList">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading suggestions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Todo Management -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">Todo Management</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success me-2" onclick="showBatchOperations()">
+                            <i class="fas fa-tasks"></i> Batch Operations
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="showAddTodoModal()">
+                            <i class="fas fa-plus"></i> Add Todo
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for role in all_roles %}
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3" style="border-color: {{ role.color }}!important;">
+                                <h6 style="color: {{ role.color }}">
+                                    <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
+                                    {{ role.name }}
+                                </h6>
+                                <div class="todo-list" id="todo-list-{{ role.id }}">
+                                    {% for todo in all_todos %}
+                                        {% if todo.role_id == role.id %}
+                                        <div class="todo-item mb-2 p-2 border rounded" data-todo-id="{{ todo.id }}">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input todo-checkbox" 
+                                                       data-todo-id="{{ todo.id }}" 
+                                                       onchange="toggleTodoComplete({{ todo.id }}, this.checked)"
+                                                       {{ 'checked' if todo.completed else '' }}>
+                                                <label class="form-check-label">
+                                                    <strong>{{ todo.title }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Priority: {{ todo.priority|title }}
+                                                        {% if todo.due_date %}
+                                                        | Due: {{ todo.due_date.strftime('%m/%d/%Y') }}
+                                                        {% endif %}
+                                                    </small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Operations Modal -->
+<div class="modal fade" id="batchOperationsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Batch Operations</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Operation:</label>
+                    <select class="form-select" id="batchOperation">
+                        <option value="complete">Mark as Complete</option>
+                        <option value="delete">Delete Selected</option>
+                        <option value="update_priority">Update Priority</option>
+                        <option value="move_to_role">Move to Role</option>
+                    </select>
+                </div>
+                
+                <div id="priorityOptions" class="mb-3" style="display: none;">
+                    <label class="form-label">New Priority:</label>
+                    <select class="form-select" id="newPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <div id="roleOptions" class="mb-3" style="display: none;">
+                    <label class="form-label">New Role:</label>
+                    <select class="form-select" id="newRole">
+                        {% for role in all_roles %}
+                        <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Select Todos:</label>
+                    <div id="todoSelectionList" style="max-height: 200px; overflow-y: auto;">
+                        <!-- Todo checkboxes will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeBatchOperation()">Execute</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let categoryChart, hourlyChart, dailyPatternChart;
+let currentTimeRange = 7;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initializeCharts();
+    
+    // Load initial data
+    loadAnalytics();
+    loadProductivityInsights();
+    loadPrioritySuggestions();
+    
+    // Set up event listeners
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Time range selector
+    document.querySelectorAll('input[name="timeRange"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentTimeRange = parseInt(this.value);
+            loadAnalytics();
+        });
+    });
+    
+    // Batch operation selector
+    document.getElementById('batchOperation').addEventListener('change', function() {
+        const priorityOptions = document.getElementById('priorityOptions');
+        const roleOptions = document.getElementById('roleOptions');
+        
+        priorityOptions.style.display = this.value === 'update_priority' ? 'block' : 'none';
+        roleOptions.style.display = this.value === 'move_to_role' ? 'block' : 'none';
+    });
+}
+
+function initializeCharts() {
+    // Category breakdown chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Hourly productivity chart
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    hourlyChart = new Chart(hourlyCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Productivity Score',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Daily pattern chart
+    const dailyCtx = document.getElementById('dailyPatternChart').getContext('2d');
+    dailyPatternChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Average Hours',
+                data: [],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+async function loadAnalytics() {
+    try {
+        const response = await fetch(`/api/time-analytics?days=${currentTimeRange}`);
+        const data = await response.json();
+        
+        updateMetrics(data);
+        updateCharts(data);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
+}
+
+function updateMetrics(data) {
+    document.getElementById('totalHours').textContent = data.total_hours.toFixed(1);
+    
+    // Calculate completion rate
+    const totalBlocks = Object.values(data.category_breakdown).reduce((sum, cat) => sum + cat.total_blocks, 0);
+    const completedBlocks = Object.values(data.category_breakdown).reduce((sum, cat) => sum + cat.completed_blocks, 0);
+    const completionRate = totalBlocks > 0 ? (completedBlocks / totalBlocks * 100) : 0;
+    document.getElementById('completionRate').textContent = completionRate.toFixed(1) + '%';
+    
+    // Update other metrics (these would come from enhanced analytics)
+    document.getElementById('avgFocusScore').textContent = '7.2'; // Placeholder
+    document.getElementById('estimationAccuracy').textContent = '85%'; // Placeholder
+}
+
+function updateCharts(data) {
+    // Update category chart
+    const categoryLabels = Object.keys(data.category_breakdown);
+    const categoryData = categoryLabels.map(cat => data.category_breakdown[cat].hours);
+    const categoryColors = categoryLabels.map(cat => data.category_breakdown[cat].color);
+    
+    categoryChart.data.labels = categoryLabels;
+    categoryChart.data.datasets[0].data = categoryData;
+    categoryChart.data.datasets[0].backgroundColor = categoryColors;
+    categoryChart.update();
+    
+    // Update hourly chart
+    const hours = Object.keys(data.most_productive_hours).sort((a, b) => parseInt(a) - parseInt(b));
+    const productivityScores = hours.map(hour => data.most_productive_hours[hour]);
+    
+    hourlyChart.data.labels = hours.map(h => h + ':00');
+    hourlyChart.data.datasets[0].data = productivityScores;
+    hourlyChart.update();
+    
+    // Update daily pattern chart
+    const days = Object.keys(data.daily_patterns);
+    const avgHours = days.map(day => data.daily_patterns[day].average_hours || 0);
+    
+    dailyPatternChart.data.labels = days;
+    dailyPatternChart.data.datasets[0].data = avgHours;
+    dailyPatternChart.update();
+}
+
+async function loadProductivityInsights() {
+    try {
+        const response = await fetch('/api/productivity-insights');
+        const data = await response.json();
+        
+        const insightsList = document.getElementById('insightsList');
+        insightsList.innerHTML = '';
+        
+        data.recommendations.forEach(rec => {
+            const insightDiv = document.createElement('div');
+            insightDiv.className = 'mb-3 p-2 border-start border-3';
+            insightDiv.style.borderLeftColor = rec.priority === 'high' ? '#dc3545' : '#ffc107';
+            
+            insightDiv.innerHTML = `
+                <h6 class="mb-1">${rec.title}</h6>
+                <p class="small mb-0 text-muted">${rec.description}</p>
+            `;
+            
+            insightsList.appendChild(insightDiv);
+        });
+    } catch (error) {
+        console.error('Error loading insights:', error);
+    }
+}
+
+async function loadPrioritySuggestions() {
+    try {
+        const response = await fetch('/api/todos/priority-suggestions');
+        const data = await response.json();
+        
+        const suggestionsList = document.getElementById('suggestionsList');
+        suggestionsList.innerHTML = '';
+        
+        if (data.suggestions.length === 0) {
+            suggestionsList.innerHTML = '<p class="text-muted text-center">No priority suggestions at this time.</p>';
+            return;
+        }
+        
+        data.suggestions.forEach(suggestion => {
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'mb-3 p-3 border rounded';
+            
+            suggestionDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${suggestion.title}</h6>
+                        <p class="small mb-2 text-muted">
+                            Current: <span class="badge bg-${getPriorityColor(suggestion.current_priority)}">${suggestion.current_priority}</span>
+                            → Suggested: <span class="badge bg-${getPriorityColor(suggestion.suggested_priority)}">${suggestion.suggested_priority}</span>
+                        </p>
+                        <div class="small">
+                            <strong>Reasons:</strong> ${suggestion.reasons.join(', ')}
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="applySuggestion(${suggestion.todo_id}, '${suggestion.suggested_priority}')">
+                        Apply
+                    </button>
+                </div>
+            `;
+            
+            suggestionsList.appendChild(suggestionDiv);
+        });
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+    }
+}
+
+function getPriorityColor(priority) {
+    const colors = {
+        'low': 'success',
+        'medium': 'warning',
+        'high': 'danger',
+        'urgent': 'danger'
+    };
+    return colors[priority] || 'secondary';
+}
+
+async function applySuggestion(todoId, newPriority) {
+    try {
+        const response = await fetch('/api/todos/batch-operations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                operation: 'update_priority',
+                todo_ids: [todoId],
+                priority: newPriority
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            loadPrioritySuggestions(); // Refresh suggestions
+            showToast('Priority updated successfully', 'success');
+        }
+    } catch (error) {
+        console.error('Error applying suggestion:', error);
+        showToast('Failed to update priority', 'error');
+    }
+}
+
+async function smartScheduleTodos() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    try {
+        const response = await fetch('/api/todos/smart-schedule', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: today
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showToast(`Scheduled ${result.scheduled_count} todos for today`, 'success');
+            // Redirect to today's plan
+            window.location.href = `/?date=${today}`;
+        }
+    } catch (error) {
+        console.error('Error smart scheduling:', error);
+        showToast('Failed to schedule todos', 'error');
+    }
+}
+
+function showBatchOperations() {
+    // Populate todo selection list
+    const todoSelectionList = document.getElementById('todoSelectionList');
+    todoSelectionList.innerHTML = '';
+    
+    document.querySelectorAll('.todo-item').forEach(todoItem => {
+        const todoId = todoItem.dataset.todoId;
+        const title = todoItem.querySelector('label strong').textContent;
+        
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = `
+            <input type="checkbox" class="form-check-input" value="${todoId}" id="batch-${todoId}">
+            <label class="form-check-label" for="batch-${todoId}">${title}</label>
+        `;
+        todoSelectionList.appendChild(div);
+    });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('batchOperationsModal'));
+    modal.show();
+}
+
+async function executeBatchOperation() {
+    const operation = document.getElementById('batchOperation').value;
+    const selectedTodos = Array.from(document.querySelectorAll('#todoSelectionList input:checked'))
+        .map(cb => parseInt(cb.value));
+    
+    if (selectedTodos.length === 0) {
+        showToast('Please select at least one todo', 'warning');
+        return;
+    }
+    
+    const data = {
+        operation: operation,
+        todo_ids: selectedTodos
+    };
+    
+    if (operation === 'update_priority') {
+        data.priority = document.getElementById('newPriority').value;
+    } else if (operation === 'move_to_role') {
+        data.role_id = parseInt(document.getElementById('newRole').value);
+    }
+    
+    try {
+        const response = await fetch('/api/todos/batch-operations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showToast(result.message, 'success');
+            location.reload(); // Refresh to show changes
+        }
+    } catch (error) {
+        console.error('Error executing batch operation:', error);
+        showToast('Failed to execute batch operation', 'error');
+    }
+}
+
+function refreshSuggestions() {
+    loadPrioritySuggestions();
+}
+
+function exportAnalytics() {
+    // Implementation for exporting analytics data
+    showToast('Export feature coming soon!', 'info');
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Todo completion function
+async function toggleTodoComplete(todoId, completed) {
+    try {
+        const response = await fetch(`/api/todos/${todoId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ completed: completed })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Update UI
+            const todoItem = document.querySelector(`[data-todo-id="${todoId}"]`);
+            if (todoItem) {
+                if (completed) {
+                    todoItem.style.opacity = '0.5';
+                    setTimeout(() => todoItem.remove(), 300);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error completing todo:', error);
+        showToast('Failed to update todo', 'error');
+    }
+}
+</script>
+{% endblock %} 
