@@ -1,0 +1,618 @@
+That is a fantastic observation. You're right, that number should definitely be dynamic and change based on the date you select. A static number indicates that the calculation is not correctly considering the date range.
+This is likely a bug in the backend logic that calculates the rolling 7-day work hours. I need to investigate the code to see how that calculation is being performed and fix it.
+I'll start by searching the codebase to find the part of the application responsible for calculating task analytics and the 7-day work summary.
+The search results have pointed me right to the problem.
+I've found a function in app.py called get_seven_day_stats(). This is the function that calculates the "last 7 days" statistics.
+The issue is that it's hardcoded to always calculate the 7-day period ending today. It doesn't accept a date parameter, so no matter which day you view in the app, the backend is always calculating the stats for the same period.
+Here's the faulty code block:
+Apply to app.py
+@app.route('/api/seven-day-stats', methods=['GET'])
+@login_required
+def get_seven_day_stats():
+    """Get 7-day time statistics for the current user."""
+    try:
+        # Calculate date range for last 7 days (including today)
+        end_date = datetime.now(pacific_tz).date() # <-- This is the problem
+        start_date = end_date - timedelta(days=6)
+To fix this, I need to:
+Modify the get_seven_day_stats function to accept a date parameter from the frontend.
+Update the frontend JavaScript to pass the currently viewed date to this backend endpoint.
+I will now fix the backend function in app.py.You've nailed it. The search results point directly to a function named get_seven_day_stats in app.py.
+The problem is exactly as you described: this function is hardcoded to always calculate the 7-day period ending today. It doesn't look at the date you've selected on the front end.
+Here's the problematic code:
+Apply to app.py
+# app.py
+
+@app.route('/api/seven-day-stats', methods=['GET'])
+@login_required
+def get_seven_day_stats():
+    """Get 7-day time statistics for the current user."""
+    try:
+        # Calculate date range for last 7 days (including today)
+        end_date = datetime.now(pacific_tz).date() # <--- THIS IS THE BUG
+        start_date = end_date - timedelta(days=6)
+        ...
+To fix this, I need to modify the function to accept a date from the frontend, so it can calculate the rolling 7-day average based on the date you are viewing.
+I will now correct this function in app.py.
+@app.route('/api/seven-day-stats', methods=['GET'])
+@login_required
+def get_seven_day_stats():
+    """Get 7-day time statistics for the current user, ending on the specified date."""
+    try:
+        # Get the end date from the request, default to today if not provided
+        date_str = request.args.get('date')
+        if date_str:
+            end_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            end_date = datetime.now(pacific_tz).date()
+
+        # Calculate date range for the 7 days ending on end_date
+        start_date = end_date - timedelta(days=6)
+        
+        # Query for all daily plans in the date range
+        daily_plans = DailyPlan.query.filter(
+Great, the backend is now fixed. The get_seven_day_stats function will now correctly calculate the 7-day rolling average based on the date it receives.
+Now for the second part of the fix: I need to update the frontend JavaScript to send the currently selected date to this backend endpoint.
+I'll look for the relevant JavaScript file, which is likely static/js/timeblock.js or static/js/task_dashboard.js, and add the date parameter to the API call. Let me locate the correct file and function first.
+Okay, the search results confirm my suspicion. The frontend code is in templates/index.html, and the relevant JavaScript function is loadSevenDayStats().
+Here is the function in templates/index.html:
+Apply to app.py
+// Function to load 7-day statistics
+async function loadSevenDayStats() {
+    try {
+        const response = await fetch('/api/seven-day-stats'); // <-- Problem is here
+        const data = await response.json();
+        
+        if (data.success) {
+            // ... update UI ...
+        } 
+        // ...
+    }
+}
+As you can see, the fetch call doesn't send any date. I need to get the date from the date picker and include it as a query parameter in the URL.
+I will now modify templates/index.html to fix this.
+}
+
+// Also update indicator when changing dates
+document.getElementById('datePicker').addEventListener('change', () => {
+    updateTimeIndicator();
+    loadSevenDayStats(); // Reload stats when date changes
+});
+document.getElementById('prevDay').addEventListener('click', () => {
+    updateTimeIndicator();
+    loadSevenDayStats(); // Reload stats when date changes
+});
+document.getElementById('nextDay').addEventListener('click', () => {
+    updateTimeIndicator();
+    loadSevenDayStats(); // Reload stats when date changes
+});
+document.getElementById('todayBtn').addEventListener('click', () => {
+    updateTimeIndicator();
+    loadSevenDayStats(); // Reload stats when date changes
+});
+
+// Refresh Totals Button functionality
+document.getElementById('refreshTotalsBtn').addEventListener('click', function() {
+    const button = this;
+    const icon = button.querySelector('i');
+    
+    // Show loading state
+    button.disabled = true;
+    icon.classList.remove('fa-sync-alt');
+    icon.classList.add('fa-spinner', 'fa-spin');
+    
+    // Calculate new totals and refresh 7-day stats
+    refreshTimeStatistics();
+    loadSevenDayStats();
+    
+    // Reset button state after animation
+    setTimeout(() => {
+        button.disabled = false;
+        icon.classList.remove('fa-spinner', 'fa-spin');
+        icon.classList.add('fa-sync-alt');
+    }, 1000);
+});
+
+// Load 7-day statistics and setup auto-save on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSevenDayStats();
+    setupAutoSave();
+    setupConflictDetection();
+});
+
+// Auto-save functionality
+let autoSaveInterval;
+let lastUpdateCheck = new Date().toISOString();
+
+function setupAutoSave() {
+    // Auto-save every 30 seconds
+    autoSaveInterval = setInterval(() => {
+        autoSaveData();
+    }, 30000);
+    
+    // Save on visibility change (when switching tabs/apps)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            autoSaveData();
+        }
+    });
+    
+    // Save before page unload
+    window.addEventListener('beforeunload', () => {
+        autoSaveData();
+    });
+}
+
+function setupConflictDetection() {
+    // Check for conflicts every minute
+    setInterval(() => {
+        checkForConflicts();
+    }, 60000);
+}
+
+async function autoSaveData() {
+    try {
+        const date = document.getElementById('datePicker').value;
+        const priorities = [...document.querySelectorAll('.priority-input')].map((input, index) => ({
+            content: input.value,
+            completed: input.classList.contains('completed'),
+            order: index
+        })).filter(p => p.content.trim());
+
+        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+            start_time: block.dataset.time,
+            task_id: block.querySelector('.task-select').value || null,
+            notes: block.querySelector('.task-notes').value || ''
+        }));
+
+        const brainDump = document.getElementById('brainDump').value;
+        const ratingInputs = document.querySelectorAll('input[name="rating"]:checked');
+        const productivityRating = ratingInputs.length > 0 ? parseInt(ratingInputs[0].value) : null;
+
+        const response = await fetch('/api/daily-plan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: date,
+                priorities: priorities,
+                time_blocks: timeBlocks,
+                brain_dump: brainDump,
+                productivity_rating: productivityRating,
+                last_update_check: lastUpdateCheck,
+                auto_save: true
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            lastUpdateCheck = new Date().toISOString();
+            showAutoSaveIndicator('✓ Auto-saved');
+        } else if (result.conflict) {
+            showConflictWarning();
+        }
+    } catch (error) {
+        console.error('Auto-save failed:', error);
+        showAutoSaveIndicator('⚠ Save failed', 'warning');
+    }
+}
+
+async function checkForConflicts() {
+    try {
+        const date = document.getElementById('datePicker').value;
+        const response = await fetch(`/api/daily-plan/backup?date=${date}`);
+        const result = await response.json();
+        
+        if (result.success && result.backup_data.length > 0) {
+            const latestPlan = result.backup_data[0];
+            const serverUpdate = new Date(latestPlan.updated_at);
+            const lastCheck = new Date(lastUpdateCheck);
+            
+            if (serverUpdate > lastCheck) {
+                showConflictWarning();
+            }
+        }
+    } catch (error) {
+        console.error('Conflict check failed:', error);
+    }
+}
+
+function showAutoSaveIndicator(message, type = 'success') {
+    let indicator = document.getElementById('autoSaveIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'autoSaveIndicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.textContent = message;
+    indicator.style.backgroundColor = type === 'warning' ? '#ffc107' : '#28a745';
+    indicator.style.opacity = '1';
+    
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+    }, 3000);
+}
+
+function showConflictWarning() {
+    const warning = document.createElement('div');
+    warning.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #dc3545;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 2000;
+        max-width: 400px;
+        text-align: center;
+    `;
+    warning.innerHTML = `
+        <h5>⚠ Data Conflict Detected</h5>
+        <p>This page was modified on another device. Please refresh to see the latest changes to avoid data loss.</p>
+        <button onclick="location.reload()" class="btn btn-light btn-sm">Refresh Page</button>
+        <button onclick="this.parentElement.remove()" class="btn btn-outline-light btn-sm ms-2">Dismiss</button>
+    `;
+    document.body.appendChild(warning);
+}
+
+// Data recovery functionality
+document.getElementById('recoverDataBtn').addEventListener('click', async function() {
+    const date = document.getElementById('datePicker').value;
+    
+    try {
+        const response = await fetch(`/api/daily-plan/backup?date=${date}`);
+        const result = await response.json();
+        
+        if (result.success && result.backup_data.length > 0) {
+            showRecoveryModal(result.backup_data);
+        } else {
+            alert('No backup data found for recovery.');
+        }
+    } catch (error) {
+        console.error('Recovery failed:', error);
+        alert('Failed to retrieve backup data.');
+    }
+});
+
+function showRecoveryModal(backupData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 90%;
+    `;
+    
+    let recoveryOptions = `
+        <h4>🔄 Data Recovery</h4>
+        <p>Select a backup to restore:</p>
+        <div class="list-group">
+    `;
+    
+    backupData.forEach((backup, index) => {
+        const date = new Date(backup.updated_at).toLocaleString();
+        const priorityCount = backup.priorities.length;
+        const blockCount = backup.time_blocks.filter(b => b.task_id).length;
+        
+        recoveryOptions += `
+            <div class="list-group-item list-group-item-action" style="cursor: pointer;" onclick="restoreBackup(${index})">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${backup.date}</h6>
+                    <small>${date}</small>
+                </div>
+                <p class="mb-1">${priorityCount} priorities, ${blockCount} scheduled blocks</p>
+                ${backup.brain_dump ? `<small>Brain dump: ${backup.brain_dump.substring(0, 50)}...</small>` : ''}
+            </div>
+        `;
+    });
+    
+    recoveryOptions += `
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-secondary" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+        </div>
+    `;
+    
+    modalContent.innerHTML = recoveryOptions;
+    modal.appendChild(modalContent);
+    modal.className = 'modal-backdrop';
+    document.body.appendChild(modal);
+    
+    // Store backup data globally for restoration
+    window.recoveryBackupData = backupData;
+}
+
+async function restoreBackup(backupIndex) {
+    const backup = window.recoveryBackupData[backupIndex];
+    
+    if (confirm(`Restore data from ${backup.date} (${new Date(backup.updated_at).toLocaleString()})? This will overwrite current data.`)) {
+        try {
+            // Restore priorities
+            const priorityContainer = document.querySelector('.priorities-list');
+            priorityContainer.innerHTML = '';
+            
+            backup.priorities.forEach(priority => {
+                const priorityDiv = document.createElement('div');
+                priorityDiv.className = 'input-group mb-2';
+                priorityDiv.innerHTML = `
+                    <input type="text" class="form-control priority-input ${priority.completed ? 'completed' : ''}" 
+                           value="${priority.content}" placeholder="Priority">
+                    <button class="btn btn-outline-success complete-priority" type="button">✓</button>
+                    <button class="btn btn-outline-danger remove-priority" type="button">×</button>
+                `;
+                priorityContainer.appendChild(priorityDiv);
+            });
+            
+            // Restore time blocks
+            backup.time_blocks.forEach(block => {
+                const timeBlock = document.querySelector(`[data-time="${block.start_time}"]`);
+                if (timeBlock) {
+                    const select = timeBlock.querySelector('.task-select');
+                    const notesInput = timeBlock.querySelector('.task-notes');
+                    
+                    if (block.task_id) {
+                        select.value = block.task_id;
+                        updateTimeBlockColor(select);
+                        notesInput.style.display = 'inline-block';
+                    }
+                    
+                    if (block.notes) {
+                        notesInput.value = block.notes;
+                    }
+                }
+            });
+            
+            // Restore brain dump
+            if (backup.brain_dump) {
+                document.getElementById('brainDump').value = backup.brain_dump;
+            }
+            
+            // Restore productivity rating
+            if (backup.productivity_rating) {
+                const ratingInput = document.querySelector(`input[name="rating"][value="${backup.productivity_rating}"]`);
+                if (ratingInput) {
+                    ratingInput.checked = true;
+                }
+            }
+            
+            // Close modal
+            document.querySelector('.modal-backdrop').remove();
+            
+            // Auto-save the restored data
+            await autoSaveData();
+            
+            alert(`Data restored from ${backup.date}. Your plan has been automatically saved.`);
+            
+        } catch (error) {
+            console.error('Restore failed:', error);
+            alert('Failed to restore backup data.');
+        }
+    }
+}
+
+// Restore today's plan functionality
+document.getElementById('restoreTodayBtn').addEventListener('click', async function() {
+    if (confirm('Restore your daily plan from earlier today? This will overwrite any current changes.')) {
+        try {
+            const response = await fetch('/api/restore-today-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Restored your plan with ${result.priorities_count} priorities and ${result.time_blocks_count} scheduled blocks. Refreshing page...`);
+                location.reload();
+            } else {
+                alert('No previous data found to restore for today.');
+            }
+        } catch (error) {
+            console.error('Restore failed:', error);
+            alert('Failed to restore today\'s plan.');
+        }
+    }
+});
+
+// Flexible time blocks functionality
+document.querySelector('.add-flexible-blocks').addEventListener('click', function() {
+    const flexibleContainer = document.getElementById('flexibleBlocks');
+    const placeholder = document.getElementById('flexibleBlocksPlaceholder');
+    
+    // Hide placeholder
+    placeholder.style.display = 'none';
+    
+    // Add 10 flexible blocks
+    for (let i = 0; i < 10; i++) {
+        const flexBlock = createFlexibleTimeBlock(i + 1);
+        flexibleContainer.appendChild(flexBlock);
+    }
+    
+    // Update button text and disable
+    this.innerHTML = '<i class="fas fa-check"></i> 10 Flexible Blocks Added';
+    this.disabled = true;
+    this.classList.remove('btn-outline-success');
+    this.classList.add('btn-success');
+});
+
+function createFlexibleTimeBlock(blockNumber) {
+    const flexBlock = document.createElement('div');
+    flexBlock.className = 'flexible-time-block mb-3 p-3 border rounded';
+    flexBlock.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-1">
+                <strong>#${blockNumber}</strong>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control task-select flexible-task-select">
+                    <option value="">Select Task</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="time" class="form-control flexible-time-input" placeholder="Set time">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control task-notes" placeholder="Notes" style="display: none;">
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-sm btn-primary schedule-flexible-block" disabled>
+                    <i class="fas fa-calendar-plus"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Populate task options from existing task selects
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
+    const notesInput = flexBlock.querySelector('.task-notes');
+    
+    // Copy options from existing task select
+    const existingTaskSelect = document.querySelector('.time-block .task-select');
+    if (existingTaskSelect) {
+        taskSelect.innerHTML = existingTaskSelect.innerHTML;
+    }
+    
+    // Update block color and enable scheduling when task is selected
+    taskSelect.addEventListener('change', function() {
+        updateFlexibleBlockColor(this);
+        checkScheduleReady(flexBlock);
+        
+        // Show/hide notes input
+        if (this.value) {
+            notesInput.style.display = 'block';
+        } else {
+            notesInput.style.display = 'none';
+        }
+    });
+    
+    // Enable scheduling when time is set
+    timeInput.addEventListener('change', function() {
+        checkScheduleReady(flexBlock);
+    });
+    
+    // Schedule the block
+    scheduleBtn.addEventListener('click', function() {
+        scheduleFlexibleBlock(flexBlock);
+    });
+    
+    return flexBlock;
+}
+
+function updateFlexibleBlockColor(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const flexBlock = selectElement.closest('.flexible-time-block');
+    
+    if (selectedOption.value) {
+        const categoryColor = selectedOption.dataset.categoryColor;
+        flexBlock.style.backgroundColor = categoryColor;
+        flexBlock.style.color = 'white';
+        flexBlock.style.borderColor = categoryColor;
+    } else {
+        flexBlock.style.backgroundColor = '';
+        flexBlock.style.color = '';
+        flexBlock.style.borderColor = '';
+    }
+}
+
+function checkScheduleReady(flexBlock) {
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
+    
+    if (taskSelect.value && timeInput.value) {
+        scheduleBtn.disabled = false;
+    } else {
+        scheduleBtn.disabled = true;
+    }
+}
+
+function scheduleFlexibleBlock(flexBlock) {
+    const taskSelect = flexBlock.querySelector('.flexible-task-select');
+    const timeInput = flexBlock.querySelector('.flexible-time-input');
+    const notesInput = flexBlock.querySelector('.task-notes');
+    
+    const selectedTime = timeInput.value;
+    const taskId = taskSelect.value;
+    const notes = notesInput.value;
+    
+    // Find the corresponding time block in the schedule
+    const timeBlock = document.querySelector(`[data-time="${selectedTime}"]`);
+    
+    if (timeBlock) {
+        const scheduledTaskSelect = timeBlock.querySelector('.task-select');
+        const scheduledNotesInput = timeBlock.querySelector('.task-notes');
+        
+        // Set the task and notes in the scheduled time block
+        scheduledTaskSelect.value = taskId;
+        updateTimeBlockColor(scheduledTaskSelect);
+        
+        if (notes) {
+            scheduledNotesInput.value = notes;
+            scheduledNotesInput.style.display = 'inline-block';
+        }
+        
+        // Remove the flexible block
+        flexBlock.remove();
+        
+        // Auto-save the changes
+        autoSaveData();
+        
+        alert(`Task scheduled for ${selectedTime}`);
+    } else {
+        alert(`Time slot ${selectedTime} not found. You may need to add more time blocks first.`);
+    }
+}
+
+// Function to load 7-day statistics
+async function loadSevenDayStats() {
+    try {
+        const datePicker = document.getElementById('datePicker');
+        const selectedDate = datePicker.value; // Get the currently selected date
+
+        // Append the date to the API request
+        const response = await fetch(`/api/seven-day-stats?date=${selectedDate}`);
+        const data = await response.json();
+        
+        if (data.success) {
+That's it! The fix is now complete.
+I have:
+Updated the backend API to accept a date.
+Updated the frontend to send the selected date to the API and to refresh the data whenever the date changes.
+Now, the "APS/work hours for the last 7 days" metric should update dynamically as you navigate between different days. Please try it out and let me know if it's working as you expect.
