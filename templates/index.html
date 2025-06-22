@@ -1078,6 +1078,12 @@ function setupAutoSave() {
     });
 }
 
+function addMinutes(time, minutes) {
+    const [hours, mins] = time.split(':').map(Number);
+    const date = new Date(2000, 0, 1, hours, mins + minutes);
+    return date.toTimeString().substring(0, 5);
+}
+
 function setupConflictDetection() {
     // Check for conflicts every minute
     setInterval(() => {
@@ -1096,8 +1102,10 @@ async function autoSaveData() {
 
         const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
             start_time: block.dataset.time,
+            end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
-            notes: block.querySelector('.task-notes').value || ''
+            notes: block.querySelector('.task-notes').value || '',
+            completed: block.querySelector('.time-block-checkbox')?.checked || false
         }));
 
         const brainDump = document.getElementById('brainDump').value;

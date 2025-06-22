@@ -1,0 +1,200 @@
+     ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+     [POST]500timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="cfe2456a-6142-42fa" responseTimeMS=157 responseBytes=681 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/app.py", line 785, in save_daily_plan
+    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                               ~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'end_time'
+ERROR:app:Request exception: 'end_time'
+127.0.0.1 - - [22/Jun/2025:01:13:00 +0000] "POST /api/daily-plan HTTP/1.1" 500 265 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/daily-plan/backup?date=2025-06-22clientIP="24.16.109.229" requestID="fb2a98bd-18ea-46c5" responseTimeMS=511 responseBytes=1523 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:13:42 +0000] "GET /api/daily-plan/backup?date=2025-06-22 HTTP/1.1" 200 16175 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]500timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="aec624f4-268e-4ea1" responseTimeMS=156 responseBytes=681 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+ERROR:app:Exception on /api/daily-plan [POST]
+Traceback (most recent call last):
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/app.py", line 785, in save_daily_plan
+    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                               ~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'end_time'
+ERROR:app:Request exception: 'end_time'
+127.0.0.1 - - [22/Jun/2025:01:14:00 +0000] "POST /api/daily-plan HTTP/1.1" 500 265 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/daily-plan/backup?date=2025-06-22clientIP="24.16.109.229" requestID="faa45a2b-5ed8-45a3" responseTimeMS=532 responseBytes=1523 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="6d439839-66fb-48b1" responseTimeMS=733 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:14:42 +0000] "GET /api/daily-plan/backup?date=2025-06-22 HTTP/1.1" 200 16175 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:14:42 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     ==> Deploying...
+ERROR:app:Exception on /api/daily-plan [POST]
+Traceback (most recent call last):
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.13/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+     [POST]500timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="98f4026a-e20a-4ec7" responseTimeMS=157 responseBytes=681 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/app.py", line 785, in save_daily_plan
+    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                               ~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'end_time'
+ERROR:app:Request exception: 'end_time'
+127.0.0.1 - - [22/Jun/2025:01:15:00 +0000] "POST /api/daily-plan HTTP/1.1" 500 265 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+==> Running 'gunicorn --bind 0.0.0.0:$PORT main:app'
+INFO:google_auth:Initializing Google OAuth configuration
+[2025-06-22 01:15:21 +0000] [106] [INFO] Starting gunicorn 23.0.0
+[2025-06-22 01:15:21 +0000] [106] [INFO] Listening at: http://0.0.0.0:10000 (106)
+[2025-06-22 01:15:21 +0000] [106] [INFO] Using worker: sync
+[2025-06-22 01:15:21 +0000] [107] [INFO] Booting worker with pid: 107
+✅ Database tables verified/created
+127.0.0.1 - - [22/Jun/2025:01:15:22 +0000] "HEAD / HTTP/1.1" 302 0 "-" "Go-http-client/1.1"
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:15', 'task_id': '2', 'notes': ''}
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="918c500c-d3d8-44b4" responseTimeMS=447 responseBytes=573 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:30', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:45', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:00', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:15', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:30', 'task_id': '2', 'notes': ''}
+127.0.0.1 - - [22/Jun/2025:01:16:00 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/daily-plan/backup?date=2025-06-22clientIP="24.16.109.229" requestID="85c45a4c-1a73-46fc" responseTimeMS=954 responseBytes=1509 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:16:01 +0000] "GET /api/daily-plan/backup?date=2025-06-22 HTTP/1.1" 200 14286 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     ==> Deploying...
+[2025-06-22 01:16:22 +0000] [104] [INFO] Handling signal: term
+[2025-06-22 01:16:22 +0000] [106] [INFO] Worker exiting (pid: 106)
+[2025-06-22 01:16:24 +0000] [104] [INFO] Shutting down: Master
+✅ Database tables verified/created
+==> Running 'gunicorn --bind 0.0.0.0:$PORT main:app'
+INFO:google_auth:Initializing Google OAuth configuration
+[2025-06-22 01:16:37 +0000] [105] [INFO] Starting gunicorn 23.0.0
+[2025-06-22 01:16:37 +0000] [105] [INFO] Listening at: http://0.0.0.0:10000 (105)
+[2025-06-22 01:16:37 +0000] [105] [INFO] Using worker: sync
+[2025-06-22 01:16:37 +0000] [106] [INFO] Booting worker with pid: 106
+✅ Database tables verified/created
+127.0.0.1 - - [22/Jun/2025:01:16:38 +0000] "HEAD / HTTP/1.1" 302 0 "-" "Go-http-client/1.1"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="c9a9294d-b11f-45fb" responseTimeMS=234 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:16:42 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://timeblocker.onrender.com
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     [GET]302timeblocker.onrender.com/clientIP="35.230.74.10" requestID="afa24424-e266-405c" responseTimeMS=5 responseBytes=530 userAgent="Go-http-client/2.0"
+     [GET]200timeblocker.onrender.com/loginclientIP="35.230.74.10" requestID="106807c8-3669-483d" responseTimeMS=18 responseBytes=1515 userAgent="Go-http-client/2.0"
+127.0.0.1 - - [22/Jun/2025:01:16:47 +0000] "GET / HTTP/1.1" 302 199 "-" "Go-http-client/2.0"
+127.0.0.1 - - [22/Jun/2025:01:16:47 +0000] "GET /login HTTP/1.1" 200 3776 "https://timeblocker.onrender.com" "Go-http-client/2.0"
+     [GET]200timeblocker.onrender.com/api/daily-plan/backup?date=2025-06-22clientIP="24.16.109.229" requestID="d9dcc34c-c083-4d96" responseTimeMS=851 responseBytes=1527 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]409timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="48ddd017-a8cc-4a73" responseTimeMS=966 responseBytes=656 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:00 +0000] "GET /api/daily-plan/backup?date=2025-06-22 HTTP/1.1" 200 16175 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:00 +0000] "POST /api/daily-plan HTTP/1.1" 409 170 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]409timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="958571e8-1620-440c" responseTimeMS=328 responseBytes=656 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:05 +0000] "POST /api/daily-plan HTTP/1.1" 409 170 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/?date=2025-06-22clientIP="24.16.109.229" requestID="cb022a50-6e39-4f0a" responseTimeMS=1231 responseBytes=20150 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/css/style.cssclientIP="24.16.109.229" requestID="afaa614c-86d9-4349" responseTimeMS=106 responseBytes=2872 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/js/timeblock.jsclientIP="24.16.109.229" requestID="369b05ec-5ca0-462e" responseTimeMS=188 responseBytes=7045 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/templatesclientIP="24.16.109.229" requestID="d3afd2e3-d26e-4ad5" responseTimeMS=142 responseBytes=582 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:06 +0000] "GET /?date=2025-06-22 HTTP/1.1" 200 846569 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:06 +0000] "GET /static/css/style.css HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:06 +0000] "GET /static/js/timeblock.js HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:06 +0000] "GET /api/templates HTTP/1.1" 200 69 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:11 +0000] "GET /api/seven-day-stats?date=2025-06-22 HTTP/1.1" 200 258 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/seven-day-stats?date=2025-06-22clientIP="24.16.109.229" requestID="e4a9ed88-e7c4-4ad3" responseTimeMS=5239 responseBytes=685 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/favicon/favicon.pngclientIP="24.16.109.229" requestID="19d11794-7813-4cb5" responseTimeMS=5226 responseBytes=1253 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="4dc8e605-314b-4fe0" responseTimeMS=1229 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]404timeblocker.onrender.com/save-daily-planclientIP="24.16.109.229" requestID="a1c10288-a1e9-4bfb" responseTimeMS=1310 responseBytes=673 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/favicon/favicon.svgclientIP="24.16.109.229" requestID="73614e8e-7b01-4fab" responseTimeMS=358 responseBytes=869 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:12 +0000] "GET /static/favicon/favicon.png HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:12 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:12 +0000] "POST /save-daily-plan HTTP/1.1" 404 207 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:17:12 +0000] "GET /static/favicon/favicon.svg HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="88704fdb-f763-4af1" responseTimeMS=170 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '07:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '08:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '09:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '10:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '11:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '12:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '13:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:15', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:30', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '14:45', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:00', 'task_id': None, 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:15', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:30', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '15:45', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:00', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:15', 'task_id': '2', 'notes': ''}
+WARNING:app:Skipping time block with missing time data: {'start_time': '16:30', 'task_id': '2', 'notes': ''}
+127.0.0.1 - - [22/Jun/2025:01:17:15 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
