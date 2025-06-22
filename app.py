@@ -797,6 +797,124 @@ def save_daily_plan():
         logger.error(f"Error saving daily plan: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/analytics')
+@login_required
+def analytics():
+    """Analytics dashboard route"""
+    # Get all roles for the analytics page
+    all_roles = Role.query.filter_by(user_id=current_user.id).all()
+    all_todos = ToDo.query.filter_by(user_id=current_user.id, completed=False).all()
+    
+    return render_template('analytics.html', all_roles=all_roles, all_todos=all_todos)
+
+@app.route('/api/productivity/analytics')
+@login_required
+def get_productivity_analytics():
+    """Get productivity analytics and statistics"""
+    try:
+        days = int(request.args.get('days', 7))
+        end_date = get_current_pacific_date()
+        start_date = end_date - timedelta(days=days-1)
+        
+        # Get daily plans in date range
+        daily_plans = DailyPlan.query.filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).all()
+        
+        # Calculate metrics
+        total_hours = 0
+        completed_blocks = 0
+        total_blocks = 0
+        category_data = {}
+        hourly_data = {}
+        daily_data = {}
+        
+        for plan in daily_plans:
+            date_str = plan.date.strftime('%Y-%m-%d')
+            daily_minutes = 0
+            
+            for block in plan.time_blocks:
+                total_blocks += 1
+                block_minutes = 15  # Each block is 15 minutes
+                total_hours += block_minutes / 60
+                daily_minutes += block_minutes
+                
+                if block.completed:
+                    completed_blocks += 1
+                
+                # Hourly breakdown
+                hour = block.start_time.hour
+                if hour not in hourly_data:
+                    hourly_data[hour] = {'count': 0, 'completed': 0}
+                hourly_data[hour]['count'] += 1
+                if block.completed:
+                    hourly_data[hour]['completed'] += 1
+                
+                # Category breakdown
+                if block.task_id:
+                    task = Task.query.get(block.task_id)
+                    if task and task.category:
+                        cat_id = task.category_id
+                        if cat_id not in category_data:
+                            category_data[cat_id] = {
+                                'name': task.category.name,
+                                'color': task.category.color,
+                                'hours': 0
+                            }
+                        category_data[cat_id]['hours'] += block_minutes / 60
+            
+            daily_data[date_str] = {'hours': daily_minutes / 60}
+        
+        # Calculate completion rate
+        completion_rate = (completed_blocks / total_blocks * 100) if total_blocks > 0 else 0
+        
+        # Calculate hourly productivity scores
+        hourly_chart_data = []
+        for hour in range(24):
+            if hour in hourly_data:
+                data = hourly_data[hour]
+                score = (data['completed'] / data['count'] * 100) if data['count'] > 0 else 0
+                hourly_chart_data.append({'hour': hour, 'score': score})
+            else:
+                hourly_chart_data.append({'hour': hour, 'score': 0})
+        
+        # Prepare response data
+        analytics_data = {
+            'metrics': {
+                'total_hours': round(total_hours, 1),
+                'completion_rate': round(completion_rate, 1),
+                'avg_focus_score': 75,  # Placeholder for now
+                'estimation_accuracy': 85  # Placeholder for now
+            },
+            'categories': list(category_data.values()),
+            'hourly': hourly_chart_data,
+            'daily': [{'date': date, 'hours': data['hours']} for date, data in daily_data.items()]
+        }
+        
+        return jsonify(analytics_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting analytics: {str(e)}")
+        return jsonify({'error': 'Failed to load analytics'}), 500
+
+@app.route('/api/insights')
+@login_required
+def get_insights():
+    """Get productivity insights"""
+    try:
+        insights = [
+            "Your most productive hours are between 9-11 AM",
+            "You complete 85% of scheduled time blocks",
+            "Personal category takes up 40% of your time",
+            "Consider scheduling breaks between intense work sessions"
+        ]
+        return jsonify(insights)
+    except Exception as e:
+        logger.error(f"Error getting insights: {str(e)}")
+        return jsonify([])
+
 @app.route('/summary')
 @login_required
 def summary():

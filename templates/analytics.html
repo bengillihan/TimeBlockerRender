@@ -311,7 +311,7 @@ function initializeCharts() {
 }
 
 function loadAnalytics() {
-    fetch(`/api/analytics?days=${currentTimeRange}`)
+    fetch(`/api/productivity/analytics?days=${currentTimeRange}`)
         .then(response => response.json())
         .then(data => {
             updateMetrics(data.metrics);
