@@ -1487,31 +1487,7 @@ def time_preferences():
     """Show time preferences page."""
     return render_template('time_preferences.html')
 
-@app.route('/api/seven-day-stats', methods=['GET'])
-@login_required
-def get_seven_day_stats():
-    """Get 7-day time statistics for the current user, ending on the specified date."""
-    try:
-        # Get the end date from the request, default to today if not provided
-        date_str = request.args.get('date')
-        if date_str:
-            end_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        else:
-            end_date = datetime.now(pacific_tz).date()
-
-        # Calculate date range for the 7 days ending on end_date
-        start_date = end_date - timedelta(days=6)  # 6 days ago + end_date = 7 days
-        
-        # Query for all daily plans in the date range
-        daily_plans = DailyPlan.query.filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date
-        ).all()
-        
-        # Initialize statistics
-        total_minutes = 0
-        aps_minutes = 0
+# Route conflicts resolved - duplicate function removed
         category_stats = {}
         
         # Calculate statistics from time blocks
@@ -1561,7 +1537,7 @@ def get_seven_day_stats():
             'error': 'Failed to fetch 7-day statistics'
         }), 500
 
-@app.route('/api/time-preferences', methods=['POST'])
+@app.route('/api/time-preferences', methods=['PUT'])
 @login_required
 def update_time_preferences():
     """Update user's time preferences."""
@@ -1583,7 +1559,13 @@ def update_time_preferences():
         logger.error(f"Error updating time preferences: {str(e)}")
         return jsonify({'error': 'Failed to update preferences'}), 500
 
-# ToDo Management Endpoints
+@app.route('/api/time-preferences')
+@login_required  
+def time_preferences():
+    """Show time preferences page."""
+    return render_template('time_preferences.html')
+
+# ToDo Management Endpoints  
 @app.route('/api/todos', methods=['GET'])
 @login_required
 def get_todos():
