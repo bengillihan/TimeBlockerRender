@@ -1,0 +1,110 @@
+I can see the issue from the error logs. The problem is in the save_daily_plan function in app.py at line 785, where it's trying to access block_data['end_time'] but the end_time key doesn't exist in the data being sent from the frontend.
+Let me examine the relevant code to understand the issue better.
+Now let me look at the specific save_daily_plan function to see the full context:
+Now I can see the issue clearly. The problem is on line 785 where the code is trying to access block_data['end_time'] but the end_time key doesn't exist in the data being sent from the frontend. Let me check what the frontend is actually sending by looking at the JavaScript code:
+Let me look at the saveData function to see how the time blocks are being prepared:
+Perfect! Now I can see the issue. In the saveData function on line 507, the frontend is correctly sending both start_time and end_time:
+Apply to timeblock.js
+const blockData = {
+    start_time: block.dataset.time,
+    end_time: addMinutes(block.dataset.time, 15),
+    task_id: taskId || null,
+    notes: block.querySelector('.task-notes')?.value || '',
+    completed: block.querySelector('.time-block-checkbox')?.checked || false
+};
+However, there's a filtering condition on line 495 that might be causing some blocks to be skipped:
+Apply to timeblock.js
+if (taskId === "new") {
+    console.log('Skipping block with "new" task_id:', block.dataset.time);
+    return null;
+}
+The issue is that the backend is trying to access end_time for all blocks, but some blocks might be getting filtered out or have missing data. Let me check the addMinutes function to make sure it's working correctly:
+The addMinutes function looks correct. The issue is likely that some time blocks are being sent without the end_time field, or there's a case where the filtering logic is not working as expected.
+Looking at the backend code again, the issue is that the code assumes every block_data will have an end_time key, but it's not checking if the key exists before accessing it. Let me fix this by adding proper validation:
+    if data.get('time_blocks'):
+        TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        for block_data in data.get('time_blocks', []):
+            # Validate that both start_time and end_time exist
+            if not block_data.get('start_time') or not block_data.get('end_time'):
+                logger.warning(f"Skipping time block with missing time data: {block_data}")
+                continue
+                
+            try:
+                time_block = TimeBlock(
+                    daily_plan_id=daily_plan.id,
+                    start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                    task_id=block_data.get('task_id'),
+                    completed=block_data.get('completed', False),
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                )
+                db.session.add(time_block)
+            except (ValueError, KeyError) as e:
+                logger.error(f"Error processing time block {block_data}: {str(e)}")
+                continue
+
+    try:
+        db.session.commit()
+Now let me also check if there are any issues with the frontend filtering logic. The problem might be that some blocks are being sent with task_id: "new" but still being included in the data. Let me look at the filtering logic more carefully:
+I notice there's an issue in the template saving code. On line 620, the template saving is not filtering out blocks with task_id: "new", but the main save function does. This could be causing inconsistent data. Let me fix this:
+                        content: input.value,
+                        completed: input.classList.contains('completed')
+                    })),
+                    time_blocks: [...document.querySelectorAll('.time-block')].map(block => {
+                        const taskSelect = block.querySelector('.task-select');
+                        const taskId = taskSelect.value;
+
+                        // Only skip if task_id is explicitly "new"
+                        if (taskId === "new") {
+                            return null;
+                        }
+
+                        return {
+                            start_time: block.dataset.time,
+                            end_time: addMinutes(block.dataset.time, 15),
+                            task_id: taskId || null,
+                            notes: block.querySelector('.task-notes')?.value || ''
+                        };
+                    }).filter(block => block !== null) // Remove null blocks
+                };
+
+                const response = await fetch('/api/templates', {
+this is the file in replit 
+
+I understand you're working with the file in Replit. Let me help you fix the KeyError: 'end_time' issue. The problem is that the backend code is trying to access block_data['end_time'] without checking if the key exists first.
+Let me provide you with the fix for the save_daily_plan function in app.py. You'll need to update the time blocks handling section around line 785:
+    # Handle time blocks - only update if explicitly provided with data
+    if data.get('time_blocks'):
+        TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        for block_data in data.get('time_blocks', []):
+            # Validate that both start_time and end_time exist
+            if not block_data.get('start_time') or not block_data.get('end_time'):
+                logger.warning(f"Skipping time block with missing time data: {block_data}")
+                continue
+                
+            try:
+                time_block = TimeBlock(
+                    daily_plan_id=daily_plan.id,
+                    start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                    task_id=block_data.get('task_id'),
+                    completed=block_data.get('completed', False),
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                )
+                db.session.add(time_block)
+            except (ValueError, KeyError) as e:
+                logger.error(f"Error processing time block {block_data}: {str(e)}")
+                continue
+It seems the file wasn't updated. Let me check the current state of the file around the problematic line:
+Great! I can see that the fix has already been applied to your file. The code now includes proper validation to check if both start_time and end_time exist before trying to access them, and it has error handling to catch any issues.
+The updated code (lines 778-795) now includes:
+Validation check: if not block_data.get('start_time') or not block_data.get('end_time')
+Warning logging: When time data is missing
+Try-catch block: To handle any parsing errors
+Continue statement: To skip problematic blocks instead of crashing
+This should resolve the KeyError: 'end_time' issue you were experiencing. The application will now:
+Skip any time blocks that don't have both start_time and end_time
+Log warnings when this happens so you can debug
+Continue processing other valid time blocks
+Not crash the entire save operation
+The fix is already in place in your Replit file, so the error should be resolved. Try saving your daily plan again and it should work without the KeyError.

@@ -777,8 +777,12 @@ def save_daily_plan():
     if data.get('time_blocks'):
         TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
         for block_data in data.get('time_blocks', []):
-            if block_data.get('start_time'):
-                # Allow any valid time, even if it's before the default start time
+            # Validate that both start_time and end_time exist
+            if not block_data.get('start_time') or not block_data.get('end_time'):
+                logger.warning(f"Skipping time block with missing time data: {block_data}")
+                continue
+                
+            try:
                 time_block = TimeBlock(
                     daily_plan_id=daily_plan.id,
                     start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
@@ -788,6 +792,9 @@ def save_daily_plan():
                     notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
                 )
                 db.session.add(time_block)
+            except (ValueError, KeyError) as e:
+                logger.error(f"Error processing time block {block_data}: {str(e)}")
+                continue
 
     try:
         db.session.commit()
