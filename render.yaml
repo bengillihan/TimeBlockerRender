@@ -2,18 +2,49 @@ services:
   - type: web
     name: timeblocker
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --preload main:app
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 60 --preload app:app"
     envVars:
-      - key: FLASK_ENV
-        value: production
-      - key: FLASK_DEBUG
-        value: false
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: timeblocker-db
+          property: connectionString
       - key: SESSION_SECRET
-        sync: false
-      - key: GOOGLE_OAUTH_CLIENT_ID
-        sync: false
-      - key: GOOGLE_OAUTH_CLIENT_SECRET
-        sync: false
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.6
+      - key: IS_RENDER
+        value: "true"
+
+  - type: cron
+    name: cleanup
+    env: python
+    plan: free
+    schedule: "0 0 * * *" # Run daily at midnight UTC
+    command: "python cleanup.py"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: timeblocker-db
+          property: connectionString
+
+  - type: cron
+    name: pinger
+    env: python
+    plan: free
+    schedule: "*/10 * * * *" # Run every 10 minutes
+    command: "curl -sS https://${RENDER_EXTERNAL_HOSTNAME} > /dev/null"
+    envVars:
+      - key: RENDER_EXTERNAL_HOSTNAME
+        fromService:
+          type: web
+          name: timeblocker
+          property: host
+
+databases:
+  - name: timeblocker-db
+    plan: free
+    databaseName: timeblocker
+    user: timeblocker
+    ipAllowList: []

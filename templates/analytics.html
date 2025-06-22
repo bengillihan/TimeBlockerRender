@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-chart-line me-2"></i>Productivity Analytics</h2>
+            <p class="text-muted">Track your time usage patterns and get personalized insights</p>
+        </div>
+    </div>
+
+    <!-- Time Range Selector -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Time Range</h6>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="timeRange" id="7days" value="7" checked>
+                        <label class="btn btn-outline-primary" for="7days">7 Days</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="30days" value="30">
+                        <label class="btn btn-outline-primary" for="30days">30 Days</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="90days" value="90">
+                        <label class="btn btn-outline-primary" for="90days">90 Days</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Quick Actions</h6>
+                    <button class="btn btn-sm btn-success me-2" onclick="smartScheduleTodos()">
+                        <i class="fas fa-magic"></i> Smart Schedule
+                    </button>
+                    <button class="btn btn-sm btn-info me-2" onclick="getPrioritySuggestions()">
+                        <i class="fas fa-lightbulb"></i> Priority Suggestions
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="exportAnalytics()">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="totalHours">0</h4>
+                            <p class="mb-0">Total Hours</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="completionRate">0%</h4>
+                            <p class="mb-0">Completion Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="avgFocusScore">0</h4>
+                            <p class="mb-0">Avg Focus Score</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-brain fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="estimationAccuracy">0%</h4>
+                            <p class="mb-0">Time Estimation Accuracy</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-bullseye fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Category Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Productivity by Hour</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Patterns and Insights -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Daily Productivity Patterns</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyPatternChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Productivity Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div id="insightsList">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading insights...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Todo Management -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">Todo Management</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success me-2" onclick="showBatchOperations()">
+                            <i class="fas fa-tasks"></i> Batch Operations
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="showAddTodoModal()">
+                            <i class="fas fa-plus"></i> Add Todo
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for role in all_roles %}
+                        <div class="col-md-4 mb-3">
+                            <div class="border rounded p-3" style="border-color: {{ role.color }}!important;">
+                                <h6 style="color: {{ role.color }}">
+                                    <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
+                                    {{ role.name }}
+                                </h6>
+                                <div class="todo-list" id="todo-list-{{ role.id }}">
+                                    {% for todo in all_todos %}
+                                        {% if todo.role_id == role.id %}
+                                        <div class="todo-item mb-2 p-2 border rounded" data-todo-id="{{ todo.id }}">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input todo-checkbox" 
+                                                       data-todo-id="{{ todo.id }}" 
+                                                       onchange="toggleTodoComplete({{ todo.id }}, this.checked)"
+                                                       {{ 'checked' if todo.completed else '' }}>
+                                                <label class="form-check-label">
+                                                    <strong>{{ todo.title }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Priority: {{ todo.priority|title }}
+                                                        {% if todo.due_date %}
+                                                        | Due: {{ todo.due_date.strftime('%m/%d/%Y') }}
+                                                        {% endif %}
+                                                    </small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let categoryChart, hourlyChart, dailyPatternChart;
+let currentTimeRange = 7;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadAnalytics();
+    loadProductivityInsights();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.querySelectorAll('input[name="timeRange"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentTimeRange = parseInt(this.value);
+            loadAnalytics();
+        });
+    });
+}
+
+function initializeCharts() {
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+    
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    hourlyChart = new Chart(hourlyCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Productivity Score',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100 }
+            }
+        }
+    });
+    
+    const dailyCtx = document.getElementById('dailyPatternChart').getContext('2d');
+    dailyPatternChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Average Hours',
+                data: [],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function loadAnalytics() {
+    fetch(`/api/analytics?days=${currentTimeRange}`)
+        .then(response => response.json())
+        .then(data => {
+            updateMetrics(data.metrics);
+            updateCategoryChart(data.categories);
+            updateHourlyChart(data.hourly);
+            updateDailyPattern(data.daily);
+        })
+        .catch(error => console.error('Error loading analytics:', error));
+}
+
+function updateMetrics(metrics) {
+    document.getElementById('totalHours').textContent = metrics.total_hours || '0';
+    document.getElementById('completionRate').textContent = (metrics.completion_rate || 0) + '%';
+    document.getElementById('avgFocusScore').textContent = metrics.avg_focus_score || '0';
+    document.getElementById('estimationAccuracy').textContent = (metrics.estimation_accuracy || 0) + '%';
+}
+
+function updateCategoryChart(categories) {
+    categoryChart.data.labels = categories.map(c => c.name);
+    categoryChart.data.datasets[0].data = categories.map(c => c.hours);
+    categoryChart.data.datasets[0].backgroundColor = categories.map(c => c.color);
+    categoryChart.update();
+}
+
+function updateHourlyChart(hourly) {
+    hourlyChart.data.labels = hourly.map(h => h.hour + ':00');
+    hourlyChart.data.datasets[0].data = hourly.map(h => h.score);
+    hourlyChart.update();
+}
+
+function updateDailyPattern(daily) {
+    dailyPatternChart.data.labels = daily.map(d => d.date);
+    dailyPatternChart.data.datasets[0].data = daily.map(d => d.hours);
+    dailyPatternChart.update();
+}
+
+function loadProductivityInsights() {
+    fetch('/api/insights')
+        .then(response => response.json())
+        .then(insights => {
+            const container = document.getElementById('insightsList');
+            container.innerHTML = insights.map(insight => 
+                `<div class="alert alert-info mb-2">${insight}</div>`
+            ).join('');
+        })
+        .catch(error => {
+            document.getElementById('insightsList').innerHTML = 
+                '<div class="text-muted">No insights available</div>';
+        });
+}
+
+function smartScheduleTodos() {
+    alert('Smart scheduling feature coming soon!');
+}
+
+function getPrioritySuggestions() {
+    alert('Priority suggestions feature coming soon!');
+}
+
+function exportAnalytics() {
+    alert('Export feature coming soon!');
+}
+
+function showBatchOperations() {
+    alert('Batch operations feature coming soon!');
+}
+
+function showAddTodoModal() {
+    alert('Add todo feature coming soon!');
+}
+
+function toggleTodoComplete(todoId, completed) {
+    fetch(`/api/todos/${todoId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: completed })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error updating todo:', error));
+}
+</script>
+{% endblock %}
