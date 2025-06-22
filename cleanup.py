@@ -10,7 +10,7 @@ def cleanup_old_data():
     """
     app = create_app()
     with app.app_context():
-        retention_days = 180
+        retention_days = 60
         cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
 
         # Delete old daily plans and associated data

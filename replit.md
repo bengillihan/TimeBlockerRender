@@ -136,6 +136,11 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 22, 2025: Enhanced application with 7-day tracking system and flexible time blocks
+- June 22, 2025: Added comprehensive todo management with recurring patterns using dateutil
+- June 22, 2025: Fixed Flask route conflicts and implemented analytics API endpoints
+- June 22, 2025: Updated cleanup script to 60-day retention for better data management
+- June 22, 2025: Completed Render deployment configuration with cron jobs and database setup
 - June 21, 2025: Fixed production database schema - added missing 'order' column to priority table
 - June 21, 2025: Successfully migrated time block history data to production Supabase database
 - June 21, 2025: Resolved timezone comparison errors in datetime handling for production deployment
