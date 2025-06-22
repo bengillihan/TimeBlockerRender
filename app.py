@@ -978,9 +978,9 @@ def get_insights():
         logger.error(f"Error getting insights: {str(e)}")
         return jsonify([])
 
-@app.route('/api/todos', methods=['GET', 'POST'])
+@app.route('/api/todos-list', methods=['GET', 'POST'])
 @login_required
-def get_todos():
+def get_todos_list():
     """Get all todos for the current user."""
     if request.method == 'GET':
         todos = ToDo.query.filter_by(user_id=current_user.id).order_by(
@@ -1054,9 +1054,9 @@ def get_todos():
         logger.error(f"Error creating todo: {str(e)}")
         return jsonify({'success': False, 'message': 'Failed to create todo'}), 500
 
-@app.route('/api/todos/<int:todo_id>/complete', methods=['POST'])
+@app.route('/api/todos/<int:todo_id>/complete-item', methods=['POST'])
 @login_required
-def complete_todo(todo_id):
+def complete_todo_item(todo_id):
     """Mark a todo as completed and create next occurrence if recurring."""
     try:
         todo = ToDo.query.filter_by(id=todo_id, user_id=current_user.id).first_or_404()
@@ -1487,56 +1487,6 @@ def time_preferences():
     """Show time preferences page."""
     return render_template('time_preferences.html')
 
-# Route conflicts resolved - duplicate function removed
-        category_stats = {}
-        
-        # Calculate statistics from time blocks
-        for plan in daily_plans:
-            for block in plan.time_blocks:
-                if block.task_id:
-                    task = Task.query.get(block.task_id)
-                    if task and task.category:
-                        # Each block is 15 minutes
-                        minutes = 15
-                        total_minutes += minutes
-                        
-                        # Check if this is APS/Work category
-                        if task.category.name.lower() in ['aps', 'work']:
-                            aps_minutes += minutes
-                        
-                        # Update category statistics
-                        category_name = task.category.name
-                        if category_name not in category_stats:
-                            category_stats[category_name] = {
-                                'name': category_name,
-                                'color': task.category.color,
-                                'minutes': 0
-                            }
-                        category_stats[category_name]['minutes'] += minutes
-        
-        # Calculate progress percentage for APS goal (32 hours = 1920 minutes)
-        aps_goal_minutes = 32 * 60  # 32 hours in minutes
-        aps_progress_percentage = min((aps_minutes / aps_goal_minutes) * 100, 100) if aps_goal_minutes > 0 else 0
-        
-        return jsonify({
-            'success': True,
-            'total_hours': round(total_minutes / 60, 1),
-            'aps_hours': round(aps_minutes / 60, 1),
-            'aps_progress_percentage': round(aps_progress_percentage, 1),
-            'category_stats': list(category_stats.values()),
-            'date_range': {
-                'start': start_date.strftime('%Y-%m-%d'),
-                'end': end_date.strftime('%Y-%m-%d')
-            }
-        })
-        
-    except Exception as e:
-        logger.error(f"Error fetching 7-day stats: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Failed to fetch 7-day statistics'
-        }), 500
-
 @app.route('/api/time-preferences', methods=['PUT'])
 @login_required
 def update_time_preferences():
@@ -1559,71 +1509,9 @@ def update_time_preferences():
         logger.error(f"Error updating time preferences: {str(e)}")
         return jsonify({'error': 'Failed to update preferences'}), 500
 
-@app.route('/api/time-preferences')
-@login_required  
-def time_preferences():
-    """Show time preferences page."""
-    return render_template('time_preferences.html')
+# Removed duplicate time_preferences function
 
-# ToDo Management Endpoints  
-@app.route('/api/todos', methods=['GET'])
-@login_required
-def get_todos():
-    """Get all todos for the current user."""
-    todos = db.session.query(ToDo).filter(
-        ToDo.user_id == current_user.id,
-        ToDo.completed == False
-    ).order_by(
-        ToDo.due_date.asc().nullslast(),
-        ToDo.priority.desc()
-    ).all()
-    
-    todo_list = []
-    for todo in todos:
-        todo_data = {
-            'id': todo.id,
-            'title': todo.title,
-            'description': todo.description,
-            'priority': todo.priority,
-            'status': todo.status,
-            'due_date': todo.due_date.isoformat() if todo.due_date else None,
-            'is_recurring': todo.is_recurring,
-            'recurrence_rule': todo.recurrence_rule,
-            'role_id': todo.role_id,
-            'role_name': todo.assigned_role.name if todo.assigned_role else None,
-            'is_overdue': todo.is_overdue(),
-            'created_at': todo.created_at.isoformat()
-        }
-        todo_list.append(todo_data)
-    
-    return jsonify({'todos': todo_list})
-
-@app.route('/api/todos', methods=['POST'])
-@login_required
-def create_todo():
-    """Create a new todo."""
-    data = request.get_json()
-    
-    try:
-        # Parse due date if provided
-        due_date = None
-        if data.get('due_date'):
-            due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
-        
-        todo = ToDo(
-            title=data['title'],
-            description=data.get('description', ''),
-            user_id=current_user.id,
-            role_id=data.get('role_id'),
-            due_date=due_date,
-            priority=data.get('priority', 'medium'),
-            status=data.get('status', 'todo'),
-            is_recurring=data.get('is_recurring', False),
-            recurrence_rule=data.get('recurrence_rule')
-        )
-        
-        db.session.add(todo)
-        db.session.commit()
+# Duplicate todo management endpoints removed
         
         return jsonify({
             'success': True,
