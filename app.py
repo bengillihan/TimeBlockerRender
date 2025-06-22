@@ -1054,47 +1054,7 @@ def get_todos_list():
         logger.error(f"Error creating todo: {str(e)}")
         return jsonify({'success': False, 'message': 'Failed to create todo'}), 500
 
-@app.route('/api/todos/<int:todo_id>/complete-item', methods=['POST'])
-@login_required
-def complete_todo_item(todo_id):
-    """Mark a todo as completed and create next occurrence if recurring."""
-    try:
-        todo = ToDo.query.filter_by(id=todo_id, user_id=current_user.id).first_or_404()
-        
-        # Mark as completed
-        todo.completed = True
-        todo.completed_at = datetime.utcnow()
-        todo.status = 'completed'
-        
-        # If it's recurring, create the next occurrence
-        if todo.is_recurring and todo.recurrence_rule:
-            next_due_date = calculate_next_due_date(todo.due_date or datetime.utcnow(), todo.recurrence_rule)
-            
-            new_todo = ToDo(
-                title=todo.title,
-                description=todo.description,
-                user_id=current_user.id,
-                role_id=todo.role_id,
-                due_date=next_due_date,
-                priority=todo.priority,
-                is_recurring=True,
-                recurrence_rule=todo.recurrence_rule,
-                next_occurrence=calculate_next_due_date(next_due_date, todo.recurrence_rule)
-            )
-            db.session.add(new_todo)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Todo completed successfully',
-            'next_occurrence_created': todo.is_recurring
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error completing todo: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to complete todo'}), 500
+# Removed first duplicate complete_todo function
 
 def calculate_next_due_date(current_due_date, recurrence_rule):
     """Calculate the next due date based on recurrence rule."""
@@ -1510,22 +1470,6 @@ def update_time_preferences():
         return jsonify({'error': 'Failed to update preferences'}), 500
 
 # Removed duplicate time_preferences function
-
-# Duplicate todo management endpoints removed
-        
-        return jsonify({
-            'success': True,
-            'message': 'Todo created successfully',
-            'todo_id': todo.id
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error creating todo: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to create todo'
-        }), 500
 
 @app.route('/api/todos/<int:todo_id>/complete', methods=['POST'])
 @login_required
