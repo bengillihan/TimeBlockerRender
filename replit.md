@@ -136,6 +136,9 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 22, 2025: Reduced conflict detection frequency and added 60-minute cooldown to prevent excessive popups
+- June 22, 2025: Improved conflict warning UI with less intrusive notifications and auto-dismiss
+- June 22, 2025: Optimized auto-save intervals to reduce server load and false conflicts
 - June 22, 2025: Fixed critical KeyError: 'end_time' issue in save_daily_plan function
 - June 22, 2025: Added proper validation for time block data to prevent crashes
 - June 22, 2025: Updated autoSaveData function to include end_time field consistently

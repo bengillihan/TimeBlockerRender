@@ -1060,10 +1060,10 @@ let autoSaveInterval;
 let lastUpdateCheck = new Date().toISOString();
 
 function setupAutoSave() {
-    // Auto-save every 30 seconds
+    // Auto-save every 2 minutes to reduce server load
     autoSaveInterval = setInterval(() => {
         autoSaveData();
-    }, 30000);
+    }, 120000);
     
     // Save on visibility change (when switching tabs/apps)
     document.addEventListener('visibilitychange', () => {
@@ -1084,11 +1084,15 @@ function addMinutes(time, minutes) {
     return date.toTimeString().substring(0, 5);
 }
 
+// Global variable to track last conflict warning time
+let lastConflictWarningTime = 0;
+const CONFLICT_WARNING_COOLDOWN = 60 * 60 * 1000; // 60 minutes in milliseconds
+
 function setupConflictDetection() {
-    // Check for conflicts every minute
+    // Check for conflicts every 5 minutes instead of every minute
     setInterval(() => {
         checkForConflicts();
-    }, 60000);
+    }, 300000); // 5 minutes
 }
 
 async function autoSaveData() {
@@ -1144,6 +1148,12 @@ async function autoSaveData() {
 
 async function checkForConflicts() {
     try {
+        // Check if we're within the cooldown period
+        const now = Date.now();
+        if (now - lastConflictWarningTime < CONFLICT_WARNING_COOLDOWN) {
+            return; // Skip check if within cooldown period
+        }
+        
         const date = document.getElementById('datePicker').value;
         const response = await fetch(`/api/daily-plan/backup?date=${date}`);
         const result = await response.json();
@@ -1153,8 +1163,11 @@ async function checkForConflicts() {
             const serverUpdate = new Date(latestPlan.updated_at);
             const lastCheck = new Date(lastUpdateCheck);
             
-            if (serverUpdate > lastCheck) {
+            // Only show warning if there's a significant time difference (more than 5 minutes)
+            const timeDifference = serverUpdate.getTime() - lastCheck.getTime();
+            if (timeDifference > 300000) { // 5 minutes
                 showConflictWarning();
+                lastConflictWarningTime = now; // Update last warning time
             }
         }
     } catch (error) {
@@ -1191,27 +1204,76 @@ function showAutoSaveIndicator(message, type = 'success') {
 }
 
 function showConflictWarning() {
+    // Check if a warning already exists
+    if (document.getElementById('conflictWarning')) {
+        return; // Don't show multiple warnings
+    }
+    
     const warning = document.createElement('div');
+    warning.id = 'conflictWarning';
     warning.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #dc3545;
-        color: white;
-        padding: 20px;
+        top: 20px;
+        right: 20px;
+        background: #ffc107;
+        color: #333;
+        padding: 15px;
         border-radius: 8px;
         z-index: 2000;
-        max-width: 400px;
-        text-align: center;
+        max-width: 350px;
+        text-align: left;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        border-left: 4px solid #ff9800;
     `;
     warning.innerHTML = `
-        <h5>⚠ Data Conflict Detected</h5>
-        <p>This page was modified on another device. Please refresh to see the latest changes to avoid data loss.</p>
-        <button onclick="location.reload()" class="btn btn-light btn-sm">Refresh Page</button>
-        <button onclick="this.parentElement.remove()" class="btn btn-outline-light btn-sm ms-2">Dismiss</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i>
+            <div style="flex: 1;">
+                <strong>Data Updated Elsewhere</strong>
+                <div style="font-size: 13px; margin-top: 4px;">
+                    Changes detected from another session. Consider refreshing to see latest data.
+                </div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: none; 
+                border: none; 
+                font-size: 18px; 
+                cursor: pointer; 
+                color: #666;
+                padding: 0;
+                margin-left: 10px;
+            ">&times;</button>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button onclick="location.reload()" style="
+                background: #ff9800; 
+                color: white; 
+                border: none; 
+                padding: 6px 12px; 
+                border-radius: 4px; 
+                cursor: pointer; 
+                font-size: 12px;
+            ">Refresh</button>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #6c757d; 
+                color: white; 
+                border: none; 
+                padding: 6px 12px; 
+                border-radius: 4px; 
+                cursor: pointer; 
+                font-size: 12px;
+            ">Continue</button>
+        </div>
     `;
+    
     document.body.appendChild(warning);
+    
+    // Auto-dismiss after 15 seconds
+    setTimeout(() => {
+        if (warning.parentElement) {
+            warning.remove();
+        }
+    }, 15000);
 }
 
 // Data recovery functionality

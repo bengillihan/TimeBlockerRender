@@ -574,14 +574,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Backup auto-save every 2 minutes instead of 30 seconds
+        // Backup auto-save every 5 minutes to reduce conflicts
         setInterval(async () => {
             try {
                 await saveData();
             } catch (error) {
                 console.error('Periodic auto-save failed:', error);
             }
-        }, 120000);
+        }, 300000);
 
         // Load existing templates
         async function loadTemplates() {
