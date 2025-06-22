@@ -982,6 +982,20 @@ document.getElementById('refreshTotalsBtn').addEventListener('click', function()
     }, 1000);
 });
 
+// Also update 7-day stats when changing dates
+document.getElementById('datePicker').addEventListener('change', () => {
+    loadSevenDayStats(); // Reload stats when date changes
+});
+document.getElementById('prevDay').addEventListener('click', () => {
+    // Stats will reload when page navigates
+});
+document.getElementById('nextDay').addEventListener('click', () => {
+    // Stats will reload when page navigates  
+});
+document.getElementById('todayBtn').addEventListener('click', () => {
+    // Stats will reload when page navigates
+});
+
 // Load 7-day statistics and setup auto-save on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadSevenDayStats();
@@ -1472,7 +1486,8 @@ function scheduleFlexibleBlock(flexBlock) {
 // Function to load 7-day statistics
 async function loadSevenDayStats() {
     try {
-        const response = await fetch('/api/seven-day-stats');
+        const date = document.getElementById('datePicker').value;
+        const response = await fetch(`/api/seven-day-stats?date=${date}`);
         const data = await response.json();
         
         if (data.success) {

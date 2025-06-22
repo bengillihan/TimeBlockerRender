@@ -1133,11 +1133,17 @@ def time_preferences():
 @app.route('/api/seven-day-stats', methods=['GET'])
 @login_required
 def get_seven_day_stats():
-    """Get 7-day time statistics for the current user."""
+    """Get 7-day time statistics for the current user, ending on the specified date."""
     try:
-        # Calculate date range for last 7 days (including today)
-        end_date = datetime.now(pacific_tz).date()
-        start_date = end_date - timedelta(days=6)  # 6 days ago + today = 7 days
+        # Get the end date from the request, default to today if not provided
+        date_str = request.args.get('date')
+        if date_str:
+            end_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            end_date = datetime.now(pacific_tz).date()
+
+        # Calculate date range for the 7 days ending on end_date
+        start_date = end_date - timedelta(days=6)  # 6 days ago + end_date = 7 days
         
         # Query for all daily plans in the date range
         daily_plans = DailyPlan.query.filter(
