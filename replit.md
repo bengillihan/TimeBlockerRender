@@ -136,6 +136,9 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 22, 2025: Fixed critical KeyError: 'end_time' issue in save_daily_plan function
+- June 22, 2025: Added proper validation for time block data to prevent crashes
+- June 22, 2025: Updated autoSaveData function to include end_time field consistently
 - June 22, 2025: Enhanced application with 7-day tracking system and flexible time blocks
 - June 22, 2025: Added comprehensive todo management with recurring patterns using dateutil
 - June 22, 2025: Fixed Flask route conflicts and implemented analytics API endpoints

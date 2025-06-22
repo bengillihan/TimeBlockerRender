@@ -1,0 +1,42 @@
+[2025-06-22 01:21:06 +0000] [106] [INFO] Using worker: sync
+[2025-06-22 01:21:06 +0000] [107] [INFO] Booting worker with pid: 107
+127.0.0.1 - - [22/Jun/2025:01:21:06 +0000] "POST /api/daily-plan HTTP/1.1" 409 170 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="94cabd7e-ddcb-4bdc" responseTimeMS=3417 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+✅ Database tables verified/created
+127.0.0.1 - - [22/Jun/2025:01:21:07 +0000] "HEAD / HTTP/1.1" 302 0 "-" "Go-http-client/1.1"
+127.0.0.1 - - [22/Jun/2025:01:21:07 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/daily-plan/backup?date=2025-06-22clientIP="24.16.109.229" requestID="158b75f5-c3d0-4217" responseTimeMS=4131 responseBytes=1504 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:08 +0000] "GET /api/daily-plan/backup?date=2025-06-22 HTTP/1.1" 200 16172 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://timeblocker.onrender.com
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     [GET]200timeblocker.onrender.com/loginclientIP="35.247.111.159" requestID="8af9589a-7705-4e74" responseTimeMS=96 responseBytes=1515 userAgent="Go-http-client/2.0"
+     [GET]302timeblocker.onrender.com/clientIP="35.247.111.159" requestID="8a6cfa66-980a-4d09" responseTimeMS=4 responseBytes=530 userAgent="Go-http-client/2.0"
+127.0.0.1 - - [22/Jun/2025:01:21:13 +0000] "GET / HTTP/1.1" 302 199 "-" "Go-http-client/2.0"
+127.0.0.1 - - [22/Jun/2025:01:21:13 +0000] "GET /login HTTP/1.1" 200 3776 "https://timeblocker.onrender.com" "Go-http-client/2.0"
+     [GET]200timeblocker.onrender.com/static/css/style.cssclientIP="24.16.109.229" requestID="f1faf582-bde1-4cd3" responseTimeMS=181 responseBytes=2872 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]409timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="f2bd69aa-2a4a-4b37" responseTimeMS=1167 responseBytes=656 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/js/timeblock.jsclientIP="24.16.109.229" requestID="3767b707-d672-4361" responseTimeMS=100 responseBytes=7045 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/?date=2025-06-22clientIP="24.16.109.229" requestID="70348349-0b84-4841" responseTimeMS=1071 responseBytes=20216 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:25 +0000] "GET /?date=2025-06-22 HTTP/1.1" 200 850596 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:25 +0000] "POST /api/daily-plan HTTP/1.1" 409 170 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:25 +0000] "GET /static/js/timeblock.js HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:25 +0000] "GET /static/css/style.css HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/templatesclientIP="24.16.109.229" requestID="da2aec48-2b10-47b1" responseTimeMS=109 responseBytes=582 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:26 +0000] "GET /api/templates HTTP/1.1" 200 69 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/api/seven-day-stats?date=2025-06-22clientIP="24.16.109.229" requestID="13ae820b-5716-4d7d" responseTimeMS=3368 responseBytes=687 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/favicon/favicon.svgclientIP="24.16.109.229" requestID="11f622d0-602f-4b63" responseTimeMS=310 responseBytes=869 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [GET]200timeblocker.onrender.com/static/favicon/favicon.pngclientIP="24.16.109.229" requestID="9dad3c89-66ab-4a39" responseTimeMS=3325 responseBytes=1253 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="fe0e10f0-d80a-4c1a" responseTimeMS=843 responseBytes=573 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]404timeblocker.onrender.com/save-daily-planclientIP="24.16.109.229" requestID="7dad6b6a-b230-4bdb" responseTimeMS=658 responseBytes=673 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:29 +0000] "GET /api/seven-day-stats?date=2025-06-22 HTTP/1.1" 200 258 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:29 +0000] "GET /static/favicon/favicon.png HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:29 +0000] "POST /save-daily-plan HTTP/1.1" 404 207 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:29 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:29 +0000] "GET /static/favicon/favicon.svg HTTP/1.1" 200 0 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+     [POST]200timeblocker.onrender.com/api/daily-planclientIP="24.16.109.229" requestID="59ed8e7c-947c-4bad" responseTimeMS=180 responseBytes=574 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+127.0.0.1 - - [22/Jun/2025:01:21:33 +0000] "POST /api/daily-plan HTTP/1.1" 200 56 "https://timeblocker.onrender.com/?date=2025-06-22" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
