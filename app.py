@@ -1071,48 +1071,7 @@ def calculate_next_due_date(current_due_date, recurrence_rule):
         # Fallback: add one day
         return current_due_date + timedelta(days=1)
 
-@app.route('/api/import-todos', methods=['POST'])
-@login_required
-def import_todos():
-    """Import todos from the provided list."""
-    try:
-        # Get existing todos for the user to avoid duplicates
-        existing_todos = ToDo.query.filter_by(user_id=current_user.id).all()
-        existing_titles = {todo.title.lower() for todo in existing_todos}
-        
-        # Sample todos to import (in real app, this might come from external source)
-        sample_todos = [
-            {'title': 'Review weekly goals', 'priority': 'high', 'is_recurring': True, 'recurrence_rule': 'FREQ=WEEKLY'},
-            {'title': 'Update project documentation', 'priority': 'medium', 'is_recurring': False},
-            {'title': 'Team standup meeting', 'priority': 'high', 'is_recurring': True, 'recurrence_rule': 'FREQ=DAILY'},
-            {'title': 'Monthly budget review', 'priority': 'medium', 'is_recurring': True, 'recurrence_rule': 'FREQ=MONTHLY'},
-        ]
-        
-        imported_count = 0
-        for todo_data in sample_todos:
-            if todo_data['title'].lower() not in existing_titles:
-                todo = ToDo(
-                    title=todo_data['title'],
-                    user_id=current_user.id,
-                    priority=todo_data['priority'],
-                    is_recurring=todo_data['is_recurring'],
-                    recurrence_rule=todo_data.get('recurrence_rule')
-                )
-                db.session.add(todo)
-                imported_count += 1
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Successfully imported {imported_count} new todos',
-            'imported_count': imported_count
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error importing todos: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to import todos'}), 500
+# First duplicate import_todos function removed
 
 @app.route('/summary')
 @login_required
@@ -1578,30 +1537,7 @@ def calculate_next_due_date(current_due_date, recurrence_rule):
         logger.error(f"Error calculating next due date: {str(e)}")
         return None
 
-@app.route('/api/import-todos', methods=['POST'])
-@login_required
-def import_todos():
-    """Import todos from the provided list."""
-    from models import Role
-    
-    # Get or create roles
-    aps_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'APS').first()
-    if not aps_role:
-        aps_role = Role(name='APS', user_id=current_user.id, color='#007bff', description='APS work tasks')
-        db.session.add(aps_role)
-        db.session.flush()
-    
-    home_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'Home').first()
-    if not home_role:
-        home_role = Role(name='Home', user_id=current_user.id, color='#28a745', description='Personal tasks')
-        db.session.add(home_role)
-        db.session.flush()
-    
-    church_role = db.session.query(Role).filter(Role.user_id == current_user.id, Role.name == 'Church').first()
-    if not church_role:
-        church_role = Role(name='Church', user_id=current_user.id, color='#6f42c1', description='Church tasks')
-        db.session.add(church_role)
-        db.session.flush()
+# Second duplicate import_todos function removed
     
     # Todo items from the document
     todo_items = [
