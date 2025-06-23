@@ -73,6 +73,15 @@ def make_session_permanent():
     # Marks the user's session as active to prevent premature disconnect
     if current_user.is_authenticated:
         session.modified = True
+        
+        # Check if this session is still valid (single session enforcement)
+        user_session_id = session.get('user_session_id')
+        if not user_session_id or not current_user.is_session_valid(user_session_id):
+            # Session is invalid, log out the user
+            from flask_login import logout_user
+            logout_user()
+            flash('You have been logged out because you logged in from another location.', 'info')
+            return redirect(url_for('login'))
 
 # Ensure database connections are properly closed after each request
 @app.teardown_request

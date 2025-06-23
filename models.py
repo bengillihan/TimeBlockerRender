@@ -1,4 +1,5 @@
 from datetime import datetime
+import secrets
 from app import db
 from flask_login import UserMixin
 from sqlalchemy import Index
@@ -18,6 +19,22 @@ class User(UserMixin, db.Model):
     roles = db.relationship('Role', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    current_session_id = db.Column(db.String(64), nullable=True)  # Track current active session
+    
+    def generate_new_session(self):
+        """Generate a new session ID and invalidate old sessions"""
+        self.current_session_id = secrets.token_urlsafe(32)
+        db.session.commit()
+        return self.current_session_id
+    
+    def is_session_valid(self, session_id):
+        """Check if the provided session ID matches the current session"""
+        return self.current_session_id == session_id
+    
+    def invalidate_session(self):
+        """Invalidate the current session"""
+        self.current_session_id = None
+        db.session.commit()
 
 # NavLink model removed - simplified navigation
 

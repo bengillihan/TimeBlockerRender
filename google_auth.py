@@ -124,17 +124,15 @@ def callback():
             user = User(username=users_name, email=users_email)
             db.session.add(user)
             db.session.commit()
-            
-            # Create default categories for new users
-            from models import Category
-            default_categories = ['APS', 'Church', 'Personal']
-            for cat_name in default_categories:
-                if not Category.query.filter_by(name=cat_name, user_id=user.id).first():
-                    category = Category(name=cat_name, user_id=user.id)
-                    db.session.add(category)
-            db.session.commit()
 
+        # Generate new session ID and invalidate other sessions
+        new_session_id = user.generate_new_session()
+        
         login_user(user)
+        
+        # Store session ID in Flask session for validation
+        from flask import session
+        session['user_session_id'] = new_session_id
 
         flash("Successfully logged in!", "success")
         return redirect(url_for("index"))
@@ -146,6 +144,15 @@ def callback():
 @google_auth.route("/logout")
 @login_required
 def logout():
+    # Invalidate user's session
+    from flask_login import current_user
+    from flask import session
+    if current_user.is_authenticated:
+        current_user.invalidate_session()
+    
+    # Clear Flask session
+    session.pop('user_session_id', None)
+    
     logout_user()
     flash('You have been logged out successfully.', 'info')
     return redirect(url_for("login"))
