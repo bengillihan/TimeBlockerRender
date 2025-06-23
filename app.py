@@ -87,12 +87,8 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 def create_default_categories(user):
-    default_categories = ['APS', 'Church', 'Personal']
-    for cat_name in default_categories:
-        if not Category.query.filter_by(name=cat_name, user_id=user.id).first():
-            category = Category(name=cat_name, user_id=user.id)
-            db.session.add(category)
-    db.session.commit()
+    # No default categories - users create their own
+    pass
 
 def get_current_pacific_date():
     return datetime.now(pacific_tz).date()
