@@ -29,18 +29,7 @@ services:
           name: timeblocker-db
           property: connectionString
 
-  - type: cron
-    name: pinger
-    env: python
-    plan: free
-    schedule: "*/10 * * * *" # Run every 10 minutes
-    command: "curl -sS https://${RENDER_EXTERNAL_HOSTNAME} > /dev/null"
-    envVars:
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromService:
-          type: web
-          name: timeblocker
-          property: host
+
 
 databases:
   - name: timeblocker-db
