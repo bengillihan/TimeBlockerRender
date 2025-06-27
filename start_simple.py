@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 def main():
     try:
-        # Get Railway port
-        port = int(os.environ.get('PORT', 5000))
-        logger.info(f"Starting on port {port}")
+        # Railway expects port 5000 based on networking configuration
+        port = 5000
+        logger.info(f"Starting on Railway assigned port {port}")
         
         # Import and run Flask app directly
         from app import app
