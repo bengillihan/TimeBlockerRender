@@ -105,12 +105,24 @@ def start_application():
         logger.info(f"Railway PORT environment variable: {os.environ.get('PORT', 'NOT SET')}")
         logger.info(f"Starting Gunicorn server on {host}:{port}")
         
+        # Test that the app can be imported before starting Gunicorn
+        try:
+            logger.info("Testing Flask app import...")
+            test_response = app.test_client().get('/health')
+            logger.info(f"Health check response: {test_response.status_code}")
+        except Exception as e:
+            logger.error(f"Flask app test failed: {str(e)}")
+        
         # Start with Railway-optimized Gunicorn settings
         cmd = [
             'gunicorn',
             '--bind', f'{host}:{port}',  # Use dynamic PORT from Railway
             '--workers', '1',  # Single worker for Railway free tier
+            '--worker-class', 'sync',  # Explicit worker class
             '--timeout', '60',
+            '--keepalive', '5',
+            '--max-requests', '1000',
+            '--max-requests-jitter', '100',
             '--preload',
             '--log-level', 'info',
             '--access-logfile', '-',
@@ -118,7 +130,8 @@ def start_application():
             'app:app'
         ]
         
-        logger.info(f"Executing: {' '.join(cmd)}")
+        logger.info(f"Final Gunicorn command: {' '.join(cmd)}")
+        logger.info("Executing Gunicorn...")
         os.execvp('gunicorn', cmd)
         
     except Exception as e:

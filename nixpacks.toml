@@ -2,4 +2,4 @@
 nixPkgs = ["python311", "postgresql", "git"]
 
 [start]
-cmd = "python railway_start.py"
+cmd = "python start_simple.py"

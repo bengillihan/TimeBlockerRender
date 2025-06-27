@@ -30,4 +30,4 @@ dependencies = [
 ]
 
 [tool.nixpacks]
-start = "python railway_start.py"
+start = "python start_simple.py"

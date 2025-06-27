@@ -1,0 +1,194 @@
+TimeBlocker
+
+
+production
+Architecture
+Observability
+Logs
+Settings
+
+Share
+
+
+
+
+
+
+
+Activity
+
+
+3 changes across 3 services
+
+bengillihan
+
+·
+25 hours ago
+
+
+10 changes in TImeBlockerRW
+
+bengillihan
+
+·
+25 hours ago
+
+timeblocker-db
+
+Deployment successful
+
+25 hours ago
+
+
+Deploy PostgreSQL
+
+1 service and 1 volume updated
+bengillihan
+
+·
+25 hours ago
+
+timeblocker
+
+Deployment created
+
+25 hours ago
+
+
+New environment
+
+bengillihan
+
+·
+25 hours ago
+
+
+TImeBlockerRW
+Cron Runs
+Deployments
+Variables
+Metrics
+Settings
+tb.bengillihan.com
+us-west2
+1 Replica
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+History
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TImeBlockerRW
+/
+94887d4
+Jun 27, 2025 12:06 PM
+
+Active
+
+tb.bengillihan.com
+
+Details
+Build Logs
+Deploy Logs
+HTTP Logs
+
+Filter
+Filter logs using "", (), AND, OR, -
+
+
+
+You reached the start of the range → Jun 27, 2025 12:06 PM
+
+Starting Container
+
+2025-06-27 19:10:10 [INFO] === TimeBlocker Railway Startup - 2025-06-27 19:10:10.137731 ===
+
+2025-06-27 19:10:10 [INFO] === Railway Startup Diagnostics ===
+
+2025-06-27 19:10:10 [INFO] Python version: 3.11.10 (main, Sep  7 2024, 01:03:31) [GCC 13.3.0]
+
+2025-06-27 19:10:10 [INFO] Current working directory: /app
+
+2025-06-27 19:10:10 [INFO] ✓ DATABASE_URL: postgresql://postgre...
+
+2025-06-27 19:10:10 [INFO] ✓ GOOGLE_OAUTH_CLIENT_ID: 985936012000-4hrvjsh...
+
+2025-06-27 19:10:10 [INFO] ✓ GOOGLE_OAUTH_CLIENT_SECRET: GOCSPX-tpkijaAdPEitR...
+
+2025-06-27 19:10:10 [INFO] ✓ All required environment variables are set
+
+2025-06-27 19:10:10 [INFO] Testing database connection...
+
+2025-06-27 19:10:10 [INFO] ✓ Database connection successful
+
+2025-06-27 19:10:10 [INFO] All checks passed, starting application...
+
+2025-06-27 19:10:10 [INFO] Starting Flask application...
+
+2025-06-27 19:10:11 [INFO] Starting TimeBlocker application...
+
+2025-06-27 19:10:11 [INFO] Database URL configured: postgresql://postgres.ltrawiqehgfxmtcjoumf:Titus07...
+
+2025-06-27 19:10:11 [INFO] Converted postgresql:// to postgresql+psycopg2://
+
+2025-06-27 19:10:11 [INFO] Database configuration completed
+
+2025-06-27 19:10:11 [INFO] Initializing Google OAuth configuration
+
+✅ Database tables verified/created
+
+2025-06-27 19:10:11 [INFO] Railway PORT environment variable: 8080
+
+2025-06-27 19:10:11 [INFO] Starting Gunicorn server on 0.0.0.0:8080
+
+2025-06-27 19:10:11 [INFO] Executing: gunicorn --bind 0.0.0.0:8080 --workers 1 --timeout 60 --preload --log-level info --access-logfile - --error-logfile - app:app
+
+2025-06-27 19:10:13 INFO [app] Starting TimeBlocker application...
+
+2025-06-27 19:10:13 INFO [app] Database URL configured: postgresql://postgres.ltrawiqehgfxmtcjoumf:Titus07...
+
+2025-06-27 19:10:13 INFO [app] Converted postgresql:// to postgresql+psycopg2://
+
+2025-06-27 19:10:13 INFO [app] Database configuration completed
+
+2025-06-27 19:10:13 INFO [google_auth] Initializing Google OAuth configuration
+
+✅ Database tables verified/created
+
+[2025-06-27 19:10:13 +0000] [1] [INFO] Starting gunicorn 23.0.0
+
+[2025-06-27 19:10:13 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
+
+[2025-06-27 19:10:13 +0000] [1] [INFO] Using worker: sync
+
+[2025-06-27 19:10:13 +0000] [4] [INFO] Booting worker with pid: 4
+
+
+TImeBlockerRW | Railway
+100MB
