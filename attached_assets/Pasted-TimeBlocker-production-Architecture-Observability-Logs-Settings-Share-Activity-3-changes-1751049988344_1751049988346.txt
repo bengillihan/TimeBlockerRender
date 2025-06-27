@@ -1,0 +1,231 @@
+TimeBlocker
+
+
+production
+Architecture
+Observability
+Logs
+Settings
+
+Share
+
+
+
+
+
+
+
+Activity
+
+
+3 changes across 3 services
+
+bengillihan
+
+·
+25 hours ago
+
+
+10 changes in TImeBlockerRW
+
+bengillihan
+
+·
+25 hours ago
+
+timeblocker-db
+
+Deployment successful
+
+25 hours ago
+
+
+Deploy PostgreSQL
+
+1 service and 1 volume updated
+bengillihan
+
+·
+25 hours ago
+
+timeblocker
+
+Deployment created
+
+25 hours ago
+
+
+New environment
+
+bengillihan
+
+·
+25 hours ago
+
+
+TImeBlockerRW
+Cron Runs
+Deployments
+Variables
+Metrics
+Settings
+tb.bengillihan.com
+us-west2
+1 Replica
+
+
+
+
+History
+
+
+
+
+
+
+
+
+
+TImeBlockerRW
+/
+e554569
+Jun 27, 2025 11:41 AM
+
+Active
+
+tb.bengillihan.com
+
+Details
+Build Logs
+Deploy Logs
+HTTP Logs
+
+Filter
+Filter logs using "", (), AND, OR, -
+
+
+
+You reached the start of the range → Jun 27, 2025 11:41 AM
+
+2.9.10
+
+
+ + pyasn1==0.6.1
+
+
+ +
+
+ pyasn1-modules
+
+==0.4.1
+
+
+ 
+
++ pyjwt
+
+==
+
+2.10.1
+ +
+
+ pyparsing==
+
+3.2.1
+
+
+ + python-dateutil==2.9.0
+
+.post0
+
+
+ + 
+
+python-dotenv
+
+==1.0.1
+ + pytz
+
+==2025.1
+ 
+
++ requests==2.32.3
+
+
+ + requests-oauthlib==2.0.0
+
+
+ 
+
++ requests-toolbelt==1.0.0
+
+
+ + rsa==4.9
+ + six==1.17.0
+
+
+ + sqlalchemy==2.0.38
+
+
+ + twilio
+
+==9.4.6
+
+
+ + typing-extensions==4.12.2
+
+
+ + typing-inspect
+
+==0.9.0
+
+
+ + uritemplate==4.1.1
+
+
+ + urllib3==2.3.0
+ + werkzeug==3.1.3
+ +
+
+ 
+
+wtforms==3.2.1
+
+
+ + yarl==1.18.3
+
+
+
+[stage-0 6/8] RUN --mount=type=cache,id=s/49576460-bbe3-4218-b1fe-6afdd54d9a36-/root/cache/uv,target=/root/.cache/uv python -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip install uv==0.4.30 && uv sync --no-dev --frozen  ✔ 6s
+
+[stage-0 7/8] RUN printf '\nPATH=/opt/venv/bin:$PATH' >> /root/.profile
+
+[stage-0 7/8] RUN printf '\nPATH=/opt/venv/bin:$PATH' >> /root/.profile  ✔ 598ms
+
+[stage-0 8/8] COPY . /app
+
+[stage-0 8/8] COPY . /app  ✔ 88ms
+
+exporting to docker image format
+
+exporting to image
+
+[auth] sharing credentials for production-us-west2.railway-registry.com
+
+[auth] sharing credentials for production-us-west2.railway-registry.com  ✔ 0ms
+
+importing to docker
+
+importing to docker  ✔ 13s
+
+=== Successfully Built! ===
+
+Run:
+
+docker run -it production-us-west2.railway-registry.com/49576460-bbe3-4218-b1fe-6afdd54d9a36:e5545696-62b7-4f72-8033-37c9bd714892
+
+Build time: 45.94 seconds
+
+
+TImeBlockerRW | Railway
+100MB

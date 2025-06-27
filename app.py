@@ -12,9 +12,17 @@ from sqlalchemy import text, func
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 from dateutil.rrule import rrule, rrulestr
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging with Railway-specific settings
+if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+else:
+    logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.info("Starting TimeBlocker application...")
 
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
@@ -26,13 +34,25 @@ db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Database configuration
-database_url = os.environ.get("DATABASE_URL")
-if database_url and database_url.startswith("postgresql://"):
-    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+# Database configuration with error handling
+try:
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        logger.error("DATABASE_URL environment variable not set")
+        raise ValueError("DATABASE_URL is required")
+    
+    logger.info(f"Database URL configured: {database_url[:50]}...")
+    
+    if database_url and database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        logger.info("Converted postgresql:// to postgresql+psycopg2://")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Disable resource-intensive event system
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    logger.info("Database configuration completed")
+except Exception as e:
+    logger.error(f"Database configuration failed: {str(e)}")
+    raise
 # Optimize for Railway free tier constraints
 if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
     # Railway-specific optimizations
