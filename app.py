@@ -33,20 +33,39 @@ if database_url and database_url.startswith("postgresql://"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Disable resource-intensive event system
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,  # Recycle connections after 5 minutes
-    "pool_pre_ping": True,  # Check connection validity before using it
-    "pool_size": 2,  # Lower limit on max connections for cloud
-    "max_overflow": 1,  # Reduce connections over pool_size 
-    "pool_timeout": 20,  # Seconds to wait before timing out
-    "connect_args": {
-        "client_encoding": "utf8",
-        "application_name": "timeblocker_replit",
-        "connect_timeout": 10,
-        "options": "-c default_transaction_isolation=read_committed"
-    },
-    "echo": False,  # Disable SQL query logging to reduce overhead
-}
+# Optimize for Railway free tier constraints
+if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+    # Railway-specific optimizations
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 180,  # More aggressive connection recycling
+        "pool_pre_ping": True,
+        "pool_size": 1,  # Minimal connections for free tier
+        "max_overflow": 0,  # No overflow connections
+        "pool_timeout": 10,  # Shorter timeout
+        "connect_args": {
+            "client_encoding": "utf8",
+            "application_name": "timeblocker_railway",
+            "connect_timeout": 5,
+            "options": "-c default_transaction_isolation=read_committed"
+        },
+        "echo": False,
+    }
+else:
+    # Default configuration for other environments
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+        "pool_size": 2,
+        "max_overflow": 1,
+        "pool_timeout": 20,
+        "connect_args": {
+            "client_encoding": "utf8",
+            "application_name": "timeblocker_replit",
+            "connect_timeout": 10,
+            "options": "-c default_transaction_isolation=read_committed"
+        },
+        "echo": False,
+    }
 
 # Initialize extensions
 db.init_app(app)
@@ -70,6 +89,25 @@ app.register_blueprint(google_auth)
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Internal server error: {str(error)}")
+    db.session.rollback()
+    return jsonify({
+        'error': 'Internal server error',
+        'message': 'Please try again later',
+        'timestamp': datetime.now(pacific_tz).isoformat()
+    }), 500
+
+@app.errorhandler(502)
+def bad_gateway(error):
+    logger.error(f"Bad gateway error: {str(error)}")
+    return jsonify({
+        'error': 'Service temporarily unavailable',
+        'message': 'The server is experiencing issues. Please try again in a few minutes.',
+        'timestamp': datetime.now(pacific_tz).isoformat()
+    }), 502
     # Marks the user's session as active to prevent premature disconnect
     if current_user.is_authenticated:
         session.modified = True
@@ -914,6 +952,7 @@ def summary():
 
 
 @app.route('/health')
+@app.route('/health-check')
 def health_check():
     """Health check endpoint to verify server status."""
     try:
@@ -924,13 +963,15 @@ def health_check():
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
-            'nylas_configured': nylas_configured
+            'nylas_configured': nylas_configured,
+            'timestamp': datetime.now(pacific_tz).isoformat()
         })
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return jsonify({
             'status': 'unhealthy',
-            'error': str(e)
+            'error': str(e),
+            'timestamp': datetime.now(pacific_tz).isoformat()
         }), 500
 
 
