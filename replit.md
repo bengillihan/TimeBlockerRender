@@ -141,7 +141,7 @@ Time Block Planner is a personal productivity web application that enables users
 - June 27, 2025: Renamed APS category to Work throughout application (database, UI, analytics, seven-day tracking)
 - June 27, 2025: Updated seven-day statistics to include PTO hours in Work category calculations
 - June 27, 2025: Enhanced auto-save functionality to include PTO hours and support number input fields
-- June 27, 2025: Changed cleanup cron job from daily to weekly (Sundays) to reduce resource usage
+- June 27, 2025: Changed cleanup cron job from daily to weekly (Mondays at 10am UTC) to reduce resource usage and avoid sleep mode
 - June 22, 2025: Reduced conflict detection frequency and added 60-minute cooldown to prevent excessive popups
 - June 22, 2025: Improved conflict warning UI with less intrusive notifications and auto-dismiss
 - June 22, 2025: Optimized auto-save intervals to reduce server load and false conflicts
