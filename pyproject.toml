@@ -28,3 +28,6 @@ dependencies = [
     "alembic>=1.16.2",
     "cachelib>=0.13.0",
 ]
+
+[tool.nixpacks]
+start = "python railway_start.py"
