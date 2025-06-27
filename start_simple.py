@@ -23,13 +23,25 @@ def main():
         # Import and run Flask app directly
         from app import app
         
-        # Run Flask development server on Railway
-        app.run(
-            host='0.0.0.0',
-            port=port,
-            debug=False,
-            threaded=True
-        )
+        # Use Gunicorn for production deployment on Railway
+        import subprocess
+        cmd = [
+            'gunicorn',
+            '--bind', f'0.0.0.0:{port}',
+            '--workers', '2',
+            '--timeout', '120',
+            '--keep-alive', '2',
+            '--max-requests', '1000',
+            '--max-requests-jitter', '100',
+            '--worker-class', 'sync',
+            '--log-level', 'info',
+            '--access-logfile', '-',
+            '--error-logfile', '-',
+            'main:app'
+        ]
+        
+        logger.info(f"Starting Gunicorn with command: {' '.join(cmd)}")
+        subprocess.run(cmd)
         
     except Exception as e:
         logger.error(f"Startup failed: {str(e)}")

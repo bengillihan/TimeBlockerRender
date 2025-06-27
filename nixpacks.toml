@@ -2,4 +2,4 @@
 nixPkgs = ["python311", "postgresql", "git"]
 
 [start]
-cmd = "python start_simple.py"
+cmd = "gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 --worker-class sync --log-level info --access-logfile - --error-logfile - main:app"

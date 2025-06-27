@@ -130,10 +130,12 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Current Status
 - Database: Supabase PostgreSQL with production data successfully migrated
-- Application: Deployed and running on Render at https://timeblocker.onrender.com
+- Application: Deployed and running on Railway at https://timeblockerrw-production.up.railway.app
 - Historical Data: Time block history from March 2025 imported with 25 tasks, priorities, and scheduled blocks
 - Authentication: Google OAuth working with user profile (bdgillihan@gmail.com)
 - Production Status: All database schema issues resolved, application fully functional
+- Task Selection: Enhanced interface with Work category prioritization and usage frequency tracking active
+- Railway Deployment: Updated configuration to use Gunicorn for reliable production deployment
 
 ## Changelog
 
