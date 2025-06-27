@@ -513,6 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
             const brainDump = document.getElementById('brainDump')?.value || '';
+            const ptoHours = document.getElementById('ptoHours')?.value || 0;
 
             try {
                 const response = await fetch('/api/daily-plan', {
@@ -523,7 +524,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         priorities,
                         time_blocks: timeBlocks,
                         productivity_rating: rating,
-                        brain_dump: brainDump
+                        brain_dump: brainDump,
+                        pto_hours: ptoHours
                     })
                 });
 
@@ -560,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('input, textarea, select').forEach(el => {
             el.addEventListener('change', triggerAutoSave);
             if (el.tagName.toLowerCase() === 'textarea' ||
-                (el.tagName.toLowerCase() === 'input' && el.type === 'text')) {
+                (el.tagName.toLowerCase() === 'input' && (el.type === 'text' || el.type === 'number'))) {
                 el.addEventListener('input', triggerAutoSave);
             }
         });

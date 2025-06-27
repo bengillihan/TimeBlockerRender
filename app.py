@@ -1172,8 +1172,23 @@ def get_seven_day_stats():
         aps_minutes = 0
         category_stats = {}
         
-        # Calculate statistics from time blocks
+        # Calculate statistics from time blocks and PTO hours
         for plan in daily_plans:
+            # Add PTO hours to Work category if any exist
+            if plan.pto_hours and plan.pto_hours > 0:
+                pto_minutes = plan.pto_hours * 60
+                total_minutes += pto_minutes
+                aps_minutes += pto_minutes  # PTO counts toward Work hours
+                
+                # Add to Work category stats
+                if 'Work' not in category_stats:
+                    category_stats['Work'] = {
+                        'name': 'Work',
+                        'color': '#007bff',  # Default blue color for Work
+                        'minutes': 0
+                    }
+                category_stats['Work']['minutes'] += pto_minutes
+            
             for block in plan.time_blocks:
                 if block.task_id:
                     task = Task.query.get(block.task_id)
@@ -1196,15 +1211,15 @@ def get_seven_day_stats():
                             }
                         category_stats[category_name]['minutes'] += minutes
         
-        # Calculate progress percentage for APS goal (32 hours = 1920 minutes)
-        aps_goal_minutes = 32 * 60  # 32 hours in minutes
-        aps_progress_percentage = min((aps_minutes / aps_goal_minutes) * 100, 100) if aps_goal_minutes > 0 else 0
+        # Calculate progress percentage for Work goal (32 hours = 1920 minutes)
+        work_goal_minutes = 32 * 60  # 32 hours in minutes
+        aps_progress_percentage = min((aps_minutes / work_goal_minutes) * 100, 100) if work_goal_minutes > 0 else 0
         
         return jsonify({
             'success': True,
             'total_hours': round(total_minutes / 60, 1),
-            'aps_hours': round(aps_minutes / 60, 1),
-            'aps_progress_percentage': round(aps_progress_percentage, 1),
+            'work_hours': round(aps_minutes / 60, 1),  # Changed from aps_hours to work_hours
+            'work_progress_percentage': round(aps_progress_percentage, 1),  # Changed from aps_progress_percentage
             'category_stats': list(category_stats.values()),
             'date_range': {
                 'start': start_date.strftime('%Y-%m-%d'),
