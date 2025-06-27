@@ -110,9 +110,23 @@ app.register_blueprint(google_auth)
 def make_session_permanent():
     session.permanent = True
 
+@app.errorhandler(404)
+def not_found(error):
+    logger.error(f"404 error - Resource not found: {request.url}")
+    return jsonify({
+        'error': 'Resource not found',
+        'message': 'The requested resource was not found',
+        'url': request.url,
+        'timestamp': datetime.now(pacific_tz).isoformat()
+    }), 404
+
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"Internal server error: {str(error)}")
+    logger.error(f"Request URL: {request.url}")
+    logger.error(f"Request method: {request.method}")
+    import traceback
+    logger.error(f"Traceback: {traceback.format_exc()}")
     db.session.rollback()
     return jsonify({
         'error': 'Internal server error',
@@ -128,6 +142,9 @@ def bad_gateway(error):
         'message': 'The server is experiencing issues. Please try again in a few minutes.',
         'timestamp': datetime.now(pacific_tz).isoformat()
     }), 502
+
+@app.before_request
+def session_management():
     # Marks the user's session as active to prevent premature disconnect
     if current_user.is_authenticated:
         session.modified = True
@@ -190,7 +207,15 @@ def index():
     
     # For each category, order tasks by usage frequency (most used first), then by title
     for category in categories:
-        category.tasks = sorted(category.tasks, key=lambda task: (-task.usage_count if task.usage_count else 0, task.title))
+        # Get tasks for this category and sort by usage frequency
+        category_tasks = Task.query.filter_by(
+            category_id=category.id,
+            user_id=current_user.id
+        ).order_by(
+            Task.usage_count.desc().nullslast(),
+            Task.title
+        ).all()
+        category.tasks = category_tasks
     
 
     
