@@ -21,7 +21,7 @@ services:
     name: cleanup
     env: python
     plan: free
-    schedule: "0 0 * * *" # Run daily at midnight UTC
+    schedule: "0 0 * * 0" # Run weekly on Sunday at midnight UTC
     command: "python cleanup.py"
     envVars:
       - key: DATABASE_URL
