@@ -147,6 +147,8 @@ Time Block Planner is a personal productivity web application that enables users
 - June 27, 2025: Enhanced application logging for production debugging and Railway deployment troubleshooting
 - June 27, 2025: Added nixpacks.toml to override Railway's auto-detection and force custom startup command
 - June 27, 2025: Implemented dual configuration approach (nixpacks.toml + pyproject.toml) for Railway deployment reliability
+- June 27, 2025: Fixed critical Railway port binding issue - updated to use dynamic $PORT environment variable instead of hardcoded port 5000
+- June 27, 2025: Updated both railway_start.py and main.py to handle Railway's dynamic port allocation correctly
 - June 22, 2025: Reduced conflict detection frequency and added 60-minute cooldown to prevent excessive popups
 - June 22, 2025: Improved conflict warning UI with less intrusive notifications and auto-dismiss
 - June 22, 2025: Optimized auto-save intervals to reduce server load and false conflicts

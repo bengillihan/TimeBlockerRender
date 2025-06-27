@@ -98,17 +98,17 @@ def start_application():
         # Import and start the app
         from app import app
         
-        # Get port from Railway
+        # Get dynamic port from Railway - CRITICAL for Railway deployment
         port = int(os.environ.get('PORT', 5000))
         host = '0.0.0.0'
         
-        logger.info(f"Starting server on {host}:{port}")
+        logger.info(f"Railway PORT environment variable: {os.environ.get('PORT', 'NOT SET')}")
+        logger.info(f"Starting Gunicorn server on {host}:{port}")
         
-        # Start with basic Gunicorn settings for Railway
-        import subprocess
+        # Start with Railway-optimized Gunicorn settings
         cmd = [
             'gunicorn',
-            '--bind', f'{host}:{port}',
+            '--bind', f'{host}:{port}',  # Use dynamic PORT from Railway
             '--workers', '1',  # Single worker for Railway free tier
             '--timeout', '60',
             '--preload',
