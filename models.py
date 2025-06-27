@@ -44,6 +44,7 @@ class DailyPlan(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     productivity_rating = db.Column(db.Integer)
     brain_dump = db.Column(db.Text)
+    pto_hours = db.Column(db.Float, default=0.0)  # PTO hours for the day
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     priorities = db.relationship('Priority', backref='daily_plan', lazy=True)

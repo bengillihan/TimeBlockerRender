@@ -757,6 +757,8 @@ def save_daily_plan():
         daily_plan.productivity_rating = data.get('productivity_rating')
     if 'brain_dump' in data:
         daily_plan.brain_dump = data.get('brain_dump')
+    if 'pto_hours' in data:
+        daily_plan.pto_hours = float(data.get('pto_hours', 0))
 
     # Handle priorities - preserve existing ones if this is just carrying over incomplete priorities
     if data.get('priorities'):
