@@ -152,6 +152,8 @@ Time Block Planner is a personal productivity web application that enables users
 - June 27, 2025: Created simplified startup script (start_simple.py) to bypass Gunicorn complexity and ensure reliable Railway deployment
 - June 27, 2025: Updated all Railway configuration files (nixpacks.toml, pyproject.toml, railway.json) to use simplified startup approach
 - June 27, 2025: Fixed Railway networking configuration - updated startup scripts to bind to Railway's assigned port 5000 instead of dynamic PORT variable
+- June 27, 2025: Enhanced task selection interface - Work category tasks now appear first, all tasks ordered by usage frequency for easier access to frequently used tasks
+- June 27, 2025: Added task usage tracking system - tracks how often tasks are used and when they were last used to improve task selection ordering
 - June 22, 2025: Reduced conflict detection frequency and added 60-minute cooldown to prevent excessive popups
 - June 22, 2025: Improved conflict warning UI with less intrusive notifications and auto-dismiss
 - June 22, 2025: Optimized auto-save intervals to reduce server load and false conflicts
