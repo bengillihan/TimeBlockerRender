@@ -182,7 +182,15 @@ def index():
     day_end = current_user.day_end_time or datetime.strptime('17:00', '%H:%M').time()
 
     # Get categories and their tasks for the time block selector
-    categories = Category.query.filter_by(user_id=current_user.id).all()
+    # Order categories to prioritize Work category first, then by name
+    categories = Category.query.filter_by(user_id=current_user.id).order_by(
+        db.case([(Category.name == 'Work', 0)], else_=1),
+        Category.name
+    ).all()
+    
+    # For each category, order tasks by usage frequency (most used first), then by title
+    for category in categories:
+        category.tasks = sorted(category.tasks, key=lambda task: (-task.usage_count if task.usage_count else 0, task.title))
     
 
     
@@ -857,6 +865,13 @@ def save_daily_plan():
                     notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
                 )
                 db.session.add(time_block)
+                
+                # Update task usage statistics when a task is assigned to a time block
+                if block_data.get('task_id'):
+                    task = Task.query.get(block_data['task_id'])
+                    if task:
+                        task.usage_count = (task.usage_count or 0) + 1
+                        task.last_used = datetime.utcnow()
             except (ValueError, KeyError) as e:
                 logger.error(f"Error processing time block {block_data}: {str(e)}")
                 continue

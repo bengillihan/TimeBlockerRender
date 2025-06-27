@@ -97,6 +97,8 @@ class Task(db.Model):
     notes = db.Column(db.Text)
     tags = db.Column(db.JSON)
     dependencies = db.Column(db.JSON)
+    usage_count = db.Column(db.Integer, default=0, index=True)  # Track how often task is used
+    last_used = db.Column(db.DateTime, nullable=True, index=True)  # Track when last used
     
     # Progress tracking
     progress_percentage = db.Column(db.Integer, default=0)
