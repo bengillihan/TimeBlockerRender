@@ -1636,19 +1636,19 @@ async function loadSevenDayStats() {
             // Update total hours
             document.getElementById('sevenDayTotal').textContent = `${data.total_hours} hrs`;
             
-            // Update APS hours
-            document.getElementById('sevenDayAPS').textContent = `${data.aps_hours} hrs`;
+            // Update Work hours
+            document.getElementById('sevenDayWork').textContent = `${data.work_hours} hrs`;
             
             // Update progress bar
-            const progressBar = document.getElementById('apsProgressBar');
-            progressBar.style.width = `${data.aps_progress_percentage}%`;
-            progressBar.setAttribute('aria-valuenow', data.aps_hours);
+            const progressBar = document.getElementById('workProgressBar');
+            progressBar.style.width = `${data.work_progress_percentage}%`;
+            progressBar.setAttribute('aria-valuenow', data.work_hours);
             
             // Update color based on progress
             progressBar.className = 'progress-bar';
-            if (data.aps_progress_percentage >= 100) {
+            if (data.work_progress_percentage >= 100) {
                 progressBar.classList.add('bg-success');
-            } else if (data.aps_progress_percentage >= 75) {
+            } else if (data.work_progress_percentage >= 75) {
                 progressBar.classList.add('bg-warning');
             } else {
                 progressBar.classList.add('bg-primary');
@@ -1657,12 +1657,12 @@ async function loadSevenDayStats() {
         } else {
             console.error('Failed to load 7-day stats:', data.error);
             document.getElementById('sevenDayTotal').textContent = 'Error';
-            document.getElementById('sevenDayAPS').textContent = 'Error';
+            document.getElementById('sevenDayWork').textContent = 'Error';
         }
     } catch (error) {
         console.error('Error loading 7-day stats:', error);
         document.getElementById('sevenDayTotal').textContent = 'Error';
-        document.getElementById('sevenDayAPS').textContent = 'Error';
+        document.getElementById('sevenDayWork').textContent = 'Error';
     }
 }
 

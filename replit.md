@@ -23,10 +23,10 @@ Time Block Planner is a personal productivity web application that enables users
 
 ### Database Schema
 - **Users**: Authentication and preferences (day start/end times, timezone)
-- **Daily Plans**: Date-specific planning data with productivity ratings
+- **Daily Plans**: Date-specific planning data with productivity ratings and PTO hours
 - **Priorities**: Top priorities for each day
 - **Time Blocks**: 15-minute scheduling increments
-- **Tasks/Categories**: Organized task management
+- **Tasks/Categories**: Organized task management with Work category for professional tasks
 - **Nav Links**: Customizable navigation for external integrations
 
 ## Key Components
@@ -41,6 +41,7 @@ Time Block Planner is a personal productivity web application that enables users
 - Drag-and-drop interface for task arrangement
 - Auto-save with 10-second delay after changes
 - Visual feedback for save status and current time
+- PTO (Paid Time Off) hours tracking integrated with Work category analytics
 
 ### Task Management
 - Hierarchical task organization with categories and roles
@@ -136,6 +137,10 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 27, 2025: Added PTO (Paid Time Off) hours tracking with database column and frontend input field
+- June 27, 2025: Renamed APS category to Work throughout application (database, UI, analytics, seven-day tracking)
+- June 27, 2025: Updated seven-day statistics to include PTO hours in Work category calculations
+- June 27, 2025: Enhanced auto-save functionality to include PTO hours and support number input fields
 - June 22, 2025: Reduced conflict detection frequency and added 60-minute cooldown to prevent excessive popups
 - June 22, 2025: Improved conflict warning UI with less intrusive notifications and auto-dismiss
 - June 22, 2025: Optimized auto-save intervals to reduce server load and false conflicts
