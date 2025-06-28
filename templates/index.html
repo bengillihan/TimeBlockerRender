@@ -872,6 +872,18 @@ function saveTodo() {
     });
 }
 
+// Initialize work hour tracking on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial work hour progress
+    updateWorkHourProgress();
+    
+    // Set up PTO hours change handler
+    const ptoInput = document.getElementById('ptoHours');
+    if (ptoInput) {
+        ptoInput.addEventListener('change', updatePTOHours);
+    }
+});
+
 // Show work hour settings modal
 function showWorkHourSettings() {
     const modal = new bootstrap.Modal(document.getElementById('workHourSettingsModal'));

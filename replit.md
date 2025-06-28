@@ -139,6 +139,7 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 28, 2025: Enhanced work hour tracking with configurable goals - moved PTO display below total time, added 30-day work hour tracking, implemented user-configurable weekly/monthly work hour goals with settings modal
 - June 28, 2025: Successfully completed Railway deployment fixes - resolved SQLAlchemy circular imports, fixed SESSION_SECRET handling, corrected import order in app.py, and optimized Procfile configuration
 - June 28, 2025: Simplified Railway deployment configuration - removed complex startup scripts and used standard Procfile approach
 - June 28, 2025: Fixed Railway 502 Bad Gateway error by implementing dynamic port assignment using $PORT environment variable

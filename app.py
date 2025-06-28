@@ -1961,6 +1961,104 @@ def get_priority_suggestions():
         'suggestions': suggestions[:10]  # Top 10 suggestions
     })
 
+@app.route('/api/work-hour-settings', methods=['POST'])
+@login_required
+def update_work_hour_settings():
+    """Update user's work hour goals"""
+    try:
+        data = request.get_json()
+        weekly_goal = float(data.get('weekly_goal', 32))
+        monthly_goal = float(data.get('monthly_goal', 140))
+        
+        # Validate goals
+        if weekly_goal < 1 or weekly_goal > 168:
+            return jsonify({'success': False, 'message': 'Weekly goal must be between 1 and 168 hours'})
+        if monthly_goal < 1 or monthly_goal > 744:
+            return jsonify({'success': False, 'message': 'Monthly goal must be between 1 and 744 hours'})
+        
+        # Update user goals
+        current_user.weekly_work_goal = weekly_goal
+        current_user.monthly_work_goal = monthly_goal
+        db.session.commit()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        app.logger.error(f"Error updating work hour settings: {str(e)}")
+        return jsonify({'success': False, 'message': 'Failed to update work hour settings'})
+
+@app.route('/api/work-hour-stats')
+@login_required
+def get_work_hour_stats():
+    """Get work hour statistics for progress bars"""
+    try:
+        from datetime import datetime, timedelta
+        
+        # Get current date in user's timezone
+        end_date = get_current_pacific_date()
+        
+        # Calculate 7-day and 30-day periods
+        seven_days_ago = end_date - timedelta(days=6)
+        thirty_days_ago = end_date - timedelta(days=29)
+        
+        # Get Work category
+        work_category = Category.query.filter_by(user_id=current_user.id, name='Work').first()
+        
+        if not work_category:
+            return jsonify({
+                'success': True,
+                'seven_day_work': 0,
+                'thirty_day_work': 0,
+                'weekly_goal': current_user.weekly_work_goal or 32,
+                'monthly_goal': current_user.monthly_work_goal or 140
+            })
+        
+        # Calculate 7-day work hours
+        seven_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date.between(seven_days_ago, end_date),
+            Task.category_id == work_category.id
+        ).all()
+        
+        seven_day_minutes = sum(15 for block in seven_day_blocks if block.task_id)
+        
+        # Add PTO hours for 7-day period
+        seven_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date.between(seven_days_ago, end_date)
+        ).scalar() or 0
+        
+        seven_day_work_hours = (seven_day_minutes / 60) + seven_day_pto
+        
+        # Calculate 30-day work hours
+        thirty_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date.between(thirty_days_ago, end_date),
+            Task.category_id == work_category.id
+        ).all()
+        
+        thirty_day_minutes = sum(15 for block in thirty_day_blocks if block.task_id)
+        
+        # Add PTO hours for 30-day period
+        thirty_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date.between(thirty_days_ago, end_date)
+        ).scalar() or 0
+        
+        thirty_day_work_hours = (thirty_day_minutes / 60) + thirty_day_pto
+        
+        return jsonify({
+            'success': True,
+            'seven_day_work': round(seven_day_work_hours, 1),
+            'thirty_day_work': round(thirty_day_work_hours, 1),
+            'weekly_goal': current_user.weekly_work_goal or 32,
+            'monthly_goal': current_user.monthly_work_goal or 140
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting work hour stats: {str(e)}")
+        return jsonify({'success': False, 'message': 'Failed to get work hour statistics'})
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
