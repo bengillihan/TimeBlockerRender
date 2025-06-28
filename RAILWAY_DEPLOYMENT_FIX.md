@@ -1,8 +1,12 @@
 # Railway Deployment Fix - TimeBlocker
 
-## Issue Resolved: 502 Bad Gateway
+## Issues Resolved
 
+### 1. 502 Bad Gateway Error
 Your TimeBlocker application was experiencing a 502 Bad Gateway error due to incorrect port configuration. Railway assigns ports dynamically via the `$PORT` environment variable, but the application was hardcoded to use port 5000.
+
+### 2. Build Error: pip command not found
+Railway's build system couldn't find pip when using custom nixpacks configuration. The solution is to use Railway's standard Python auto-detection.
 
 ## What Was Fixed
 
@@ -10,22 +14,31 @@ Your TimeBlocker application was experiencing a 502 Bad Gateway error due to inc
 - **Before**: Hardcoded port 5000 in all startup scripts
 - **After**: Dynamic port assignment using Railway's `$PORT` environment variable
 
-### 2. Startup Process Simplified
-- Created `railway_startup.py` - dedicated Railway startup script
-- Updated `nixpacks.toml` to use Railway-specific requirements and startup command
-- Modified `railway.json` to use consistent startup approach
+### 2. Build System Simplified
+- **Removed**: Custom `nixpacks.toml` that caused pip errors
+- **Added**: Standard Python deployment files that Railway auto-detects
+- **Created**: `Procfile` for explicit startup command
+- **Added**: `runtime.txt` to specify Python version
 
 ### 3. Dependencies Management
-- Created `railway_requirements.txt` with all necessary Python packages
-- Configured nixpacks to use Railway-specific requirements file
+- **Created**: Standard `requirements.txt` file (copied from render_requirements.txt)
+- **Simplified**: Railway configuration to use auto-detection
 
-## Files Modified
+## Files Modified/Created
 
-1. **railway_startup.py** (new) - Main startup script for Railway
-2. **nixpacks.toml** - Updated to use dynamic port and Railway requirements
-3. **railway.json** - Simplified configuration with health checks
-4. **main.py** - Updated to respect Railway's PORT environment variable
-5. **start_simple.py** - Updated for dynamic port assignment
+### Core Railway Files
+1. **requirements.txt** - Standard Python dependencies (copied from render_requirements.txt)
+2. **Procfile** - Explicit startup command for Railway
+3. **runtime.txt** - Python version specification (3.11.6)
+4. **railway.json** - Minimal Railway configuration with health check
+
+### Updated Application Files
+5. **main.py** - Updated to respect Railway's PORT environment variable
+6. **start_simple.py** - Updated for dynamic port assignment
+7. **railway_startup.py** - Alternative startup script (backup)
+
+### Removed Files
+- **nixpacks.toml** - Removed custom configuration that caused pip errors
 
 ## Next Steps for Deployment
 
