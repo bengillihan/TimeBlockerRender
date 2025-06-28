@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["python311", "postgresql", "git"]
-
-[phases.install]
-cmds = ["pip install -r railway_requirements.txt"]
-
-[start]
-cmd = "python railway_startup.py"
