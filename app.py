@@ -26,14 +26,13 @@ logger.info("Starting TimeBlocker application...")
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
 
-from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+session_secret = os.environ.get("SESSION_SECRET")
+if not session_secret:
+    if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+        raise ValueError("SESSION_SECRET environment variable is required in production")
+    session_secret = "dev-secret-key"
+app.secret_key = session_secret
 
 # Database configuration with error handling
 try:
@@ -88,6 +87,9 @@ else:
         "echo": False,
     }
 
+# Import db from models and initialize with app
+from models import db, User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
+
 # Initialize extensions
 db.init_app(app)
 login_manager = LoginManager()
@@ -100,14 +102,7 @@ init_cache(app)
 # Set session lifetime (8 hours) for better user experience
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
-# Set db reference in models to avoid circular import
-import models
-models.db = db
-
-# Import models after setting db reference
-from models import User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
 from google_auth import google_auth
-
 app.register_blueprint(google_auth)
 
 # Set session to permanent but with defined lifetime
@@ -1962,22 +1957,11 @@ def get_priority_suggestions():
         'suggestions': suggestions[:10]  # Top 10 suggestions
     })
 
-# Database tables will be created automatically on first request
 if __name__ == '__main__':
     with app.app_context():
-        # Create all database tables
         db.create_all()
         print("✅ Database tables created successfully")
-    # Do NOT start the server here – it will be run by main.py
-else:
-    # For production deployment, create tables on startup
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Database tables verified/created")
-        except Exception as e:
-            print(f"⚠️ Database initialization warning: {e}")
-            # Continue running even if table creation fails (tables might already exist)
+    app.run(debug=True)
 
 @app.route('/analytics')
 @login_required

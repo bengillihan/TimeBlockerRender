@@ -1,10 +1,10 @@
 from datetime import datetime
 import secrets
 from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Index
 
-# db will be imported from app.py after initialization
-db = None
+db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
