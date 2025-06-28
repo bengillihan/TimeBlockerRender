@@ -7,7 +7,6 @@ from functools import wraps
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import text, func
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 from dateutil.rrule import rrule, rrulestr
@@ -26,6 +25,8 @@ logger.info("Starting TimeBlocker application...")
 
 # Configure timezone
 pacific_tz = pytz.timezone('America/Los_Angeles')
+
+from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
     pass
@@ -99,7 +100,11 @@ init_cache(app)
 # Set session lifetime (8 hours) for better user experience
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
-# Import routes after app initialization to avoid circular imports
+# Set db reference in models to avoid circular import
+import models
+models.db = db
+
+# Import models after setting db reference
 from models import User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
 from google_auth import google_auth
 
