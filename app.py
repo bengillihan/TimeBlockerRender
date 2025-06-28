@@ -1355,6 +1355,18 @@ def update_time_preferences():
         current_user.day_start_time = start_time
         current_user.day_end_time = end_time
         current_user.day_split_time = split_time
+        
+        # Update work hour goals if provided
+        if 'weekly_work_goal' in data:
+            weekly_goal = float(data['weekly_work_goal'])
+            if 1 <= weekly_goal <= 168:
+                current_user.weekly_work_goal = weekly_goal
+        
+        if 'monthly_work_goal' in data:
+            monthly_goal = float(data['monthly_work_goal'])
+            if 1 <= monthly_goal <= 744:
+                current_user.monthly_work_goal = monthly_goal
+        
         db.session.commit()
 
         return jsonify({'message': 'Preferences updated successfully'})

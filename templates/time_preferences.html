@@ -43,6 +43,35 @@
                                 </small>
                             </div>
                         </div>
+                        
+                        <!-- Work Hour Goals Section -->
+                        <hr class="my-4">
+                        <h4 class="mb-3">Work Hour Goals</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="weeklyWorkGoal" class="form-label">Weekly Work Hours Goal</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="weeklyWorkGoal" name="weekly_work_goal" 
+                                               value="{{ current_user.weekly_work_goal or 32 }}" min="1" max="168" step="0.5" required>
+                                        <span class="input-group-text">hours</span>
+                                    </div>
+                                    <small class="text-muted">Set your target work hours per week (1-168 hours)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="monthlyWorkGoal" class="form-label">Monthly Work Hours Goal (30 days)</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="monthlyWorkGoal" name="monthly_work_goal" 
+                                               value="{{ current_user.monthly_work_goal or 140 }}" min="1" max="744" step="0.5" required>
+                                        <span class="input-group-text">hours</span>
+                                    </div>
+                                    <small class="text-muted">Set your target work hours per 30 days (1-744 hours)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-flex justify-content-between align-items-center">
                             <button type="submit" class="btn btn-primary">Save Preferences</button>
                             <span id="savedStatus" class="text-success" style="display: none;">
@@ -65,7 +94,9 @@ document.getElementById('timePreferencesForm').addEventListener('submit', async 
     const formData = {
         day_start_time: document.getElementById('dayStartTime').value,
         day_end_time: document.getElementById('dayEndTime').value,
-        day_split_time: document.getElementById('daySplitTime').value
+        day_split_time: document.getElementById('daySplitTime').value,
+        weekly_work_goal: parseFloat(document.getElementById('weeklyWorkGoal').value),
+        monthly_work_goal: parseFloat(document.getElementById('monthlyWorkGoal').value)
     };
 
     try {
