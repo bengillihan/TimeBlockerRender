@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""
+Railway Deployment Diagnostic Script
+Run this locally to verify your Railway configuration before deployment.
+"""
+import os
+import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
+
+def check_files():
+    """Check that all required Railway files exist"""
+    logger.info("=== Checking Railway Configuration Files ===")
+    
+    required_files = [
+        'railway.json',
+        'Procfile', 
+        'railway_start.py',
+        'requirements_railway.txt',
+        'app.py'
+    ]
+    
+    missing_files = []
+    for file in required_files:
+        if os.path.exists(file):
+            logger.info(f"✓ {file}")
+        else:
+            logger.error(f"✗ {file} - MISSING")
+            missing_files.append(file)
+    
+    if missing_files:
+        logger.error(f"Missing required files: {missing_files}")
+        return False
+    
+    logger.info("✓ All required Railway files present")
+    return True
+
+def check_procfile():
+    """Verify Procfile configuration"""
+    logger.info("=== Checking Procfile Configuration ===")
+    
+    try:
+        with open('Procfile', 'r') as f:
+            content = f.read().strip()
+        
+        logger.info(f"Procfile content: {content}")
+        
+        # Check for key elements
+        if 'web:' not in content:
+            logger.error("✗ Procfile missing 'web:' prefix")
+            return False
+        
+        if '$PORT' not in content:
+            logger.error("✗ Procfile missing $PORT environment variable")
+            return False
+        
+        if 'app:app' not in content:
+            logger.error("✗ Procfile should use 'app:app' as the application entry point")
+            return False
+        
+        logger.info("✓ Procfile configuration looks correct")
+        return True
+        
+    except Exception as e:
+        logger.error(f"✗ Error reading Procfile: {e}")
+        return False
+
+def check_railway_json():
+    """Verify railway.json configuration"""
+    logger.info("=== Checking railway.json Configuration ===")
+    
+    try:
+        with open('railway.json', 'r') as f:
+            content = f.read()
+        
+        logger.info(f"railway.json content: {content}")
+        
+        if '/health' not in content:
+            logger.error("✗ railway.json missing health check path")
+            return False
+        
+        logger.info("✓ railway.json configuration looks correct")
+        return True
+        
+    except Exception as e:
+        logger.error(f"✗ Error reading railway.json: {e}")
+        return False
+
+def check_requirements():
+    """Check requirements file"""
+    logger.info("=== Checking Requirements ===")
+    
+    try:
+        with open('requirements_railway.txt', 'r') as f:
+            requirements = f.read()
+        
+        required_packages = [
+            'Flask',
+            'gunicorn',
+            'psycopg2-binary',
+            'Flask-SQLAlchemy'
+        ]
+        
+        missing_packages = []
+        for package in required_packages:
+            if package.lower() in requirements.lower():
+                logger.info(f"✓ {package}")
+            else:
+                logger.error(f"✗ {package} - MISSING")
+                missing_packages.append(package)
+        
+        if missing_packages:
+            logger.error(f"Missing required packages: {missing_packages}")
+            return False
+        
+        logger.info("✓ All required packages present")
+        return True
+        
+    except Exception as e:
+        logger.error(f"✗ Error reading requirements: {e}")
+        return False
+
+def check_app_structure():
+    """Check basic app structure"""
+    logger.info("=== Checking App Structure ===")
+    
+    try:
+        # Try to import the app
+        sys.path.insert(0, os.getcwd())
+        from app import app
+        
+        # Check if health endpoint exists
+        with app.test_client() as client:
+            response = client.get('/health')
+            if response.status_code == 200:
+                logger.info("✓ Health endpoint working")
+            else:
+                logger.error(f"✗ Health endpoint returned {response.status_code}")
+                return False
+        
+        logger.info("✓ App structure looks correct")
+        return True
+        
+    except Exception as e:
+        logger.error(f"✗ Error checking app structure: {e}")
+        return False
+
+def main():
+    """Run all diagnostic checks"""
+    logger.info("=== Railway Deployment Diagnostic ===")
+    
+    checks = [
+        check_files,
+        check_procfile,
+        check_railway_json,
+        check_requirements,
+        check_app_structure
+    ]
+    
+    passed = 0
+    total = len(checks)
+    
+    for check in checks:
+        if check():
+            passed += 1
+        logger.info("")
+    
+    logger.info("=== Diagnostic Summary ===")
+    logger.info(f"Passed: {passed}/{total} checks")
+    
+    if passed == total:
+        logger.info("✅ All checks passed! Your Railway configuration looks good.")
+        logger.info("Next steps:")
+        logger.info("1. Commit and push your changes")
+        logger.info("2. Deploy to Railway")
+        logger.info("3. Check Railway logs for any issues")
+    else:
+        logger.error("❌ Some checks failed. Please fix the issues above before deploying.")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main() 

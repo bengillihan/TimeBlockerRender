@@ -1,0 +1,98 @@
+# Supabase Database Import Guide
+
+This guide will help you import your TimeBlocker data from Replit to Supabase for Railway deployment.
+
+## Prerequisites
+
+1. Supabase account and project
+2. Your Replit database export
+3. `supabase_import.sql` file (included in this project)
+
+## Import Steps
+
+### Step 1: Get Your Supabase Connection String
+
+1. Go to your Supabase project dashboard
+2. Navigate to Settings → Database
+3. Copy the connection string (use the connection pooling URL for better performance)
+
+### Step 2: Import Database Schema and Data
+
+1. Copy the entire contents of `supabase_import.sql`
+2. Open your Supabase SQL Editor
+3. Paste and execute the SQL script
+4. Wait for the import to complete (may take 30-60 seconds)
+
+### Step 3: Verify Import
+
+Check that your data imported correctly:
+
+```sql
+-- Check user
+SELECT * FROM users LIMIT 1;
+
+-- Check categories
+SELECT COUNT(*) FROM categories;
+
+-- Check roles  
+SELECT COUNT(*) FROM roles;
+
+-- Check tasks
+SELECT COUNT(*) FROM tasks;
+
+-- Check todos
+SELECT COUNT(*) FROM todos;
+```
+
+## What Gets Imported
+
+- **User**: Your main user account
+- **Categories**: 3 categories (Replit APS, Sage, Email, IT Support, CPE, Reporting, Other APS Work)
+- **Roles**: 6 roles (APS, Sage, Email, IT Support, CPE, Reporting)
+- **Tasks**: 29 tasks with priorities and due dates
+- **To-dos**: 18 important to-do items
+- **Templates**: 1 day template
+- **Historical Data**: Time block history from March 2025
+
+## Database Features
+
+- **JSONB Support**: Better JSON handling for Supabase
+- **Conflict Resolution**: ON CONFLICT clauses for safe re-imports
+- **Indexes**: Optimized for performance
+- **Constraints**: Data integrity checks
+
+## Troubleshooting
+
+### Import Errors
+
+- **Timeout**: Large imports may take 30-60 seconds
+- **Connection Issues**: 
+  - Use connection pooling URL (port 6543) for better reliability
+  - Check your network connection
+- **Duplicate Data**: The script uses ON CONFLICT to handle duplicates safely
+
+### Common Issues
+
+- **Permission Errors**: Ensure you have write access to your Supabase project
+- **Syntax Errors**: Make sure you're using the latest `supabase_import.sql` file
+- **Missing Tables**: The script creates all necessary tables automatically
+
+## Next Steps
+
+After successful import:
+
+1. **Deploy to Railway**: Follow `RAILWAY_DEPLOYMENT_GUIDE.md`
+2. **Configure Environment**: Set up your Railway environment variables
+3. **Test Features**: Verify all functionality works with imported data
+
+## Maintenance
+
+- **Backup Data**: Use SQL Editor to export specific tables
+- **Version Control**: Keep `supabase_import.sql` in your repository
+- **Updates**: Re-run import script if you need to refresh data
+
+## Support
+
+- **Supabase Documentation**: [supabase.com/docs](https://supabase.com/docs)
+- **Railway Documentation**: [railway.app/docs](https://railway.app/docs)
+- **Import Issues**: Check the troubleshooting section above

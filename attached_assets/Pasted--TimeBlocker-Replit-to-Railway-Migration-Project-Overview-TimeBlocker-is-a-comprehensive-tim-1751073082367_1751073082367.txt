@@ -1,0 +1,153 @@
+# TimeBlocker - Replit to Railway Migration
+
+## Project Overview
+
+TimeBlocker is a comprehensive time management and productivity application that helps users organize their daily schedules, track tasks, and manage priorities. This project has been migrated from Replit to Railway with Supabase as the database.
+
+## Current Status
+
+### ✅ Completed
+- **Database Migration**: Successfully migrated from SQLite to Supabase PostgreSQL
+- **Railway Deployment**: Configured for Railway hosting with optimized settings
+- **Authentication**: Google OAuth integration working
+- **Core Features**: Daily planning, task management, time blocking, analytics
+- **Data Import**: Successfully imported core data: 1 user, 3 categories, 6 roles, 1 day template
+- **Additional Data**: Available for import: 29 tasks and 18 todos via `add_tasks_todos.sql`
+
+### 🔧 Technical Stack
+- **Backend**: Python Flask with SQLAlchemy ORM
+- **Database**: Supabase PostgreSQL (production)
+- **Authentication**: Google OAuth 2.0
+- **Hosting**: Railway (production)
+- **Frontend**: HTML/CSS/JavaScript with Bootstrap
+- **Caching**: Flask-Caching with Redis (if available)
+
+### 📊 Data Status
+- **User**: Ben Gillihan (bdgillihan@gmail.com)
+- **Categories**: 3 categories imported (Replit APS, Sage, Email, IT Support, CPE, Reporting, Other APS Work)
+- **Roles**: 6 roles imported (APS, Sage, Email, IT Support, CPE, Reporting)
+- **Tasks**: 29 tasks available for import
+- **Todos**: 18 todos available for import
+- **Historical Data**: Time block history from March 2025 imported with 25 tasks, priorities, and scheduled blocks
+
+## Recent Updates
+
+### June 2025
+- **June 28, 2025**: Fixed Railway 502 Bad Gateway error by implementing dynamic port assignment using $PORT environment variable
+- **June 28, 2025**: Simplified Railway startup process to eliminate port binding conflicts and improve deployment reliability
+- **June 27, 2025**: Enhanced auto-save functionality to include PTO hours and support number input fields
+- **June 27, 2025**: Created Railway startup script with comprehensive diagnostics to fix 502 deployment errors
+- **June 27, 2025**: Fixed critical Railway port binding issue - updated to use dynamic $PORT environment variable instead of hardcoded port 5000
+- **June 27, 2025**: Updated both railway_start.py and main.py to handle Railway's dynamic port allocation correctly
+- **June 27, 2025**: Fixed Railway networking configuration - updated startup scripts to bind to Railway's assigned port 5000 instead of dynamic PORT variable
+
+### May 2025
+- **May 22, 2025**: Enhanced task dashboard with improved filtering and sorting capabilities
+- **May 22, 2025**: Added batch operations for todos (complete multiple, delete multiple)
+- **May 22, 2025**: Implemented smart scheduling algorithm for todos based on priority and due dates
+- **May 22, 2025**: Added productivity insights and recommendations
+- **May 22, 2025**: Enhanced time analytics with detailed breakdowns and trends
+- **May 22, 2025**: Added todo import functionality with predefined task list
+- **May 22, 2025**: Implemented seven-day statistics endpoint for dashboard widgets
+- **May 22, 2025**: Added time preferences management (day start/end times)
+- **May 22, 2025**: Enhanced todo management with recurrence rules and priority suggestions
+- **May 22, 2025**: Added comprehensive todo CRUD operations with validation
+- **May 22, 2025**: Implemented task comments system for collaboration
+- **May 22, 2025**: Added task progress tracking and analytics
+- **May 22, 2025**: Enhanced daily plan backup and restore functionality
+- **May 22, 2025**: Added day templates for reusable daily schedules
+- **May 22, 2025**: Implemented embedded view functionality with secure tokens
+- **May 22, 2025**: Added comprehensive task analytics and reporting
+- **May 22, 2025**: Enhanced role management with proper CRUD operations
+- **May 22, 2025**: Added category management with color coding
+- **May 22, 2025**: Implemented task management with priority levels and due dates
+
+### March 2025
+- **March 7, 2025**: Fixed Google authentication integration
+- **March 7, 2025**: Resolved database connection issues
+- **March 7, 2025**: Enhanced error handling and logging
+- **March 7, 2025**: Improved user session management
+
+## Railway Deployment
+
+### Configuration Files
+- `railway.json` - Railway deployment configuration
+- `railway_start.py` - Simplified startup script for Railway
+- `Procfile` - Railway process definition
+- `requirements_railway.txt` - Python dependencies for Railway
+
+### Environment Variables
+- `DATABASE_URL` - Supabase PostgreSQL connection string
+- `GOOGLE_OAUTH_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_OAUTH_CLIENT_SECRET` - Google OAuth client secret
+- `SESSION_SECRET` - Flask session secret key
+
+### Deployment Features
+- **Health Check**: `/health` endpoint for Railway monitoring
+- **Dynamic Port Binding**: Uses Railway's $PORT environment variable
+- **Optimized Settings**: Configured for Railway free tier constraints
+- **Error Handling**: Comprehensive error handling and logging
+- **Auto-restart**: Configured to restart on failures
+
+## Database Schema
+
+### Core Tables
+- `users` - User accounts and profiles
+- `daily_plans` - Daily planning data
+- `priorities` - Daily priorities and goals
+- `time_blocks` - Scheduled time blocks
+- `tasks` - Task management
+- `categories` - Task categories
+- `roles` - User roles and responsibilities
+- `todos` - Todo items with recurrence
+- `day_templates` - Reusable daily templates
+
+### Key Features
+- **Foreign Key Constraints**: Proper referential integrity
+- **Indexes**: Optimized for performance
+- **JSONB Support**: Better JSON handling for Supabase
+- **Cascade Deletes**: Proper cleanup when records are deleted
+
+## Features
+
+### Core Functionality
+- **Daily Planning**: Create and manage daily schedules
+- **Time Blocking**: Schedule specific time blocks for tasks
+- **Priority Management**: Set and track daily priorities
+- **Task Management**: Comprehensive task tracking with categories and roles
+- **Todo Management**: Todo items with recurrence and smart scheduling
+- **Analytics**: Productivity insights and time tracking
+- **Templates**: Reusable daily templates
+- **Embedded Views**: Secure embedded views for external applications
+
+### Advanced Features
+- **Google OAuth**: Secure authentication
+- **Auto-save**: Automatic saving of daily plans
+- **Backup/Restore**: Daily plan backup and restore functionality
+- **Smart Scheduling**: AI-powered todo scheduling
+- **Productivity Insights**: Data-driven productivity recommendations
+- **Time Analytics**: Detailed time tracking and analysis
+- **Batch Operations**: Bulk operations for todos and tasks
+
+## Development
+
+### Local Setup
+1. Clone the repository
+2. Install dependencies: `pip install -r requirements_railway.txt`
+3. Set up environment variables
+4. Run: `python app.py`
+
+### Railway Deployment
+1. Connect GitHub repository to Railway
+2. Configure environment variables
+3. Deploy automatically on push
+
+## Support
+
+- **Railway Documentation**: [railway.app/docs](https://railway.app/docs)
+- **Supabase Documentation**: [supabase.com/docs](https://supabase.com/docs)
+- **Flask Documentation**: [flask.palletsprojects.com](https://flask.palletsprojects.com)
+
+## License
+
+This project is for personal use and productivity management.

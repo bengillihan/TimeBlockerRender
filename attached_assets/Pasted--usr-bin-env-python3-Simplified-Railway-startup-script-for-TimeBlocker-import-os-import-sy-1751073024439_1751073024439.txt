@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""
+Simplified Railway startup script for TimeBlocker
+"""
+import os
+import sys
+import logging
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+
+def check_environment():
+    """Check required environment variables"""
+    logger.info("=== Railway Startup Check ===")
+    logger.info(f"Python version: {sys.version}")
+    logger.info(f"Working directory: {os.getcwd()}")
+    
+    # Check critical environment variables
+    port = os.environ.get('PORT')
+    database_url = os.environ.get('DATABASE_URL')
+    
+    logger.info(f"PORT: {port or 'NOT SET'}")
+    logger.info(f"DATABASE_URL: {'SET' if database_url else 'NOT SET'}")
+    
+    if not port:
+        logger.error("PORT environment variable is required for Railway")
+        return False
+    
+    if not database_url:
+        logger.error("DATABASE_URL environment variable is required")
+        return False
+    
+    logger.info("✓ Environment check passed")
+    return True
+
+def start_application():
+    """Start the Flask application"""
+    try:
+        logger.info("Starting TimeBlocker application...")
+        
+        # Import the app
+        from app import app
+        
+        # Get port from Railway
+        port = int(os.environ.get('PORT', 5000))
+        host = '0.0.0.0'
+        
+        logger.info(f"Starting on {host}:{port}")
+        
+        # Test the app can be imported
+        try:
+            test_client = app.test_client()
+            response = test_client.get('/health')
+            logger.info(f"Health check test: {response.status_code}")
+        except Exception as e:
+            logger.warning(f"Health check test failed: {e}")
+        
+        # Start with Gunicorn
+        import subprocess
+        cmd = [
+            'gunicorn',
+            '--bind', f'{host}:{port}',
+            '--workers', '1',
+            '--timeout', '60',
+            '--keep-alive', '5',
+            '--max-requests', '1000',
+            '--max-requests-jitter', '100',
+            '--preload',
+            '--log-level', 'info',
+            '--access-logfile', '-',
+            '--error-logfile', '-',
+            'app:app'
+        ]
+        
+        logger.info(f"Executing: {' '.join(cmd)}")
+        os.execvp('gunicorn', cmd)
+        
+    except Exception as e:
+        logger.error(f"Startup failed: {e}")
+        sys.exit(1)
+
+def main():
+    """Main startup function"""
+    logger.info(f"=== TimeBlocker Railway Startup - {datetime.now()} ===")
+    
+    if not check_environment():
+        sys.exit(1)
+    
+    start_application()
+
+if __name__ == '__main__':
+    main()

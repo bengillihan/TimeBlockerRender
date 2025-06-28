@@ -1,0 +1,79 @@
+# June Data Export and Import Guide
+
+This guide will help you export your June 2025 data from Replit and import it into your Railway + Supabase deployment.
+
+## Step 1: Export from Replit
+
+### Export Daily Plans
+```sql
+-- Export June daily plans
+SELECT 
+    id,
+    user_id,
+    date,
+    created_at,
+    updated_at
+FROM daily_plans 
+WHERE date >= '2025-06-01' AND date <= '2025-06-30'
+ORDER BY date;
+```
+
+### Export Priorities
+```sql
+-- Export June priorities
+SELECT 
+    p.id,
+    p.daily_plan_id,
+    p.content,
+    p.order,
+    p.completed,
+    p.created_at,
+    p.updated_at,
+    dp.date
+FROM priorities p
+JOIN daily_plans dp ON p.daily_plan_id = dp.id
+WHERE dp.date >= '2025-06-01' AND dp.date <= '2025-06-30'
+ORDER BY dp.date, p.order;
+```
+
+### Export Time Blocks
+```sql
+-- Export June time blocks
+SELECT 
+    tb.id,
+    tb.daily_plan_id,
+    tb.start_time,
+    tb.end_time,
+    tb.task_id,
+    tb.completed,
+    tb.notes,
+    tb.created_at,
+    tb.updated_at,
+    dp.date
+FROM time_blocks tb
+JOIN daily_plans dp ON tb.daily_plan_id = dp.id
+WHERE dp.date >= '2025-06-01' AND dp.date <= '2025-06-30'
+ORDER BY dp.date, tb.start_time;
+```
+
+## Step 2: Import to Supabase
+
+1. Copy the SQL results from each export
+2. Run the INSERT statements in your Supabase SQL Editor
+3. Verify the import with:
+   ```sql
+   SELECT COUNT(*) FROM daily_plans WHERE date >= '2025-06-01';
+   SELECT COUNT(*) FROM priorities p JOIN daily_plans dp ON p.daily_plan_id = dp.id WHERE dp.date >= '2025-06-01';
+   SELECT COUNT(*) FROM time_blocks tb JOIN daily_plans dp ON tb.daily_plan_id = dp.id WHERE dp.date >= '2025-06-01';
+   ```
+
+After import, check your TimeBlocker at your Railway deployment URL to see your June data restored.
+
+## Alternative: Direct Database Export
+
+If you have direct database access:
+
+```sql
+# Export specific June data
+pg_dump -h your-db-host -U your-username -d your-database --data-only --table=daily_plans --table=priorities --table=time_blocks --where="date >= '2025-06-01' AND date <= '2025-06-30'" > june_data.sql
+```
