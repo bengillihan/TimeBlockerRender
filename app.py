@@ -200,8 +200,9 @@ def index():
 
     # Get categories and their tasks for the time block selector
     # Order categories to prioritize Work category first, then by name
+    from sqlalchemy import case
     categories = Category.query.filter_by(user_id=current_user.id).order_by(
-        db.case([(Category.name == 'Work', 0)], else_=1),
+        case((Category.name == 'Work', 0), else_=1),
         Category.name
     ).all()
     
@@ -1962,7 +1963,7 @@ if __name__ == '__main__':
         # Create all database tables
         db.create_all()
         print("✅ Database tables created successfully")
-    app.run(debug=True)
+    # Do NOT start the server here – it will be run by main.py
 else:
     # For production deployment, create tables on startup
     with app.app_context():
