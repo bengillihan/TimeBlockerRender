@@ -1,5 +1,8 @@
 [phases.setup]
 nixPkgs = ["python311", "postgresql", "git"]
 
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
 [start]
-cmd = "gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 --worker-class sync --log-level info --access-logfile - --error-logfile - main:app"
+cmd = "python railway_startup.py"

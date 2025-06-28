@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Simple Railway startup script - fallback approach
+Railway startup script - uses dynamic port assignment
 """
 import os
 import sys
 import logging
 
-# Configure logging
+# Configure logging for Railway
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -16,14 +16,18 @@ logger = logging.getLogger(__name__)
 
 def main():
     try:
-        # Railway assigns port via PORT environment variable
-        port = os.environ.get('PORT', 5000)
-        logger.info(f"Starting on Railway assigned port {port}")
+        # Railway assigns port dynamically via PORT environment variable
+        port = os.environ.get('PORT')
+        if not port:
+            logger.error("PORT environment variable not set by Railway")
+            sys.exit(1)
+            
+        logger.info(f"Starting TimeBlocker on Railway port {port}")
         
-        # Import and run Flask app directly
+        # Import Flask app
         from app import app
         
-        # Use Gunicorn for production deployment on Railway
+        # Start with Gunicorn for production
         import subprocess
         cmd = [
             'gunicorn',
@@ -40,11 +44,13 @@ def main():
             'main:app'
         ]
         
-        logger.info(f"Starting Gunicorn with command: {' '.join(cmd)}")
-        subprocess.run(cmd)
+        logger.info(f"Executing: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True)
         
     except Exception as e:
-        logger.error(f"Startup failed: {str(e)}")
+        logger.error(f"Railway startup failed: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == '__main__':
