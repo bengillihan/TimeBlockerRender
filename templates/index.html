@@ -69,6 +69,15 @@
                     <h6 class="mb-0">Total Daily Hours</h6>
                     <span class="h6 mb-0">{{ (total_minutes / 60)|round(1) }} hrs</span>
                 </div>
+                
+                <!-- PTO Hours Display -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-check me-1 text-success"></i>
+                        PTO Hours Today
+                    </small>
+                    <small id="ptoHoursDisplay" class="fw-bold text-success">{{ daily_plan.pto_hours if daily_plan and daily_plan.pto_hours else 0 }} hrs</small>
+                </div>
                 {% endif %}
                 
                 <!-- 7-Day Tracking Section -->
@@ -90,8 +99,32 @@
                                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="32">
                             </div>
                         </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <small class="text-muted">Goal: <span id="weeklyGoalDisplay">32</span> hours/week</small>
+                            <button class="btn btn-sm btn-link p-0 text-muted" onclick="showWorkHourSettings()" style="font-size: 0.75rem;">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 30-Day Work Hours Section -->
+                <div id="thirtyDayTracking" class="mb-3 pb-2 border-bottom">
+                    <h6 class="mb-2 text-warning">
+                        <i class="fas fa-calendar-alt me-1"></i>30-Day Work Hours
+                    </h6>
+                    <div class="ps-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small>Last 30 Days</small>
+                            <small id="thirtyDayWork" class="fw-bold text-warning">Loading...</small>
+                        </div>
+                        <div class="progress mt-1" style="height: 8px;">
+                            <div id="monthlyWorkProgressBar" class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="140">
+                            </div>
+                        </div>
                         <div class="text-muted mt-1">
-                            <small>Goal: 32 hours/week</small>
+                            <small>Goal: <span id="monthlyGoalDisplay">140</span> hours/month</small>
                         </div>
                     </div>
                 </div>
@@ -156,7 +189,8 @@
                                 <input type="number" id="ptoHours" class="form-control" 
                                        min="0" max="24" step="0.5" 
                                        value="{{ daily_plan.pto_hours if daily_plan and daily_plan.pto_hours else 0 }}"
-                                       placeholder="0">
+                                       placeholder="0"
+                                       onchange="updatePTOHours()">
                                 <span class="input-group-text">hrs</span>
                             </div>
                         </div>
@@ -696,6 +730,46 @@
     </div>
 </div>
 
+<!-- Work Hour Settings Modal -->
+<div class="modal fade" id="workHourSettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Work Hour Goals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="workHourSettingsForm">
+                    <div class="mb-3">
+                        <label for="weeklyGoal" class="form-label">Weekly Work Hour Goal</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="weeklyGoal" 
+                                   min="1" max="168" step="0.5" 
+                                   value="{{ current_user.weekly_work_goal if current_user.weekly_work_goal else 32 }}">
+                            <span class="input-group-text">hours/week</span>
+                        </div>
+                        <div class="form-text">Set your target work hours per week (includes PTO)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="monthlyGoal" class="form-label">Monthly Work Hour Goal</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="monthlyGoal" 
+                                   min="1" max="744" step="0.5" 
+                                   value="{{ current_user.monthly_work_goal if current_user.monthly_work_goal else 140 }}">
+                            <span class="input-group-text">hours/month</span>
+                        </div>
+                        <div class="form-text">Set your target work hours per month (includes PTO)</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveWorkHourSettings()">Save Goals</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .time-indicator {
     position: absolute;
@@ -795,6 +869,87 @@ function saveTodo() {
     .catch(error => {
         console.error('Error:', error);
         alert('Error creating todo');
+    });
+}
+
+// Show work hour settings modal
+function showWorkHourSettings() {
+    const modal = new bootstrap.Modal(document.getElementById('workHourSettingsModal'));
+    modal.show();
+}
+
+// Save work hour settings
+function saveWorkHourSettings() {
+    const weeklyGoal = document.getElementById('weeklyGoal').value;
+    const monthlyGoal = document.getElementById('monthlyGoal').value;
+    
+    fetch('/api/work-hour-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            weekly_goal: parseFloat(weeklyGoal),
+            monthly_goal: parseFloat(monthlyGoal)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update display
+            document.getElementById('weeklyGoalDisplay').textContent = weeklyGoal;
+            document.getElementById('monthlyGoalDisplay').textContent = monthlyGoal;
+            
+            // Update progress bars
+            updateWorkHourProgress();
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('workHourSettingsModal')).hide();
+        } else {
+            alert('Error saving work hour settings: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving work hour settings');
+    });
+}
+
+// Update PTO hours
+function updatePTOHours() {
+    const ptoHours = document.getElementById('ptoHours').value;
+    
+    // Update display
+    document.getElementById('ptoHoursDisplay').textContent = ptoHours + ' hrs';
+    
+    // Trigger auto-save
+    if (window.autoSaveData) {
+        window.autoSaveData();
+    }
+}
+
+// Update work hour progress bars
+function updateWorkHourProgress() {
+    fetch('/api/work-hour-stats')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update 7-day progress
+            const weeklyProgress = (data.seven_day_work / data.weekly_goal) * 100;
+            document.getElementById('workProgressBar').style.width = Math.min(weeklyProgress, 100) + '%';
+            document.getElementById('workProgressBar').setAttribute('aria-valuemax', data.weekly_goal);
+            
+            // Update 30-day progress
+            const monthlyProgress = (data.thirty_day_work / data.monthly_goal) * 100;
+            document.getElementById('monthlyWorkProgressBar').style.width = Math.min(monthlyProgress, 100) + '%';
+            document.getElementById('monthlyWorkProgressBar').setAttribute('aria-valuemax', data.monthly_goal);
+            
+            // Update text displays
+            document.getElementById('thirtyDayWork').textContent = data.thirty_day_work.toFixed(1) + ' hrs';
+        }
+    })
+    .catch(error => {
+        console.error('Error updating work hour progress:', error);
     });
 }
 

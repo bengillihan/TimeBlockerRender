@@ -23,6 +23,10 @@ class User(UserMixin, db.Model):
     last_active = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     current_session_id = db.Column(db.String(64), nullable=True)  # Track current active session
     
+    # Work hour goals
+    weekly_work_goal = db.Column(db.Float, default=32.0)  # Weekly work hour goal
+    monthly_work_goal = db.Column(db.Float, default=140.0)  # Monthly work hour goal
+    
     def generate_new_session(self):
         """Generate a new session ID and invalidate old sessions"""
         self.current_session_id = secrets.token_urlsafe(32)
