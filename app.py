@@ -87,11 +87,15 @@ else:
         "echo": False,
     }
 
-# Import db from models and initialize with app
-from models import db, User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
+# Import db from models after app is created
+from models import db
 
 # Initialize extensions
 db.init_app(app)
+
+# Import model classes after db initialization
+from models import User, DailyPlan, Priority, TimeBlock, Category, Task, DayTemplate, ToDo, Role, TaskComment
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
