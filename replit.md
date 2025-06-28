@@ -139,6 +139,9 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- June 28, 2025: Fixed Railway 502 Bad Gateway error by implementing dynamic port assignment using $PORT environment variable
+- June 28, 2025: Created railway_startup.py and updated nixpacks.toml/railway.json for proper Railway deployment configuration
+- June 28, 2025: Simplified Railway startup process to eliminate port binding conflicts and improve deployment reliability
 - June 27, 2025: Added PTO (Paid Time Off) hours tracking with database column and frontend input field
 - June 27, 2025: Renamed APS category to Work throughout application (database, UI, analytics, seven-day tracking)
 - June 27, 2025: Updated seven-day statistics to include PTO hours in Work category calculations
