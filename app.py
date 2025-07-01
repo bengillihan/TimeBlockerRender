@@ -2025,14 +2025,14 @@ def get_work_hour_stats():
                 'monthly_goal': current_user.monthly_work_goal or 140
             })
         
-        # Calculate 7-day work hours
+        # Calculate 7-day work hours (only count blocks with Work category tasks)
         seven_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
             DailyPlan.user_id == current_user.id,
             DailyPlan.date.between(seven_days_ago, end_date),
             Task.category_id == work_category.id
         ).all()
         
-        seven_day_minutes = sum(15 for block in seven_day_blocks if block.task_id)
+        seven_day_minutes = sum(15 for block in seven_day_blocks)
         
         # Add PTO hours for 7-day period
         seven_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
@@ -2042,14 +2042,14 @@ def get_work_hour_stats():
         
         seven_day_work_hours = (seven_day_minutes / 60) + seven_day_pto
         
-        # Calculate 30-day work hours
+        # Calculate 30-day work hours (only count blocks with Work category tasks)
         thirty_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
             DailyPlan.user_id == current_user.id,
             DailyPlan.date.between(thirty_days_ago, end_date),
             Task.category_id == work_category.id
         ).all()
         
-        thirty_day_minutes = sum(15 for block in thirty_day_blocks if block.task_id)
+        thirty_day_minutes = sum(15 for block in thirty_day_blocks)
         
         # Add PTO hours for 30-day period
         thirty_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
