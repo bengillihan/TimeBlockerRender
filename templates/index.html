@@ -881,6 +881,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Show work hour settings modal
 function showWorkHourSettings() {
+    // Fetch current work hour stats to populate modal with latest values
+    fetch('/api/work-hour-stats')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update modal input fields with current user preferences
+            document.getElementById('weeklyGoal').value = data.weekly_goal;
+            document.getElementById('monthlyGoal').value = data.monthly_goal;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching work hour settings:', error);
+    });
+    
     const modal = new bootstrap.Modal(document.getElementById('workHourSettingsModal'));
     modal.show();
 }
@@ -953,6 +967,10 @@ function updateWorkHourProgress() {
             
             // Update text displays
             document.getElementById('thirtyDayWork').textContent = data.thirty_day_work.toFixed(1) + ' hrs';
+            
+            // Update goal displays with user's actual preferences
+            document.getElementById('weeklyGoalDisplay').textContent = data.weekly_goal;
+            document.getElementById('monthlyGoalDisplay').textContent = data.monthly_goal;
         }
     })
     .catch(error => {
@@ -1233,6 +1251,7 @@ document.getElementById('todayBtn').addEventListener('click', () => {
 // Load 7-day statistics and setup auto-save on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadSevenDayStats();
+    updateWorkHourProgress(); // Load user's actual work hour preferences
     setupAutoSave();
     setupConflictDetection();
 });
