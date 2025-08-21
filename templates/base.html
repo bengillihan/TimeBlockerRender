@@ -67,6 +67,14 @@
                                     <i class="fas fa-clock"></i> Time Preferences
                                 </a>
                             </li>
+                            {% if current_user.is_admin %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="fas fa-shield-alt text-warning"></i> Admin Dashboard
+                                </a>
+                            </li>
+                            {% endif %}
                             <!-- Navigation links menu item removed -->
                             <li><hr class="dropdown-divider"></li>
                             <li>

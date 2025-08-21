@@ -27,6 +27,9 @@ class User(UserMixin, db.Model):
     weekly_work_goal = db.Column(db.Float, default=32.0)  # Weekly work hour goal
     monthly_work_goal = db.Column(db.Float, default=140.0)  # Monthly work hour goal
     
+    # Admin privileges
+    is_admin = db.Column(db.Boolean, default=False, index=True)  # Admin flag
+    
     def generate_new_session(self):
         """Generate a new session ID and invalidate old sessions"""
         self.current_session_id = secrets.token_urlsafe(32)

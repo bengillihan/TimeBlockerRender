@@ -2117,6 +2117,136 @@ def get_priority_suggestions():
         'suggestions': suggestions[:10]  # Top 10 suggestions
     })
 
+# Admin functionality
+def admin_required(f):
+    """Decorator to require admin privileges."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if not current_user.is_admin:
+            flash('Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/admin')
+@login_required 
+@admin_required
+def admin_dashboard():
+    """Admin dashboard for managing all todos."""
+    try:
+        # Get all todos from all users with user information
+        todos = db.session.query(ToDo).join(User).order_by(ToDo.created_at.desc()).all()
+        
+        # Get all users for reference
+        users = db.session.query(User).all()
+        
+        # Get all roles for reference
+        all_roles = db.session.query(Role).all()
+        
+        # Get stats
+        total_todos = len(todos)
+        completed_todos = len([t for t in todos if t.status == 'completed'])
+        pending_todos = total_todos - completed_todos
+        recurring_todos = len([t for t in todos if t.is_recurring])
+        
+        stats = {
+            'total_todos': total_todos,
+            'completed_todos': completed_todos,
+            'pending_todos': pending_todos,
+            'recurring_todos': recurring_todos
+        }
+        
+        return render_template('admin_dashboard.html', 
+                             todos=todos, 
+                             users=users,
+                             all_roles=all_roles,
+                             stats=stats)
+                             
+    except Exception as e:
+        logger.error(f"Error loading admin dashboard: {str(e)}")
+        flash('Error loading admin dashboard', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/admin/todos/<int:todo_id>', methods=['PUT'])
+@login_required
+@admin_required 
+def admin_update_todo(todo_id):
+    """Admin update todo - can edit any user's todo."""
+    todo = db.session.query(ToDo).filter(ToDo.id == todo_id).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    data = request.get_json()
+    
+    try:
+        # Update fields
+        if 'title' in data:
+            todo.title = data['title']
+        if 'description' in data:
+            todo.description = data['description']
+        if 'status' in data:
+            todo.status = data['status']
+        if 'due_date' in data:
+            if data['due_date']:
+                todo.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            else:
+                todo.due_date = None
+        if 'priority' in data:
+            todo.priority = data['priority']
+        if 'role_id' in data:
+            todo.role_id = data['role_id']
+        if 'is_recurring' in data:
+            todo.is_recurring = data['is_recurring']
+        if 'recurrence_rule' in data:
+            todo.recurrence_rule = data['recurrence_rule']
+        
+        todo.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Admin error updating todo {todo_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to update todo'
+        }), 500
+
+@app.route('/api/admin/todos/<int:todo_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def admin_delete_todo(todo_id):
+    """Admin delete todo - can delete any user's todo."""
+    todo = db.session.query(ToDo).filter(ToDo.id == todo_id).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    try:
+        db.session.delete(todo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Admin error deleting todo {todo_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to delete todo'
+        }), 500
+
 @app.route('/api/work-hour-settings', methods=['POST'])
 @login_required
 def update_work_hour_settings():
