@@ -1407,6 +1407,35 @@ def get_todos():
     
     return jsonify({'todos': todo_list})
 
+@app.route('/api/todos/<int:todo_id>', methods=['GET'])
+@login_required
+def get_todo(todo_id):
+    """Get a specific todo by ID."""
+    todo = db.session.query(ToDo).filter(
+        ToDo.id == todo_id,
+        ToDo.user_id == current_user.id
+    ).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    todo_data = {
+        'id': todo.id,
+        'title': todo.title,
+        'description': todo.description,
+        'priority': todo.priority,
+        'status': todo.status,
+        'due_date': todo.due_date.isoformat() if todo.due_date else None,
+        'is_recurring': todo.is_recurring,
+        'recurrence_rule': todo.recurrence_rule,
+        'role_id': todo.role_id,
+        'role_name': todo.assigned_role.name if todo.assigned_role else None,
+        'is_overdue': todo.is_overdue(),
+        'created_at': todo.created_at.isoformat()
+    }
+    
+    return jsonify({'success': True, 'todo': todo_data})
+
 @app.route('/api/todos', methods=['POST'])
 @login_required
 def create_todo():
@@ -1519,6 +1548,121 @@ def calculate_next_due_date(current_due_date, recurrence_rule):
     except Exception as e:
         logger.error(f"Error parsing recurrence rule '{recurrence_rule}': {e}")
         return None
+
+@app.route('/api/todos/<int:todo_id>', methods=['PUT'])
+@login_required
+def update_todo(todo_id):
+    """Update an existing todo."""
+    todo = db.session.query(ToDo).filter(
+        ToDo.id == todo_id,
+        ToDo.user_id == current_user.id
+    ).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    data = request.get_json()
+    
+    try:
+        # Update fields if provided
+        if 'title' in data:
+            todo.title = data['title']
+        if 'description' in data:
+            todo.description = data['description']
+        if 'due_date' in data:
+            if data['due_date']:
+                todo.due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            else:
+                todo.due_date = None
+        if 'priority' in data:
+            todo.priority = data['priority']
+        if 'role_id' in data:
+            todo.role_id = data['role_id']
+        if 'is_recurring' in data:
+            todo.is_recurring = data['is_recurring']
+        if 'recurrence_rule' in data:
+            todo.recurrence_rule = data['recurrence_rule']
+        
+        todo.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating todo {todo_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to update todo'
+        }), 500
+
+@app.route('/api/todos/<int:todo_id>', methods=['DELETE'])
+@login_required 
+def delete_todo(todo_id):
+    """Delete a todo."""
+    todo = db.session.query(ToDo).filter(
+        ToDo.id == todo_id,
+        ToDo.user_id == current_user.id
+    ).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    try:
+        db.session.delete(todo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Todo deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting todo {todo_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to delete todo'
+        }), 500
+
+@app.route('/api/todos/<int:todo_id>/cancel-recurring', methods=['POST'])
+@login_required
+def cancel_recurring_todo(todo_id):
+    """Cancel recurring todo by setting is_recurring to False."""
+    todo = db.session.query(ToDo).filter(
+        ToDo.id == todo_id,
+        ToDo.user_id == current_user.id
+    ).first()
+    
+    if not todo:
+        return jsonify({'success': False, 'message': 'Todo not found'}), 404
+    
+    if not todo.is_recurring:
+        return jsonify({'success': False, 'message': 'Todo is not recurring'}), 400
+    
+    try:
+        todo.is_recurring = False
+        todo.recurrence_rule = None
+        todo.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Recurring todo cancelled successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error cancelling recurring todo {todo_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to cancel recurring todo'
+        }), 500
 
 @app.route('/api/import-todos', methods=['POST'])
 @login_required
