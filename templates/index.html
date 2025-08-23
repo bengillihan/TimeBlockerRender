@@ -420,21 +420,83 @@
                             {% endfor %}
                         {% endfor %}
                     </div>
+                    
+                    <!-- Extra Time Blocks (for overtime/extra work) -->
+                    {% if current_user.extra_blocks > 0 %}
+                    <div class="time-block-column">
+                        <h6 class="text-muted mb-2">Extra Time <small>(Overtime)</small></h6>
+                        {% for i in range(current_user.extra_blocks) %}
+                            {% set total_minutes = current_user.day_end_time.minute + (i * 15) + 15 %}
+                            {% set hour = current_user.day_end_time.hour + (total_minutes // 60) %}
+                            {% set minute = total_minutes % 60 %}
+                            {% set current_time = '%02d:%02d'|format(hour, minute) %}
+                            {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
+                            <div class="time-block extra-block" data-time="{{ current_time }}">
+                                <div class="time-label">{{ current_time }}</div>
+                                <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
+                                     {% if saved_block and saved_block.task_id %}
+                                     {% set task_category_color = none %}
+                                     {% for category in categories %}
+                                         {% for task in category.tasks %}
+                                             {% if task.id == saved_block.task_id %}
+                                                 {% set task_category_color = category.color %}
+                                             {% endif %}
+                                         {% endfor %}
+                                     {% endfor %}
+                                     style="background-color: {{ task_category_color }}20; border-left: 4px solid {{ task_category_color }};"
+                                     {% endif %}>
+                                    <select class="task-select">
+                                        <option value="">Select a task</option>
+                                        {% for category in categories %}
+                                            <optgroup label="{{ category.name }}" data-category-id="{{ category.id }}" data-color="{{ category.color }}">
+                                                {% for task in category.tasks %}
+                                                    <option value="{{ task.id }}"
+                                                            data-category-color="{{ category.color }}"
+                                                            data-category-name="{{ category.name }}"
+                                                            {% if saved_block and saved_block.task_id == task.id %}selected{% endif %}>
+                                                        {{ task.title }}
+                                                    </option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="text" class="task-notes"
+                                           placeholder="Notes..."
+                                           maxlength="15"
+                                           value="{{ saved_block.notes if saved_block and saved_block.notes else '' }}">
+                                    <div class="task-controls">
+                                        <button type="button" class="btn btn-sm task-control-btn copy-down" title="Copy task to next block">
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Flexible Time Blocks Card in Right Column -->
+        <!-- Time Settings Card in Right Column -->
         <div class="card mt-3">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-clock me-2"></i>Flexible Time Blocks
-                    <small class="text-muted">(Overtime/Extra Work)</small>
+                    <i class="fas fa-cog me-2"></i>Time Settings
                 </h5>
             </div>
             <div class="card-body">
-                <div id="flexibleBlocks" class="flexible-blocks-container">
-                    <!-- 10 permanent flexible blocks will be created automatically -->
+                <div class="mb-3">
+                    <label for="extraBlocks" class="form-label">Extra Time Blocks</label>
+                    <input type="number" class="form-control" id="extraBlocks" 
+                           value="{{ current_user.extra_blocks or 0 }}" min="0" max="20"
+                           onchange="updateExtraBlocks()">
+                    <small class="text-muted">Number of 15-minute blocks to add after {{ current_user.day_end_time.strftime('%I:%M %p') }} for overtime/extra work</small>
+                </div>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-success" onclick="updateExtraBlocks()">
+                        Save Setting
+                    </button>
                 </div>
             </div>
         </div>
@@ -1310,31 +1372,12 @@ async function autoSaveData() {
             order: index
         })).filter(p => p.content.trim());
 
-        // Include ALL time blocks (regular + flexible)
+        // Include all time blocks (now includes extra blocks automatically)
         const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
             const taskSelect = block.querySelector('.task-select');
             const notesInput = block.querySelector('.task-notes');
             const checkbox = block.querySelector('.time-block-checkbox');
             
-            // Handle flexible blocks
-            if (block.classList.contains('flexible-time-block')) {
-                const timeSelect = block.querySelector('.flexible-time-select');
-                if (taskSelect && taskSelect.value && timeSelect && timeSelect.value) {
-                    const blockIndex = [...document.querySelectorAll('.flexible-time-block')].indexOf(block) + 1;
-                    return {
-                        start_time: `0${blockIndex}:00`, // Special time slots: 01:00, 02:00, etc.
-                        end_time: `0${blockIndex}:15`,
-                        task_id: taskSelect.value,
-                        notes: notesInput?.value || '',
-                        completed: false,
-                        is_flexible: true,
-                        duration_minutes: parseInt(timeSelect.value)
-                    };
-                }
-                return null;
-            }
-            
-            // Handle regular blocks
             return {
                 start_time: block.dataset.time,
                 end_time: addMinutes(block.dataset.time, 15),
@@ -1342,7 +1385,7 @@ async function autoSaveData() {
                 notes: notesInput?.value || '',
                 completed: checkbox?.checked || false
             };
-        }).filter(block => block !== null);
+        });
 
         const brainDump = document.getElementById('brainDump').value;
         const ratingInputs = document.querySelectorAll('input[name="rating"]:checked');
@@ -1686,250 +1729,40 @@ document.getElementById('restoreTodayBtn').addEventListener('click', async funct
     }
 });
 
-// Initialize 10 permanent flexible time blocks on page load
-function initializeFlexibleBlocks() {
-    const flexibleContainer = document.getElementById('flexibleBlocks');
+// Function to update extra blocks setting  
+async function updateExtraBlocks() {
+    const extraBlocks = parseInt(document.getElementById('extraBlocks').value) || 0;
     
-    // Create 10 flexible blocks automatically
-    for (let i = 0; i < 10; i++) {
-        const flexBlock = createFlexibleTimeBlock(i + 1);
-        flexibleContainer.appendChild(flexBlock);
-    }
-    
-    // Load existing flexible block data from the server
-    {% if flexible_blocks %}
-    const existingFlexibleBlocks = {{ flexible_blocks | tojson }};
-    console.log('Loading flexible blocks:', existingFlexibleBlocks);
-    loadExistingFlexibleBlocks(existingFlexibleBlocks);
-    {% endif %}
-}
-
-function loadExistingFlexibleBlocks(flexibleBlocksData) {
-    console.log('Processing flexible blocks data:', flexibleBlocksData);
-    
-    flexibleBlocksData.forEach(blockData => {
-        const blockNumber = blockData.block_number;
-        console.log(`Loading block ${blockNumber}:`, blockData);
+    try {
+        const response = await fetch('/api/update-extra-blocks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ extra_blocks: extraBlocks })
+        });
         
-        const flexBlock = document.querySelector(`.flexible-time-block:nth-child(${blockNumber})`);
-        console.log(`Found flex block element:`, flexBlock);
-        
-        if (flexBlock) {
-            const taskSelect = flexBlock.querySelector('.flexible-task-select');
-            const timeSelect = flexBlock.querySelector('.flexible-time-select');
-            const notesInput = flexBlock.querySelector('.task-notes');
-            
-            console.log('Selects found:', { taskSelect: !!taskSelect, timeSelect: !!timeSelect, notesInput: !!notesInput });
-            
-            // Set the task
-            if (taskSelect && blockData.task_id) {
-                console.log(`Setting task to: ${blockData.task_id}`);
-                taskSelect.value = blockData.task_id;
-                updateFlexibleBlockColor(taskSelect);
-                if (notesInput) {
-                    notesInput.style.display = 'inline-block';
-                }
-            }
-            
-            // Set the duration
-            if (timeSelect && blockData.duration_minutes) {
-                console.log(`Setting duration to: ${blockData.duration_minutes}`);
-                timeSelect.value = blockData.duration_minutes;
-            }
-            
-            // Set the notes
-            if (notesInput && blockData.notes) {
-                console.log(`Setting notes to: ${blockData.notes}`);
-                notesInput.value = blockData.notes;
-            }
+        const result = await response.json();
+        if (result.success) {
+            alert('Setting saved! Page will reload to show the updated blocks.');
+            location.reload();
+        } else {
+            alert('Error saving setting: ' + result.message);
         }
-    });
-    
-    // Update totals after loading existing data
-    updateTimeTotals();
+    } catch (error) {
+        console.error('Error updating extra blocks:', error);
+        alert('Failed to save setting');
+    }
 }
 
-// Add event listeners for flexible blocks
-function setupFlexibleBlockListeners() {
-    // Task select changes
-    document.querySelectorAll('.flexible-task-select').forEach(select => {
-        select.addEventListener('change', function() {
-            updateFlexibleBlockColor(this);
-            const notesInput = this.closest('.flexible-time-block').querySelector('.task-notes');
-            if (this.value) {
-                notesInput.style.display = 'inline-block';
-            } else {
-                notesInput.style.display = 'none';
-                notesInput.value = '';
-            }
-            updateTimeTotals();
-            autoSaveData(); // Save changes
-        });
-    });
-    
-    // Time select changes
-    document.querySelectorAll('.flexible-time-select').forEach(select => {
-        select.addEventListener('change', function() {
-            updateTimeTotals();
-            autoSaveData(); // Save changes
-        });
-    });
-    
-    // Notes input changes
-    document.querySelectorAll('.flexible-time-block .task-notes').forEach(input => {
-        input.addEventListener('input', function() {
-            autoSaveData(); // Save changes
-        });
-    });
-}
+
 
 // Call this when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    initializeFlexibleBlocks();
-    // Setup listeners after flexible blocks are created
-    setTimeout(() => {
-        setupFlexibleBlockListeners();
-        document.querySelectorAll('.flexible-time-block .flexible-task-select').forEach(select => {
-            if (select.value) {
-                updateFlexibleBlockColor(select);
-            }
-        });
-        updateTimeTotals();
-    }, 100);
+    updateTimeTotals();
 });
 
-function createFlexibleTimeBlock(blockNumber) {
-    const flexBlock = document.createElement('div');
-    flexBlock.className = 'time-block flexible-time-block d-flex align-items-center mb-2 p-2 border rounded';
-    flexBlock.innerHTML = `
-        <div class="time-label me-3" style="min-width: 60px; font-weight: bold;">
-            OT-${blockNumber}
-        </div>
-        <div class="flex-grow-1 d-flex align-items-center">
-            <select class="form-control task-select flexible-task-select me-2">
-                <option value="">Select Task</option>
-            </select>
-            <select class="form-control flexible-time-select me-2" style="max-width: 100px;">
-                <option value="">Minutes</option>
-                <option value="15">15 min</option>
-                <option value="30">30 min</option>
-                <option value="45">45 min</option>
-                <option value="60">60 min</option>
-            </select>
-            <input type="text" class="form-control task-notes" placeholder="Notes" style="display: none;">
-        </div>
-    `;
-    
-    // Populate task options from existing task selects
-    const taskSelect = flexBlock.querySelector('.flexible-task-select');
-    const timeSelect = flexBlock.querySelector('.flexible-time-select');
-    
-    // Add event listeners immediately when creating block
-    taskSelect.addEventListener('change', function() {
-        console.log('Flexible task changed:', this.value);
-        updateFlexibleBlockColor(this);
-        const notesInput = this.closest('.flexible-time-block').querySelector('.task-notes');
-        if (this.value) {
-            notesInput.style.display = 'inline-block';
-        } else {
-            notesInput.style.display = 'none';
-            notesInput.value = '';
-        }
-        updateTimeTotals();
-        autoSaveData();
-    });
-    
-    timeSelect.addEventListener('change', function() {
-        console.log('Flexible time changed:', this.value);
-        updateTimeTotals();
-        autoSaveData();
-    });
-    const notesInput = flexBlock.querySelector('.task-notes');
-    
-    // Copy options from existing task select with proper data attributes
-    const existingTaskSelect = document.querySelector('.time-block:not(.flexible-time-block) .task-select');
-    if (existingTaskSelect) {
-        // Clone the structure to preserve data attributes
-        taskSelect.innerHTML = existingTaskSelect.innerHTML;
-        
-        // Ensure all optgroups have the correct data attributes
-        taskSelect.querySelectorAll('optgroup').forEach((optgroup, index) => {
-            const originalOptgroup = existingTaskSelect.querySelectorAll('optgroup')[index];
-            if (originalOptgroup) {
-                // Copy data attributes
-                if (originalOptgroup.hasAttribute('data-category-id')) {
-                    optgroup.setAttribute('data-category-id', originalOptgroup.getAttribute('data-category-id'));
-                }
-                if (originalOptgroup.hasAttribute('data-color')) {
-                    optgroup.setAttribute('data-color', originalOptgroup.getAttribute('data-color'));
-                }
-            }
-        });
-    }
-    
-    // Update block color when task is selected
-    taskSelect.addEventListener('change', function() {
-        updateFlexibleBlockColor(this);
-        
-        // Show/hide notes input
-        if (this.value) {
-            notesInput.style.display = 'inline-block';
-        } else {
-            notesInput.style.display = 'none';
-        }
-        
-        // Update totals when task changes
-        updateTimeTotals();
-        autoSaveData();
-    });
-    
-    // Update totals when time duration changes
-    timeSelect.addEventListener('change', function() {
-        updateTimeTotals();
-        autoSaveData();
-    });
-    
-    // Initialize color if task is already selected (on page load)
-    if (taskSelect.value) {
-        updateFlexibleBlockColor(taskSelect);
-        updateTimeTotals();
-    }
-    
-    // Update totals when notes change
-    notesInput.addEventListener('input', function() {
-        autoSaveData();
-    });
-    
-    return flexBlock;
-}
 
-function updateFlexibleBlockColor(selectElement) {
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    const flexBlock = selectElement.closest('.flexible-time-block');
-    
-    if (selectedOption.value) {
-        // Find the category color from the optgroup
-        const categoryOptgroup = selectedOption.closest('optgroup');
-        if (categoryOptgroup) {
-            const categoryColor = categoryOptgroup.getAttribute('data-color');
-            const categoryName = categoryOptgroup.label;
-            
-            // Apply same styling as regular time blocks
-            flexBlock.style.backgroundColor = categoryColor + '20'; // Semi-transparent background
-            flexBlock.style.borderLeft = `4px solid ${categoryColor}`; // Solid border-left
-            flexBlock.classList.add('has-task');
-            flexBlock.title = `Category: ${categoryName}`;
-            flexBlock.style.color = ''; // Reset text color to default
-        }
-    } else {
-        // Reset to default styling
-        flexBlock.style.backgroundColor = '';
-        flexBlock.style.borderLeft = '';
-        flexBlock.classList.remove('has-task');
-        flexBlock.title = '';
-        flexBlock.style.color = '';
-    }
-}
 
 // Function to load 7-day statistics
 async function loadSevenDayStats() {

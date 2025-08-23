@@ -302,53 +302,16 @@ def index():
                         }
                     category_stats[task.category_id]['minutes'] += minutes
 
-        # Add flexible time blocks to category statistics (now part of regular time_blocks)
-        flexible_time_blocks = [b for b in daily_plan.time_blocks if b.is_flexible]
-        for flex_block in flexible_time_blocks:
-            if flex_block.task_id:
-                task = Task.query.get(flex_block.task_id)
-                if task:
-                    # Use the actual duration from flexible block
-                    minutes = flex_block.duration_minutes or 15
-                    total_minutes += minutes
-
-                    # Update category statistics
-                    if task.category_id not in category_stats:
-                        category_stats[task.category_id] = {
-                            'name': task.category.name,
-                            'color': task.category.color,
-                            'minutes': 0,
-                        }
-                    category_stats[task.category_id]['minutes'] += minutes
 
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
 
-    # Load flexible time blocks (now part of regular time_blocks)
-    flexible_blocks = []
-    if daily_plan:
-        # Get flexible blocks (time slots 25:00 onwards)
-        flexible_time_blocks = [b for b in daily_plan.time_blocks if b.is_flexible]
-        for block in flexible_time_blocks:
-            # Extract block number from start_time (01:00 = block 1, 01:15 = block 2, etc.)
-            hour = block.start_time.hour
-            minute = block.start_time.minute
-            block_number = ((hour - 1) * 4) + (minute // 15) + 1
-            
-            flexible_blocks.append({
-                'id': block.id,
-                'task_id': block.task_id,
-                'duration_minutes': block.duration_minutes or 15,
-                'block_number': block_number,
-                'notes': block.notes or ''
-            })
 
     return render_template('index.html', 
                          daily_plan=daily_plan, 
                          date=formatted_date, 
                          categories=categories,
                          time_blocks=time_blocks,
-                         flexible_blocks=flexible_blocks,
                          category_stats=category_stats,
                          total_minutes=total_minutes,
                          priorities=priorities,
@@ -858,6 +821,27 @@ def restore_today_plan():
         logger.error(f"Error restoring today's plan: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to restore plan'}), 500
 
+@app.route('/api/update-extra-blocks', methods=['POST'])
+@login_required
+def update_extra_blocks():
+    """Update user's extra blocks preference"""
+    try:
+        data = request.get_json()
+        extra_blocks = data.get('extra_blocks', 0)
+        
+        # Validate range
+        if not isinstance(extra_blocks, int) or extra_blocks < 0 or extra_blocks > 20:
+            return jsonify({'success': False, 'message': 'Extra blocks must be between 0 and 20'})
+        
+        current_user.extra_blocks = extra_blocks
+        db.session.commit()
+        
+        return jsonify({'success': True, 'extra_blocks': extra_blocks})
+    
+    except Exception as e:
+        logger.error(f"Error updating extra blocks: {str(e)}")
+        return jsonify({'success': False, 'message': 'Failed to update setting'})
+
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
 def save_daily_plan():
@@ -931,9 +915,7 @@ def save_daily_plan():
                     end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
                     task_id=block_data.get('task_id'),
                     completed=block_data.get('completed', False),
-                    notes=block_data.get('notes', '')[:15],  # Ensure notes don't exceed 15 chars
-                    is_flexible=block_data.get('is_flexible', False),
-                    duration_minutes=block_data.get('duration_minutes')
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
                 )
                 db.session.add(time_block)
                 

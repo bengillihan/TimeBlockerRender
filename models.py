@@ -30,6 +30,9 @@ class User(UserMixin, db.Model):
     # Admin privileges
     is_admin = db.Column(db.Boolean, default=False, index=True)  # Admin flag
     
+    # Extra blocks preference for overtime/extra work
+    extra_blocks = db.Column(db.Integer, default=0)  # Number of 15-min blocks to add after end time
+    
     def generate_new_session(self):
         """Generate a new session ID and invalidate old sessions"""
         self.current_session_id = secrets.token_urlsafe(32)
@@ -74,8 +77,6 @@ class TimeBlock(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     completed = db.Column(db.Boolean, default=False)
     notes = db.Column(db.String(15))
-    is_flexible = db.Column(db.Boolean, default=False)
-    duration_minutes = db.Column(db.Integer, nullable=True)  # For flexible blocks
 
 
 class Category(db.Model):
