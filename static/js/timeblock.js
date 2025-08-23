@@ -442,18 +442,30 @@ document.addEventListener('DOMContentLoaded', function () {
                         const categoryName = categoryOptgroup.label;
                         const categoryColor = categoryOptgroup.getAttribute('data-color');
 
-                        // Each block is 15 minutes
-                        const minutes = 15;
-                        totalMinutes += minutes;
-
-                        if (!categoryStats[categoryId]) {
-                            categoryStats[categoryId] = {
-                                name: categoryName,
-                                color: categoryColor,
-                                minutes: 0
-                            };
+                        let minutes = 15; // Default for regular time blocks
+                        
+                        // Check if this is a flexible block with custom time
+                        if (block.classList.contains('flexible-time-block')) {
+                            const timeSelect = block.querySelector('.flexible-time-select');
+                            if (timeSelect && timeSelect.value) {
+                                minutes = parseInt(timeSelect.value);
+                            } else {
+                                minutes = 0; // Don't count if no time is set
+                            }
                         }
-                        categoryStats[categoryId].minutes += minutes;
+                        
+                        if (minutes > 0) {
+                            totalMinutes += minutes;
+
+                            if (!categoryStats[categoryId]) {
+                                categoryStats[categoryId] = {
+                                    name: categoryName,
+                                    color: categoryColor,
+                                    minutes: 0
+                                };
+                            }
+                            categoryStats[categoryId].minutes += minutes;
+                        }
                     }
                 }
             });
@@ -488,7 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 completed: input.classList.contains('completed')
             }));
 
-            const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
+            // Collect regular time blocks
+            const regularTimeBlocks = [...document.querySelectorAll('.time-block:not(.flexible-time-block)')].map(block => {
                 const taskSelect = block.querySelector('.task-select');
                 const taskId = taskSelect.value;
 
@@ -511,6 +524,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 return blockData;
             }).filter(block => block !== null); // Remove only null blocks
 
+            // Collect flexible time blocks
+            const flexibleBlocks = [...document.querySelectorAll('.flexible-time-block')].map((block, index) => {
+                const taskSelect = block.querySelector('.flexible-task-select');
+                const timeSelect = block.querySelector('.flexible-time-select');
+                const notesInput = block.querySelector('.task-notes');
+                
+                if (taskSelect.value && timeSelect.value) {
+                    return {
+                        task_id: taskSelect.value,
+                        duration_minutes: parseInt(timeSelect.value),
+                        notes: notesInput.value || '',
+                        block_number: index + 1
+                    };
+                }
+                return null;
+            }).filter(block => block !== null);
+
+            const timeBlocks = regularTimeBlocks;
+
             const rating = document.querySelector('input[name="rating"]:checked')?.value || 0;
             const brainDump = document.getElementById('brainDump')?.value || '';
             const ptoHours = document.getElementById('ptoHours')?.value || 0;
@@ -523,6 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         date,
                         priorities,
                         time_blocks: timeBlocks,
+                        flexible_blocks: flexibleBlocks,
                         productivity_rating: rating,
                         brain_dump: brainDump,
                         pto_hours: ptoHours

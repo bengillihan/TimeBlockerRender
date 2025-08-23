@@ -1693,35 +1693,29 @@ document.querySelector('.add-flexible-blocks').addEventListener('click', functio
 
 function createFlexibleTimeBlock(blockNumber) {
     const flexBlock = document.createElement('div');
-    flexBlock.className = 'flexible-time-block mb-3 p-3 border rounded';
+    flexBlock.className = 'time-block flexible-time-block d-flex align-items-center mb-2 p-2 border rounded';
     flexBlock.innerHTML = `
-        <div class="row align-items-center">
-            <div class="col-md-1">
-                <strong>#${blockNumber}</strong>
-            </div>
-            <div class="col-md-4">
-                <select class="form-control task-select flexible-task-select">
-                    <option value="">Select Task</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <input type="time" class="form-control flexible-time-input" placeholder="Set time">
-            </div>
-            <div class="col-md-3">
-                <input type="text" class="form-control task-notes" placeholder="Notes" style="display: none;">
-            </div>
-            <div class="col-md-1">
-                <button class="btn btn-sm btn-primary schedule-flexible-block" disabled>
-                    <i class="fas fa-calendar-plus"></i>
-                </button>
-            </div>
+        <div class="time-label me-3" style="min-width: 60px; font-weight: bold;">
+            OT-${blockNumber}
+        </div>
+        <div class="flex-grow-1 d-flex align-items-center">
+            <select class="form-control task-select flexible-task-select me-2">
+                <option value="">Select Task</option>
+            </select>
+            <select class="form-control flexible-time-select me-2" style="max-width: 100px;">
+                <option value="">Minutes</option>
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="45">45 min</option>
+                <option value="60">60 min</option>
+            </select>
+            <input type="text" class="form-control task-notes" placeholder="Notes" style="display: none;">
         </div>
     `;
     
     // Populate task options from existing task selects
     const taskSelect = flexBlock.querySelector('.flexible-task-select');
-    const timeInput = flexBlock.querySelector('.flexible-time-input');
-    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
+    const timeSelect = flexBlock.querySelector('.flexible-time-select');
     const notesInput = flexBlock.querySelector('.task-notes');
     
     // Copy options from existing task select
@@ -1730,27 +1724,31 @@ function createFlexibleTimeBlock(blockNumber) {
         taskSelect.innerHTML = existingTaskSelect.innerHTML;
     }
     
-    // Update block color and enable scheduling when task is selected
+    // Update block color when task is selected
     taskSelect.addEventListener('change', function() {
         updateFlexibleBlockColor(this);
-        checkScheduleReady(flexBlock);
         
         // Show/hide notes input
         if (this.value) {
-            notesInput.style.display = 'block';
+            notesInput.style.display = 'inline-block';
         } else {
             notesInput.style.display = 'none';
         }
+        
+        // Update totals when task changes
+        updateTimeTotals();
+        autoSaveData();
     });
     
-    // Enable scheduling when time is set
-    timeInput.addEventListener('change', function() {
-        checkScheduleReady(flexBlock);
+    // Update totals when time duration changes
+    timeSelect.addEventListener('change', function() {
+        updateTimeTotals();
+        autoSaveData();
     });
     
-    // Schedule the block
-    scheduleBtn.addEventListener('click', function() {
-        scheduleFlexibleBlock(flexBlock);
+    // Update totals when notes change
+    notesInput.addEventListener('input', function() {
+        autoSaveData();
     });
     
     return flexBlock;
@@ -1761,63 +1759,18 @@ function updateFlexibleBlockColor(selectElement) {
     const flexBlock = selectElement.closest('.flexible-time-block');
     
     if (selectedOption.value) {
-        const categoryColor = selectedOption.dataset.categoryColor;
-        flexBlock.style.backgroundColor = categoryColor;
-        flexBlock.style.color = 'white';
-        flexBlock.style.borderColor = categoryColor;
+        // Find the category color from the optgroup
+        const categoryOptgroup = selectedOption.closest('optgroup');
+        if (categoryOptgroup) {
+            const categoryColor = categoryOptgroup.getAttribute('data-color');
+            flexBlock.style.backgroundColor = categoryColor;
+            flexBlock.style.color = 'white';
+            flexBlock.style.borderColor = categoryColor;
+        }
     } else {
         flexBlock.style.backgroundColor = '';
         flexBlock.style.color = '';
         flexBlock.style.borderColor = '';
-    }
-}
-
-function checkScheduleReady(flexBlock) {
-    const taskSelect = flexBlock.querySelector('.flexible-task-select');
-    const timeInput = flexBlock.querySelector('.flexible-time-input');
-    const scheduleBtn = flexBlock.querySelector('.schedule-flexible-block');
-    
-    if (taskSelect.value && timeInput.value) {
-        scheduleBtn.disabled = false;
-    } else {
-        scheduleBtn.disabled = true;
-    }
-}
-
-function scheduleFlexibleBlock(flexBlock) {
-    const taskSelect = flexBlock.querySelector('.flexible-task-select');
-    const timeInput = flexBlock.querySelector('.flexible-time-input');
-    const notesInput = flexBlock.querySelector('.task-notes');
-    
-    const selectedTime = timeInput.value;
-    const taskId = taskSelect.value;
-    const notes = notesInput.value;
-    
-    // Find the corresponding time block in the schedule
-    const timeBlock = document.querySelector(`[data-time="${selectedTime}"]`);
-    
-    if (timeBlock) {
-        const scheduledTaskSelect = timeBlock.querySelector('.task-select');
-        const scheduledNotesInput = timeBlock.querySelector('.task-notes');
-        
-        // Set the task and notes in the scheduled time block
-        scheduledTaskSelect.value = taskId;
-        updateTimeBlockColor(scheduledTaskSelect);
-        
-        if (notes) {
-            scheduledNotesInput.value = notes;
-            scheduledNotesInput.style.display = 'inline-block';
-        }
-        
-        // Remove the flexible block
-        flexBlock.remove();
-        
-        // Auto-save the changes
-        autoSaveData();
-        
-        alert(`Task scheduled for ${selectedTime}`);
-    } else {
-        alert(`Time slot ${selectedTime} not found. You may need to add more time blocks first.`);
     }
 }
 
