@@ -432,7 +432,7 @@
                             {% set current_time = '%02d:%02d'|format(hour, minute) %}
                             {% set saved_block = time_blocks|selectattr('start_time', 'equalto', current_time)|first %}
                             <div class="time-block extra-block" data-time="{{ current_time }}">
-                                <div class="time-label">{{ current_time }}</div>
+                                <div class="time-label">{{ loop.index }}</div>
                                 <div class="time-content {% if saved_block and saved_block.task_id %}has-task{% endif %}"
                                      {% if saved_block and saved_block.task_id %}
                                      {% set task_category_color = none %}
@@ -478,28 +478,6 @@
             </div>
         </div>
 
-        <!-- Time Settings Card in Right Column -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-cog me-2"></i>Time Settings
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="extraBlocks" class="form-label">Extra Time Blocks</label>
-                    <input type="number" class="form-control" id="extraBlocks" 
-                           value="{{ current_user.extra_blocks or 0 }}" min="0" max="20"
-                           onchange="updateExtraBlocks()">
-                    <small class="text-muted">Number of 15-minute blocks to add after {{ current_user.day_end_time.strftime('%I:%M %p') }} for overtime/extra work</small>
-                </div>
-                <div class="mt-2">
-                    <button type="button" class="btn btn-sm btn-success" onclick="updateExtraBlocks()">
-                        Save Setting
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <div class="time-block-controls text-center mt-3">
             <div class="btn-group">
@@ -1729,31 +1707,6 @@ document.getElementById('restoreTodayBtn').addEventListener('click', async funct
     }
 });
 
-// Function to update extra blocks setting  
-async function updateExtraBlocks() {
-    const extraBlocks = parseInt(document.getElementById('extraBlocks').value) || 0;
-    
-    try {
-        const response = await fetch('/api/update-extra-blocks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ extra_blocks: extraBlocks })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            alert('Setting saved! Page will reload to show the updated blocks.');
-            location.reload();
-        } else {
-            alert('Error saving setting: ' + result.message);
-        }
-    } catch (error) {
-        console.error('Error updating extra blocks:', error);
-        alert('Failed to save setting');
-    }
-}
 
 
 

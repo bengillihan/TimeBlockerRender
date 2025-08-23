@@ -821,26 +821,6 @@ def restore_today_plan():
         logger.error(f"Error restoring today's plan: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to restore plan'}), 500
 
-@app.route('/api/update-extra-blocks', methods=['POST'])
-@login_required
-def update_extra_blocks():
-    """Update user's extra blocks preference"""
-    try:
-        data = request.get_json()
-        extra_blocks = data.get('extra_blocks', 0)
-        
-        # Validate range
-        if not isinstance(extra_blocks, int) or extra_blocks < 0 or extra_blocks > 20:
-            return jsonify({'success': False, 'message': 'Extra blocks must be between 0 and 20'})
-        
-        current_user.extra_blocks = extra_blocks
-        db.session.commit()
-        
-        return jsonify({'success': True, 'extra_blocks': extra_blocks})
-    
-    except Exception as e:
-        logger.error(f"Error updating extra blocks: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to update setting'})
 
 @app.route('/api/daily-plan', methods=['POST'])
 @login_required
@@ -1390,6 +1370,12 @@ def update_time_preferences():
             monthly_goal = float(data['monthly_work_goal'])
             if 1 <= monthly_goal <= 744:
                 current_user.monthly_work_goal = monthly_goal
+        
+        # Update extra blocks if provided
+        if 'extra_blocks' in data:
+            extra_blocks = int(data['extra_blocks'])
+            if 0 <= extra_blocks <= 20:
+                current_user.extra_blocks = extra_blocks
         
         db.session.commit()
 

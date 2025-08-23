@@ -72,6 +72,19 @@
                             </div>
                         </div>
                         
+                        <!-- Extra Time Blocks Section -->
+                        <hr class="my-4">
+                        <h4 class="mb-3">Extra Time Blocks</h4>
+                        <div class="mb-3">
+                            <label for="extraBlocks" class="form-label">Number of Extra Blocks</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="extraBlocks" name="extra_blocks" 
+                                       value="{{ current_user.extra_blocks or 0 }}" min="0" max="20" step="1" required>
+                                <span class="input-group-text">blocks</span>
+                            </div>
+                            <small class="text-muted">Add 15-minute blocks for overtime/extra work (0-20 blocks)</small>
+                        </div>
+                        
                         <div class="d-flex justify-content-between align-items-center">
                             <button type="submit" class="btn btn-primary">Save Preferences</button>
                             <span id="savedStatus" class="text-success" style="display: none;">
@@ -96,7 +109,8 @@ document.getElementById('timePreferencesForm').addEventListener('submit', async 
         day_end_time: document.getElementById('dayEndTime').value,
         day_split_time: document.getElementById('daySplitTime').value,
         weekly_work_goal: parseFloat(document.getElementById('weeklyWorkGoal').value),
-        monthly_work_goal: parseFloat(document.getElementById('monthlyWorkGoal').value)
+        monthly_work_goal: parseFloat(document.getElementById('monthlyWorkGoal').value),
+        extra_blocks: parseInt(document.getElementById('extraBlocks').value) || 0
     };
 
     try {
