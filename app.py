@@ -931,7 +931,9 @@ def save_daily_plan():
                     end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
                     task_id=block_data.get('task_id'),
                     completed=block_data.get('completed', False),
-                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                    notes=block_data.get('notes', '')[:15],  # Ensure notes don't exceed 15 chars
+                    is_flexible=block_data.get('is_flexible', False),
+                    duration_minutes=block_data.get('duration_minutes')
                 )
                 db.session.add(time_block)
                 
@@ -945,41 +947,6 @@ def save_daily_plan():
                 logger.error(f"Error processing time block {block_data}: {str(e)}")
                 continue
 
-    # Handle flexible time blocks - only update if explicitly provided with data
-    if data.get('flexible_blocks'):
-        # Delete existing flexible blocks (time slots 01:00 onwards)
-        existing_flexible = [b for b in daily_plan.time_blocks if b.is_flexible]
-        for block in existing_flexible:
-            db.session.delete(block)
-            
-        for block_data in data.get('flexible_blocks', []):
-            try:
-                block_number = block_data.get('block_number', 1)
-                # Use special time slots starting at 01:00 for flexible blocks  
-                start_hour = 1 + ((block_number - 1) // 4)
-                start_minute = ((block_number - 1) % 4) * 15
-                
-                flexible_block = TimeBlock(
-                    daily_plan_id=daily_plan.id,
-                    start_time=datetime.strptime(f"{start_hour:02d}:{start_minute:02d}", '%H:%M').time(),
-                    end_time=datetime.strptime(f"{start_hour:02d}:{start_minute + 15:02d}", '%H:%M').time(),
-                    task_id=block_data.get('task_id'),
-                    completed=False,
-                    notes=block_data.get('notes', '')[:15],
-                    is_flexible=True,
-                    duration_minutes=block_data.get('duration_minutes')
-                )
-                db.session.add(flexible_block)
-                
-                # Update task usage statistics
-                if block_data.get('task_id'):
-                    task = Task.query.get(block_data['task_id'])
-                    if task:
-                        task.usage_count = (task.usage_count or 0) + 1
-                        task.last_used = datetime.utcnow()
-            except (ValueError, KeyError) as e:
-                logger.error(f"Error processing flexible block {block_data}: {str(e)}")
-                continue
 
     try:
         db.session.commit()

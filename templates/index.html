@@ -1310,29 +1310,38 @@ async function autoSaveData() {
             order: index
         })).filter(p => p.content.trim());
 
-        const timeBlocks = [...document.querySelectorAll('.time-block:not(.flexible-time-block)')].map(block => ({
-            start_time: block.dataset.time,
-            end_time: addMinutes(block.dataset.time, 15),
-            task_id: block.querySelector('.task-select').value || null,
-            notes: block.querySelector('.task-notes').value || '',
-            completed: block.querySelector('.time-block-checkbox')?.checked || false
-        }));
-
-        // Add flexible time blocks
-        const flexibleBlocks = [...document.querySelectorAll('.flexible-time-block')].map((block, index) => {
-            const taskSelect = block.querySelector('.flexible-task-select');
-            const timeSelect = block.querySelector('.flexible-time-select');
+        // Include ALL time blocks (regular + flexible)
+        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => {
+            const taskSelect = block.querySelector('.task-select');
             const notesInput = block.querySelector('.task-notes');
+            const checkbox = block.querySelector('.time-block-checkbox');
             
-            if (taskSelect && taskSelect.value && timeSelect && timeSelect.value) {
-                return {
-                    task_id: taskSelect.value,
-                    duration_minutes: parseInt(timeSelect.value),
-                    notes: notesInput?.value || '',
-                    block_number: index + 1
-                };
+            // Handle flexible blocks
+            if (block.classList.contains('flexible-time-block')) {
+                const timeSelect = block.querySelector('.flexible-time-select');
+                if (taskSelect && taskSelect.value && timeSelect && timeSelect.value) {
+                    const blockIndex = [...document.querySelectorAll('.flexible-time-block')].indexOf(block) + 1;
+                    return {
+                        start_time: `0${blockIndex}:00`, // Special time slots: 01:00, 02:00, etc.
+                        end_time: `0${blockIndex}:15`,
+                        task_id: taskSelect.value,
+                        notes: notesInput?.value || '',
+                        completed: false,
+                        is_flexible: true,
+                        duration_minutes: parseInt(timeSelect.value)
+                    };
+                }
+                return null;
             }
-            return null;
+            
+            // Handle regular blocks
+            return {
+                start_time: block.dataset.time,
+                end_time: addMinutes(block.dataset.time, 15),
+                task_id: taskSelect?.value || null,
+                notes: notesInput?.value || '',
+                completed: checkbox?.checked || false
+            };
         }).filter(block => block !== null);
 
         const brainDump = document.getElementById('brainDump').value;
@@ -1348,7 +1357,6 @@ async function autoSaveData() {
                 date: date,
                 priorities: priorities,
                 time_blocks: timeBlocks,
-                flexible_blocks: flexibleBlocks,
                 brain_dump: brainDump,
                 productivity_rating: productivityRating,
                 last_update_check: lastUpdateCheck,
