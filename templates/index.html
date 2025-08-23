@@ -1765,9 +1765,9 @@ function setupFlexibleBlockListeners() {
 // Call this when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeFlexibleBlocks();
-    setupFlexibleBlockListeners();
-    // Load any existing flexible block data and update colors/totals
+    // Setup listeners after flexible blocks are created
     setTimeout(() => {
+        setupFlexibleBlockListeners();
         document.querySelectorAll('.flexible-time-block .flexible-task-select').forEach(select => {
             if (select.value) {
                 updateFlexibleBlockColor(select);
@@ -1802,6 +1802,27 @@ function createFlexibleTimeBlock(blockNumber) {
     // Populate task options from existing task selects
     const taskSelect = flexBlock.querySelector('.flexible-task-select');
     const timeSelect = flexBlock.querySelector('.flexible-time-select');
+    
+    // Add event listeners immediately when creating block
+    taskSelect.addEventListener('change', function() {
+        console.log('Flexible task changed:', this.value);
+        updateFlexibleBlockColor(this);
+        const notesInput = this.closest('.flexible-time-block').querySelector('.task-notes');
+        if (this.value) {
+            notesInput.style.display = 'inline-block';
+        } else {
+            notesInput.style.display = 'none';
+            notesInput.value = '';
+        }
+        updateTimeTotals();
+        autoSaveData();
+    });
+    
+    timeSelect.addEventListener('change', function() {
+        console.log('Flexible time changed:', this.value);
+        updateTimeTotals();
+        autoSaveData();
+    });
     const notesInput = flexBlock.querySelector('.task-notes');
     
     // Copy options from existing task select with proper data attributes
