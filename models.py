@@ -58,7 +58,6 @@ class DailyPlan(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     priorities = db.relationship('Priority', backref='daily_plan', lazy=True)
     time_blocks = db.relationship('TimeBlock', backref='daily_plan', lazy=True)
-    flexible_blocks = db.relationship('FlexibleTimeBlock', backref='daily_plan', lazy=True)
 
 class Priority(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,15 +74,9 @@ class TimeBlock(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
     completed = db.Column(db.Boolean, default=False)
     notes = db.Column(db.String(15))
+    is_flexible = db.Column(db.Boolean, default=False)
+    duration_minutes = db.Column(db.Integer, nullable=True)  # For flexible blocks
 
-class FlexibleTimeBlock(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    daily_plan_id = db.Column(db.Integer, db.ForeignKey('daily_plan.id'), nullable=False)
-    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
-    duration_minutes = db.Column(db.Integer, nullable=False)
-    block_number = db.Column(db.Integer, nullable=False)
-    notes = db.Column(db.String(15))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)

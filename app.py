@@ -302,15 +302,14 @@ def index():
                         }
                     category_stats[task.category_id]['minutes'] += minutes
 
-        # Add flexible time blocks to category statistics
-        from models import FlexibleTimeBlock
-        flexible_blocks_for_stats = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).all()
-        for flex_block in flexible_blocks_for_stats:
+        # Add flexible time blocks to category statistics (now part of regular time_blocks)
+        flexible_time_blocks = [b for b in daily_plan.time_blocks if b.is_flexible]
+        for flex_block in flexible_time_blocks:
             if flex_block.task_id:
                 task = Task.query.get(flex_block.task_id)
                 if task:
                     # Use the actual duration from flexible block
-                    minutes = flex_block.duration_minutes
+                    minutes = flex_block.duration_minutes or 15
                     total_minutes += minutes
 
                     # Update category statistics
@@ -325,19 +324,22 @@ def index():
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
 
-    # Load flexible time blocks
+    # Load flexible time blocks (now part of regular time_blocks)
     flexible_blocks = []
     if daily_plan:
-        from models import FlexibleTimeBlock
-        flexible_blocks_query = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).order_by(FlexibleTimeBlock.block_number).all()
-        # Convert to dictionaries for JSON serialization
-        flexible_blocks = []
-        for block in flexible_blocks_query:
+        # Get flexible blocks (time slots 25:00 onwards)
+        flexible_time_blocks = [b for b in daily_plan.time_blocks if b.is_flexible]
+        for block in flexible_time_blocks:
+            # Extract block number from start_time (01:00 = block 1, 01:15 = block 2, etc.)
+            hour = block.start_time.hour
+            minute = block.start_time.minute
+            block_number = ((hour - 1) * 4) + (minute // 15) + 1
+            
             flexible_blocks.append({
                 'id': block.id,
                 'task_id': block.task_id,
-                'duration_minutes': block.duration_minutes,
-                'block_number': block.block_number,
+                'duration_minutes': block.duration_minutes or 15,
+                'block_number': block_number,
                 'notes': block.notes or ''
             })
 
@@ -945,16 +947,27 @@ def save_daily_plan():
 
     # Handle flexible time blocks - only update if explicitly provided with data
     if data.get('flexible_blocks'):
-        from models import FlexibleTimeBlock
-        FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        # Delete existing flexible blocks (time slots 01:00 onwards)
+        existing_flexible = [b for b in daily_plan.time_blocks if b.is_flexible]
+        for block in existing_flexible:
+            db.session.delete(block)
+            
         for block_data in data.get('flexible_blocks', []):
             try:
-                flexible_block = FlexibleTimeBlock(
+                block_number = block_data.get('block_number', 1)
+                # Use special time slots starting at 01:00 for flexible blocks  
+                start_hour = 1 + ((block_number - 1) // 4)
+                start_minute = ((block_number - 1) % 4) * 15
+                
+                flexible_block = TimeBlock(
                     daily_plan_id=daily_plan.id,
+                    start_time=datetime.strptime(f"{start_hour:02d}:{start_minute:02d}", '%H:%M').time(),
+                    end_time=datetime.strptime(f"{start_hour:02d}:{start_minute + 15:02d}", '%H:%M').time(),
                     task_id=block_data.get('task_id'),
-                    duration_minutes=block_data.get('duration_minutes'),
-                    block_number=block_data.get('block_number'),
-                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                    completed=False,
+                    notes=block_data.get('notes', '')[:15],
+                    is_flexible=True,
+                    duration_minutes=block_data.get('duration_minutes')
                 )
                 db.session.add(flexible_block)
                 
