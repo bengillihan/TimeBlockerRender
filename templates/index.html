@@ -1748,14 +1748,22 @@ function updateFlexibleBlockColor(selectElement) {
         const categoryOptgroup = selectedOption.closest('optgroup');
         if (categoryOptgroup) {
             const categoryColor = categoryOptgroup.getAttribute('data-color');
-            flexBlock.style.backgroundColor = categoryColor;
-            flexBlock.style.color = 'white';
-            flexBlock.style.borderColor = categoryColor;
+            const categoryName = categoryOptgroup.label;
+            
+            // Apply same styling as regular time blocks
+            flexBlock.style.backgroundColor = categoryColor + '20'; // Semi-transparent background
+            flexBlock.style.borderLeft = `4px solid ${categoryColor}`; // Solid border-left
+            flexBlock.classList.add('has-task');
+            flexBlock.title = `Category: ${categoryName}`;
+            flexBlock.style.color = ''; // Reset text color to default
         }
     } else {
+        // Reset to default styling
         flexBlock.style.backgroundColor = '';
+        flexBlock.style.borderLeft = '';
+        flexBlock.classList.remove('has-task');
+        flexBlock.title = '';
         flexBlock.style.color = '';
-        flexBlock.style.borderColor = '';
     }
 }
 
