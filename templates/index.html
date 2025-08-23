@@ -1728,9 +1728,44 @@ function loadExistingFlexibleBlocks(flexibleBlocksData) {
     updateTimeTotals();
 }
 
+// Add event listeners for flexible blocks
+function setupFlexibleBlockListeners() {
+    // Task select changes
+    document.querySelectorAll('.flexible-task-select').forEach(select => {
+        select.addEventListener('change', function() {
+            updateFlexibleBlockColor(this);
+            const notesInput = this.closest('.flexible-time-block').querySelector('.task-notes');
+            if (this.value) {
+                notesInput.style.display = 'inline-block';
+            } else {
+                notesInput.style.display = 'none';
+                notesInput.value = '';
+            }
+            updateTimeTotals();
+            autoSaveData(); // Save changes
+        });
+    });
+    
+    // Time select changes
+    document.querySelectorAll('.flexible-time-select').forEach(select => {
+        select.addEventListener('change', function() {
+            updateTimeTotals();
+            autoSaveData(); // Save changes
+        });
+    });
+    
+    // Notes input changes
+    document.querySelectorAll('.flexible-time-block .task-notes').forEach(input => {
+        input.addEventListener('input', function() {
+            autoSaveData(); // Save changes
+        });
+    });
+}
+
 // Call this when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeFlexibleBlocks();
+    setupFlexibleBlockListeners();
     // Load any existing flexible block data and update colors/totals
     setTimeout(() => {
         document.querySelectorAll('.flexible-time-block .flexible-task-select').forEach(select => {
