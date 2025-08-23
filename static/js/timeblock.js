@@ -428,67 +428,107 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Update the updateTimeTotals function with correct category tracking
         function updateTimeTotals() {
-            const timeBlocks = document.querySelectorAll('.time-block');
             const categoryStats = {};
             let totalMinutes = 0;
 
-            timeBlocks.forEach(block => {
+            // Process regular time blocks
+            const regularTimeBlocks = document.querySelectorAll('.time-block:not(.flexible-time-block)');
+            regularTimeBlocks.forEach(block => {
                 const select = block.querySelector('.task-select');
-                if (select.value && select.value !== 'new') {
+                if (select && select.value && select.value !== 'new') {
                     const selectedOption = select.options[select.selectedIndex];
                     const categoryOptgroup = selectedOption.closest('optgroup');
                     if (categoryOptgroup) {
-                        const categoryId = categoryOptgroup.getAttribute('data-category-id');
                         const categoryName = categoryOptgroup.label;
                         const categoryColor = categoryOptgroup.getAttribute('data-color');
-
-                        let minutes = 15; // Default for regular time blocks
+                        const minutes = 15; // Regular blocks are always 15 minutes
                         
-                        // Check if this is a flexible block with custom time
-                        if (block.classList.contains('flexible-time-block')) {
-                            const timeSelect = block.querySelector('.flexible-time-select');
-                            if (timeSelect && timeSelect.value) {
-                                minutes = parseInt(timeSelect.value);
-                            } else {
-                                minutes = 0; // Don't count if no time is set
-                            }
-                        }
-                        
-                        if (minutes > 0) {
-                            totalMinutes += minutes;
+                        totalMinutes += minutes;
 
-                            if (!categoryStats[categoryId]) {
-                                categoryStats[categoryId] = {
-                                    name: categoryName,
-                                    color: categoryColor,
-                                    minutes: 0
-                                };
-                            }
-                            categoryStats[categoryId].minutes += minutes;
+                        if (!categoryStats[categoryName]) {
+                            categoryStats[categoryName] = {
+                                name: categoryName,
+                                color: categoryColor,
+                                minutes: 0
+                            };
                         }
+                        categoryStats[categoryName].minutes += minutes;
                     }
                 }
             });
 
-            // Update the stats display
-            const statsContainer = document.querySelector('.card-body');
-            if (statsContainer) {
-                // Update total time if it exists
-                const totalTimeElement = statsContainer.querySelector('.mb-0');
-                if (totalTimeElement) {
-                    totalTimeElement.textContent = `${(totalMinutes / 60).toFixed(1)} hrs`;
-                }
+            // Process flexible time blocks
+            const flexibleTimeBlocks = document.querySelectorAll('.flexible-time-block');
+            flexibleTimeBlocks.forEach(block => {
+                const taskSelect = block.querySelector('.flexible-task-select');
+                const timeSelect = block.querySelector('.flexible-time-select');
+                
+                if (taskSelect && taskSelect.value && timeSelect && timeSelect.value) {
+                    const selectedOption = taskSelect.options[taskSelect.selectedIndex];
+                    const categoryOptgroup = selectedOption.closest('optgroup');
+                    if (categoryOptgroup) {
+                        const categoryName = categoryOptgroup.label;
+                        const categoryColor = categoryOptgroup.getAttribute('data-color');
+                        const minutes = parseInt(timeSelect.value);
+                        
+                        totalMinutes += minutes;
 
-                // Update individual category stats
-                Object.values(categoryStats).forEach(stat => {
-                    const categoryElement = statsContainer.querySelector(`[style*="color: ${stat.color}"]`);
-                    if (categoryElement) {
-                        const timeElement = categoryElement.closest('.mb-3').querySelector('small:last-child');
-                        if (timeElement) {
-                            timeElement.textContent = `${(stat.minutes / 60).toFixed(1)} hrs`;
+                        if (!categoryStats[categoryName]) {
+                            categoryStats[categoryName] = {
+                                name: categoryName,
+                                color: categoryColor,
+                                minutes: 0
+                            };
                         }
+                        categoryStats[categoryName].minutes += minutes;
                     }
-                });
+                }
+            });
+
+            // Update the statistics display
+            updateStatisticsDisplay(categoryStats, totalMinutes);
+        }
+
+        // Function to update the statistics display
+        function updateStatisticsDisplay(categoryStats, totalMinutes) {
+            const statsBody = document.querySelector('.card:first-child .card-body');
+            if (!statsBody) return;
+            
+            // Update total daily hours if element exists
+            const totalElement = statsBody.querySelector('.border-bottom .h6:last-child');
+            if (totalElement) {
+                totalElement.textContent = `${(totalMinutes / 60).toFixed(1)} hrs`;
+            }
+            
+            // Clear existing category stats (keep the tracking sections)
+            const existingStats = statsBody.querySelectorAll('.mb-3:not(.pb-2):not(:has(.progress))');
+            existingStats.forEach(stat => stat.remove());
+            
+            // Add updated category stats
+            Object.values(categoryStats).forEach(stat => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-3';
+                categoryDiv.innerHTML = `
+                    <h6 class="mb-2" style="color: ${stat.color}">
+                        <i class="fas fa-square me-1" style="color: ${stat.color}"></i>
+                        ${stat.name}
+                    </h6>
+                    <div class="ps-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small>Total Time</small>
+                            <small>${(stat.minutes / 60).toFixed(1)} hrs</small>
+                        </div>
+                    </div>
+                `;
+                statsBody.appendChild(categoryDiv);
+            });
+            
+            // Show message if no time blocks assigned
+            if (totalMinutes === 0) {
+                const noDataDiv = document.createElement('div');
+                noDataDiv.className = 'text-muted text-center py-3';
+                noDataDiv.innerHTML = '<small>No time blocks assigned yet</small>';
+                statsBody.appendChild(noDataDiv);
             }
         }
 
