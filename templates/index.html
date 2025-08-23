@@ -428,9 +428,6 @@
 
 <div class="time-block-controls text-center mt-3">
     <div class="btn-group">
-        <button type="button" class="btn btn-outline-success btn-sm add-flexible-blocks">
-            <i class="fas fa-clock"></i> Add 10 Flexible Blocks
-        </button>
         <button type="button" class="btn btn-outline-secondary btn-sm add-later-blocks">
             <i class="fas fa-plus"></i> Add Later Blocks
         </button>
@@ -452,10 +449,7 @@
             </div>
             <div class="card-body">
                 <div id="flexibleBlocks" class="flexible-blocks-container">
-                    <!-- Flexible blocks will be added here -->
-                </div>
-                <div class="text-muted text-center py-3" id="flexibleBlocksPlaceholder">
-                    <i class="fas fa-info-circle"></i> Click "Add 10 Flexible Blocks" to create unscheduled task blocks
+                    <!-- 10 permanent flexible blocks will be created automatically -->
                 </div>
             </div>
         </div>
@@ -1670,25 +1664,20 @@ document.getElementById('restoreTodayBtn').addEventListener('click', async funct
     }
 });
 
-// Flexible time blocks functionality
-document.querySelector('.add-flexible-blocks').addEventListener('click', function() {
+// Initialize 10 permanent flexible time blocks on page load
+function initializeFlexibleBlocks() {
     const flexibleContainer = document.getElementById('flexibleBlocks');
-    const placeholder = document.getElementById('flexibleBlocksPlaceholder');
     
-    // Hide placeholder
-    placeholder.style.display = 'none';
-    
-    // Add 10 flexible blocks
+    // Create 10 flexible blocks automatically
     for (let i = 0; i < 10; i++) {
         const flexBlock = createFlexibleTimeBlock(i + 1);
         flexibleContainer.appendChild(flexBlock);
     }
-    
-    // Update button text and disable
-    this.innerHTML = '<i class="fas fa-check"></i> 10 Flexible Blocks Added';
-    this.disabled = true;
-    this.classList.remove('btn-outline-success');
-    this.classList.add('btn-success');
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFlexibleBlocks();
 });
 
 function createFlexibleTimeBlock(blockNumber) {
