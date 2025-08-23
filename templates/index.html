@@ -341,7 +341,7 @@
                                         <select class="task-select">
                                             <option value="">Select a task</option>
                                             {% for category in categories %}
-                                                <optgroup label="{{ category.name }}">
+                                                <optgroup label="{{ category.name }}" data-category-id="{{ category.id }}" data-color="{{ category.color }}">
                                                     {% for task in category.tasks %}
                                                         <option value="{{ task.id }}"
                                                                 data-category-color="{{ category.color }}"
@@ -393,7 +393,7 @@
                                             <select class="task-select">
                                                 <option value="">Select a task</option>
                                                 {% for category in categories %}
-                                                    <optgroup label="{{ category.name }}">
+                                                    <optgroup label="{{ category.name }}" data-category-id="{{ category.id }}" data-color="{{ category.color }}">
                                                         {% for task in category.tasks %}
                                                             <option value="{{ task.id }}"
                                                                     data-category-color="{{ category.color }}"
@@ -1674,6 +1674,15 @@ function initializeFlexibleBlocks() {
 // Call this when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     initializeFlexibleBlocks();
+    // Load any existing flexible block data and update colors/totals
+    setTimeout(() => {
+        document.querySelectorAll('.flexible-time-block .flexible-task-select').forEach(select => {
+            if (select.value) {
+                updateFlexibleBlockColor(select);
+            }
+        });
+        updateTimeTotals();
+    }, 100);
 });
 
 function createFlexibleTimeBlock(blockNumber) {
@@ -1703,10 +1712,25 @@ function createFlexibleTimeBlock(blockNumber) {
     const timeSelect = flexBlock.querySelector('.flexible-time-select');
     const notesInput = flexBlock.querySelector('.task-notes');
     
-    // Copy options from existing task select
-    const existingTaskSelect = document.querySelector('.time-block .task-select');
+    // Copy options from existing task select with proper data attributes
+    const existingTaskSelect = document.querySelector('.time-block:not(.flexible-time-block) .task-select');
     if (existingTaskSelect) {
+        // Clone the structure to preserve data attributes
         taskSelect.innerHTML = existingTaskSelect.innerHTML;
+        
+        // Ensure all optgroups have the correct data attributes
+        taskSelect.querySelectorAll('optgroup').forEach((optgroup, index) => {
+            const originalOptgroup = existingTaskSelect.querySelectorAll('optgroup')[index];
+            if (originalOptgroup) {
+                // Copy data attributes
+                if (originalOptgroup.hasAttribute('data-category-id')) {
+                    optgroup.setAttribute('data-category-id', originalOptgroup.getAttribute('data-category-id'));
+                }
+                if (originalOptgroup.hasAttribute('data-color')) {
+                    optgroup.setAttribute('data-color', originalOptgroup.getAttribute('data-color'));
+                }
+            }
+        });
     }
     
     // Update block color when task is selected
@@ -1730,6 +1754,12 @@ function createFlexibleTimeBlock(blockNumber) {
         updateTimeTotals();
         autoSaveData();
     });
+    
+    // Initialize color if task is already selected (on page load)
+    if (taskSelect.value) {
+        updateFlexibleBlockColor(taskSelect);
+        updateTimeTotals();
+    }
     
     // Update totals when notes change
     notesInput.addEventListener('input', function() {
