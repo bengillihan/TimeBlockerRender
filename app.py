@@ -305,11 +305,18 @@ def index():
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
 
+    # Load flexible time blocks
+    flexible_blocks = []
+    if daily_plan:
+        from models import FlexibleTimeBlock
+        flexible_blocks = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).order_by(FlexibleTimeBlock.block_number).all()
+
     return render_template('index.html', 
                          daily_plan=daily_plan, 
                          date=formatted_date, 
                          categories=categories,
                          time_blocks=time_blocks,
+                         flexible_blocks=flexible_blocks,
                          category_stats=category_stats,
                          total_minutes=total_minutes,
                          priorities=priorities,
@@ -904,6 +911,31 @@ def save_daily_plan():
                         task.last_used = datetime.utcnow()
             except (ValueError, KeyError) as e:
                 logger.error(f"Error processing time block {block_data}: {str(e)}")
+                continue
+
+    # Handle flexible time blocks - only update if explicitly provided with data
+    if data.get('flexible_blocks'):
+        from models import FlexibleTimeBlock
+        FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        for block_data in data.get('flexible_blocks', []):
+            try:
+                flexible_block = FlexibleTimeBlock(
+                    daily_plan_id=daily_plan.id,
+                    task_id=block_data.get('task_id'),
+                    duration_minutes=block_data.get('duration_minutes'),
+                    block_number=block_data.get('block_number'),
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                )
+                db.session.add(flexible_block)
+                
+                # Update task usage statistics
+                if block_data.get('task_id'):
+                    task = Task.query.get(block_data['task_id'])
+                    if task:
+                        task.usage_count = (task.usage_count or 0) + 1
+                        task.last_used = datetime.utcnow()
+            except (ValueError, KeyError) as e:
+                logger.error(f"Error processing flexible block {block_data}: {str(e)}")
                 continue
 
     try:

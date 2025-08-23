@@ -1669,6 +1669,45 @@ function initializeFlexibleBlocks() {
         const flexBlock = createFlexibleTimeBlock(i + 1);
         flexibleContainer.appendChild(flexBlock);
     }
+    
+    // Load existing flexible block data from the server
+    {% if flexible_blocks %}
+    const existingFlexibleBlocks = {{ flexible_blocks | tojson }};
+    loadExistingFlexibleBlocks(existingFlexibleBlocks);
+    {% endif %}
+}
+
+function loadExistingFlexibleBlocks(flexibleBlocksData) {
+    flexibleBlocksData.forEach(blockData => {
+        const blockNumber = blockData.block_number;
+        const flexBlock = document.querySelector(`.flexible-time-block:nth-child(${blockNumber})`);
+        
+        if (flexBlock) {
+            const taskSelect = flexBlock.querySelector('.flexible-task-select');
+            const timeSelect = flexBlock.querySelector('.flexible-time-select');
+            const notesInput = flexBlock.querySelector('.task-notes');
+            
+            // Set the task
+            if (taskSelect && blockData.task_id) {
+                taskSelect.value = blockData.task_id;
+                updateFlexibleBlockColor(taskSelect);
+                notesInput.style.display = 'inline-block';
+            }
+            
+            // Set the duration
+            if (timeSelect && blockData.duration_minutes) {
+                timeSelect.value = blockData.duration_minutes;
+            }
+            
+            // Set the notes
+            if (notesInput && blockData.notes) {
+                notesInput.value = blockData.notes;
+            }
+        }
+    });
+    
+    // Update totals after loading existing data
+    updateTimeTotals();
 }
 
 // Call this when the page loads
