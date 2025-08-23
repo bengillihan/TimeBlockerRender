@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
         // Update the updateTimeTotals function with correct category tracking
-        function updateTimeTotals() {
+        window.updateTimeTotals = function updateTimeTotals() {
             const categoryStats = {};
             let totalMinutes = 0;
 
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Function to update the statistics display
-        function updateStatisticsDisplay(categoryStats, totalMinutes) {
+        window.updateStatisticsDisplay = function updateStatisticsDisplay(categoryStats, totalMinutes) {
             const statsBody = document.querySelector('.card:first-child .card-body');
             if (!statsBody) return;
             
