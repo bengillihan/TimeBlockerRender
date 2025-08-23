@@ -302,6 +302,26 @@ def index():
                         }
                     category_stats[task.category_id]['minutes'] += minutes
 
+        # Add flexible time blocks to category statistics
+        from models import FlexibleTimeBlock
+        flexible_blocks_for_stats = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).all()
+        for flex_block in flexible_blocks_for_stats:
+            if flex_block.task_id:
+                task = Task.query.get(flex_block.task_id)
+                if task:
+                    # Use the actual duration from flexible block
+                    minutes = flex_block.duration_minutes
+                    total_minutes += minutes
+
+                    # Update category statistics
+                    if task.category_id not in category_stats:
+                        category_stats[task.category_id] = {
+                            'name': task.category.name,
+                            'color': task.category.color,
+                            'minutes': 0,
+                        }
+                    category_stats[task.category_id]['minutes'] += minutes
+
     # Format date for display in Pacific time
     formatted_date = date.strftime('%Y-%m-%d')
 
