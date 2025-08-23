@@ -1310,13 +1310,30 @@ async function autoSaveData() {
             order: index
         })).filter(p => p.content.trim());
 
-        const timeBlocks = [...document.querySelectorAll('.time-block')].map(block => ({
+        const timeBlocks = [...document.querySelectorAll('.time-block:not(.flexible-time-block)')].map(block => ({
             start_time: block.dataset.time,
             end_time: addMinutes(block.dataset.time, 15),
             task_id: block.querySelector('.task-select').value || null,
             notes: block.querySelector('.task-notes').value || '',
             completed: block.querySelector('.time-block-checkbox')?.checked || false
         }));
+
+        // Add flexible time blocks
+        const flexibleBlocks = [...document.querySelectorAll('.flexible-time-block')].map((block, index) => {
+            const taskSelect = block.querySelector('.flexible-task-select');
+            const timeSelect = block.querySelector('.flexible-time-select');
+            const notesInput = block.querySelector('.task-notes');
+            
+            if (taskSelect.value && timeSelect.value) {
+                return {
+                    task_id: taskSelect.value,
+                    duration_minutes: parseInt(timeSelect.value),
+                    notes: notesInput.value || '',
+                    block_number: index + 1
+                };
+            }
+            return null;
+        }).filter(block => block !== null);
 
         const brainDump = document.getElementById('brainDump').value;
         const ratingInputs = document.querySelectorAll('input[name="rating"]:checked');
@@ -1331,6 +1348,7 @@ async function autoSaveData() {
                 date: date,
                 priorities: priorities,
                 time_blocks: timeBlocks,
+                flexible_blocks: flexibleBlocks,
                 brain_dump: brainDump,
                 productivity_rating: productivityRating,
                 last_update_check: lastUpdateCheck,

@@ -309,7 +309,17 @@ def index():
     flexible_blocks = []
     if daily_plan:
         from models import FlexibleTimeBlock
-        flexible_blocks = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).order_by(FlexibleTimeBlock.block_number).all()
+        flexible_blocks_query = FlexibleTimeBlock.query.filter_by(daily_plan_id=daily_plan.id).order_by(FlexibleTimeBlock.block_number).all()
+        # Convert to dictionaries for JSON serialization
+        flexible_blocks = []
+        for block in flexible_blocks_query:
+            flexible_blocks.append({
+                'id': block.id,
+                'task_id': block.task_id,
+                'duration_minutes': block.duration_minutes,
+                'block_number': block.block_number,
+                'notes': block.notes or ''
+            })
 
     return render_template('index.html', 
                          daily_plan=daily_plan, 
