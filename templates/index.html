@@ -1324,28 +1324,16 @@ async function autoSaveData() {
             const timeSelect = block.querySelector('.flexible-time-select');
             const notesInput = block.querySelector('.task-notes');
             
-            console.log('Flexible block found:', {
-                index: index,
-                taskValue: taskSelect?.value,
-                timeValue: timeSelect?.value,
-                hasTaskSelect: !!taskSelect,
-                hasTimeSelect: !!timeSelect
-            });
-            
             if (taskSelect && taskSelect.value && timeSelect && timeSelect.value) {
-                const flexBlock = {
+                return {
                     task_id: taskSelect.value,
                     duration_minutes: parseInt(timeSelect.value),
                     notes: notesInput?.value || '',
                     block_number: index + 1
                 };
-                console.log('Including flexible block:', flexBlock);
-                return flexBlock;
             }
             return null;
         }).filter(block => block !== null);
-        
-        console.log('Total flexible blocks to save:', flexibleBlocks.length, flexibleBlocks);
 
         const brainDump = document.getElementById('brainDump').value;
         const ratingInputs = document.querySelectorAll('input[name="rating"]:checked');

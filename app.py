@@ -869,8 +869,8 @@ def save_daily_plan():
         date=date
     ).first()
     
-    # Check for conflicts if plan exists
-    if daily_plan and 'last_update_check' in data:
+    # Check for conflicts if plan exists (but not for auto-save operations)
+    if daily_plan and 'last_update_check' in data and not data.get('auto_save', False):
         last_check = datetime.fromisoformat(data['last_update_check'].replace('Z', '+00:00'))
         # Make both datetimes timezone-aware for comparison
         if daily_plan.updated_at.replace(tzinfo=last_check.tzinfo if last_check.tzinfo else None) > last_check:
