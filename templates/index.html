@@ -96,10 +96,38 @@
                 </div>
                 {% endif %}
                 
+                <!-- Work Week Tracking (Mon-Sun) -->
+                <div id="workWeekTracking" class="mb-3 pb-2 border-bottom">
+                    <h6 class="mb-2 text-success">
+                        <i class="fas fa-briefcase me-1"></i>Work Week <small class="text-muted" id="workWeekDates">(Mon-Sun)</small>
+                    </h6>
+                    <div class="ps-3" id="workWeekStats">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="workWeekWorkColor"></i>Work</small>
+                            <small id="workWeekWork" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="workWeekConsultingColor"></i>Consulting</small>
+                            <small id="workWeekConsulting" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="workWeekChurchColor"></i>Church</small>
+                            <small id="workWeekChurch" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="workWeekPersonalColor"></i>Personal</small>
+                            <small id="workWeekPersonal" class="fw-bold">Loading...</small>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- 7-Day Tracking Section -->
                 <div id="sevenDayTracking" class="mb-3 pb-2 border-bottom">
                     <h6 class="mb-2 text-info">
                         <i class="fas fa-calendar-week me-1"></i>7-Day Tracking
+                        <button class="btn btn-sm btn-link p-0 text-muted float-end" onclick="showWorkHourSettings()" style="font-size: 0.75rem;">
+                            <i class="fas fa-cog"></i>
+                        </button>
                     </h6>
                     <div class="ps-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -107,40 +135,61 @@
                             <small id="sevenDayTotal" class="fw-bold">Loading...</small>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small>Work Hours</small>
-                            <small id="sevenDayWork" class="fw-bold text-primary">Loading...</small>
+                            <small><i class="fas fa-square me-1" id="sevenDayWorkColor"></i>Work</small>
+                            <small id="sevenDayWork" class="fw-bold">Loading...</small>
                         </div>
-                        <div class="progress mt-1" style="height: 8px;">
-                            <div id="workProgressBar" class="progress-bar bg-primary" role="progressbar" 
+                        <div class="progress mt-1 mb-2" style="height: 6px;">
+                            <div id="workProgressBar" class="progress-bar" role="progressbar" 
                                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="32">
                             </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="text-muted">Goal: <span id="weeklyGoalDisplay">32</span> hours/week</small>
-                            <button class="btn btn-sm btn-link p-0 text-muted" onclick="showWorkHourSettings()" style="font-size: 0.75rem;">
-                                <i class="fas fa-cog"></i>
-                            </button>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="sevenDayConsultingColor"></i>Consulting</small>
+                            <small id="sevenDayConsulting" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="sevenDayChurchColor"></i>Church</small>
+                            <small id="sevenDayChurch" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="sevenDayPersonalColor"></i>Personal</small>
+                            <small id="sevenDayPersonal" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="text-muted mt-2">
+                            <small>Work Goal: <span id="weeklyGoalDisplay">32</span> hrs/week</small>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 30-Day Work Hours Section -->
+                <!-- 30-Day Tracking Section -->
                 <div id="thirtyDayTracking" class="mb-3 pb-2 border-bottom">
                     <h6 class="mb-2 text-warning">
-                        <i class="fas fa-calendar-alt me-1"></i>30-Day Work Hours
+                        <i class="fas fa-calendar-alt me-1"></i>30-Day Tracking
                     </h6>
                     <div class="ps-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small>Last 30 Days</small>
-                            <small id="thirtyDayWork" class="fw-bold text-warning">Loading...</small>
+                            <small><i class="fas fa-square me-1" id="thirtyDayWorkColor"></i>Work</small>
+                            <small id="thirtyDayWork" class="fw-bold">Loading...</small>
                         </div>
-                        <div class="progress mt-1" style="height: 8px;">
-                            <div id="monthlyWorkProgressBar" class="progress-bar bg-warning" role="progressbar" 
+                        <div class="progress mt-1 mb-2" style="height: 6px;">
+                            <div id="monthlyWorkProgressBar" class="progress-bar" role="progressbar" 
                                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="140">
                             </div>
                         </div>
-                        <div class="text-muted mt-1">
-                            <small>Goal: <span id="monthlyGoalDisplay">140</span> hours/month</small>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="thirtyDayConsultingColor"></i>Consulting</small>
+                            <small id="thirtyDayConsulting" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="thirtyDayChurchColor"></i>Church</small>
+                            <small id="thirtyDayChurch" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><i class="fas fa-square me-1" id="thirtyDayPersonalColor"></i>Personal</small>
+                            <small id="thirtyDayPersonal" class="fw-bold">Loading...</small>
+                        </div>
+                        <div class="text-muted mt-2">
+                            <small>Work Goal: <span id="monthlyGoalDisplay">140</span> hrs/month</small>
                         </div>
                     </div>
                 </div>
@@ -1000,22 +1049,76 @@ function updateWorkHourProgress() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update 7-day progress
-            const weeklyProgress = (data.seven_day_work / data.weekly_goal) * 100;
-            document.getElementById('workProgressBar').style.width = Math.min(weeklyProgress, 100) + '%';
-            document.getElementById('workProgressBar').setAttribute('aria-valuemax', data.weekly_goal);
+            const stats = data.category_stats || {};
+            const categories = ['work', 'consulting', 'church', 'personal'];
             
-            // Update 30-day progress
-            const monthlyProgress = (data.thirty_day_work / data.monthly_goal) * 100;
-            document.getElementById('monthlyWorkProgressBar').style.width = Math.min(monthlyProgress, 100) + '%';
-            document.getElementById('monthlyWorkProgressBar').setAttribute('aria-valuemax', data.monthly_goal);
+            // Update Work Week section with dates
+            if (data.work_week_start && data.work_week_end) {
+                const startDate = new Date(data.work_week_start + 'T00:00:00');
+                const endDate = new Date(data.work_week_end + 'T00:00:00');
+                const dateStr = `(${startDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})} - ${endDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})})`;
+                const workWeekDatesEl = document.getElementById('workWeekDates');
+                if (workWeekDatesEl) workWeekDatesEl.textContent = dateStr;
+            }
             
-            // Update text displays
-            document.getElementById('thirtyDayWork').textContent = data.thirty_day_work.toFixed(1) + ' hrs';
+            // Update each category's stats
+            categories.forEach(cat => {
+                const catStats = stats[cat] || { seven_day: 0, thirty_day: 0, work_week: 0, color: '#6c757d' };
+                const catName = cat.charAt(0).toUpperCase() + cat.slice(1);
+                
+                // Safely get numeric values with defaults
+                const sevenDayVal = (catStats.seven_day !== undefined && catStats.seven_day !== null) ? Number(catStats.seven_day) : 0;
+                const thirtyDayVal = (catStats.thirty_day !== undefined && catStats.thirty_day !== null) ? Number(catStats.thirty_day) : 0;
+                const workWeekVal = (catStats.work_week !== undefined && catStats.work_week !== null) ? Number(catStats.work_week) : 0;
+                const color = catStats.color || '#6c757d';
+                
+                // Work Week stats
+                const workWeekEl = document.getElementById('workWeek' + catName);
+                if (workWeekEl) workWeekEl.textContent = workWeekVal.toFixed(1) + ' hrs';
+                const workWeekColorEl = document.getElementById('workWeek' + catName + 'Color');
+                if (workWeekColorEl) workWeekColorEl.style.color = color;
+                
+                // 7-day stats
+                const sevenDayEl = document.getElementById('sevenDay' + catName);
+                if (sevenDayEl) sevenDayEl.textContent = sevenDayVal.toFixed(1) + ' hrs';
+                const sevenDayColorEl = document.getElementById('sevenDay' + catName + 'Color');
+                if (sevenDayColorEl) sevenDayColorEl.style.color = color;
+                
+                // 30-day stats
+                const thirtyDayEl = document.getElementById('thirtyDay' + catName);
+                if (thirtyDayEl) thirtyDayEl.textContent = thirtyDayVal.toFixed(1) + ' hrs';
+                const thirtyDayColorEl = document.getElementById('thirtyDay' + catName + 'Color');
+                if (thirtyDayColorEl) thirtyDayColorEl.style.color = color;
+            });
+            
+            // Update progress bars for Work category
+            const workStats = stats.work || { seven_day: 0, thirty_day: 0, color: '#007bff' };
+            const sevenDayWork = data.seven_day_work || 0;
+            const thirtyDayWork = data.thirty_day_work || 0;
+            const weeklyGoal = data.weekly_goal || 32;
+            const monthlyGoal = data.monthly_goal || 140;
+            
+            const weeklyProgress = (sevenDayWork / weeklyGoal) * 100;
+            const workProgressBar = document.getElementById('workProgressBar');
+            if (workProgressBar) {
+                workProgressBar.style.width = Math.min(weeklyProgress, 100) + '%';
+                workProgressBar.style.backgroundColor = workStats.color || '#007bff';
+                workProgressBar.setAttribute('aria-valuemax', weeklyGoal);
+            }
+            
+            const monthlyProgress = (thirtyDayWork / monthlyGoal) * 100;
+            const monthlyProgressBar = document.getElementById('monthlyWorkProgressBar');
+            if (monthlyProgressBar) {
+                monthlyProgressBar.style.width = Math.min(monthlyProgress, 100) + '%';
+                monthlyProgressBar.style.backgroundColor = workStats.color || '#007bff';
+                monthlyProgressBar.setAttribute('aria-valuemax', monthlyGoal);
+            }
             
             // Update goal displays with user's actual preferences
-            document.getElementById('weeklyGoalDisplay').textContent = data.weekly_goal;
-            document.getElementById('monthlyGoalDisplay').textContent = data.monthly_goal;
+            const weeklyGoalEl = document.getElementById('weeklyGoalDisplay');
+            if (weeklyGoalEl) weeklyGoalEl.textContent = weeklyGoal;
+            const monthlyGoalEl = document.getElementById('monthlyGoalDisplay');
+            if (monthlyGoalEl) monthlyGoalEl.textContent = monthlyGoal;
         }
     })
     .catch(error => {

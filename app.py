@@ -2286,69 +2286,110 @@ def update_work_hour_settings():
 @app.route('/api/work-hour-stats')
 @login_required
 def get_work_hour_stats():
-    """Get work hour statistics for progress bars"""
+    """Get work hour statistics for progress bars - tracks multiple categories"""
     try:
         from datetime import datetime, timedelta
         
         # Get current date in user's timezone
         end_date = get_current_pacific_date()
         
-        # Calculate 7-day and 30-day periods
+        # Calculate date ranges
         seven_days_ago = end_date - timedelta(days=6)
         thirty_days_ago = end_date - timedelta(days=29)
         
-        # Get Work category
-        work_category = Category.query.filter_by(user_id=current_user.id, name='Work').first()
+        # Calculate work week (Monday to Sunday)
+        # Find the Monday of the current week
+        days_since_monday = end_date.weekday()  # Monday = 0, Sunday = 6
+        work_week_start = end_date - timedelta(days=days_since_monday)
+        work_week_end = end_date
         
-        if not work_category:
-            return jsonify({
-                'success': True,
-                'seven_day_work': 0,
-                'thirty_day_work': 0,
-                'weekly_goal': current_user.weekly_work_goal or 32,
-                'monthly_goal': current_user.monthly_work_goal or 140
-            })
+        # Categories to track (Work, Consulting, Church, Personal)
+        tracked_categories = ['Work', 'Consulting', 'Church', 'Personal']
         
-        # Calculate 7-day work hours (only count blocks with Work category tasks)
-        seven_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date.between(seven_days_ago, end_date),
-            Task.category_id == work_category.id
-        ).all()
+        # Get all user categories
+        user_categories = Category.query.filter_by(user_id=current_user.id).all()
+        category_map = {cat.name: cat for cat in user_categories}
         
-        seven_day_minutes = sum(15 for block in seven_day_blocks)
+        # Initialize stats structure
+        category_stats = {}
         
-        # Add PTO hours for 7-day period
+        for cat_name in tracked_categories:
+            category = category_map.get(cat_name)
+            if category:
+                # Calculate 7-day hours for this category
+                seven_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
+                    DailyPlan.user_id == current_user.id,
+                    DailyPlan.date.between(seven_days_ago, end_date),
+                    Task.category_id == category.id
+                ).all()
+                seven_day_minutes = sum(15 for block in seven_day_blocks)
+                
+                # Calculate 30-day hours for this category
+                thirty_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
+                    DailyPlan.user_id == current_user.id,
+                    DailyPlan.date.between(thirty_days_ago, end_date),
+                    Task.category_id == category.id
+                ).all()
+                thirty_day_minutes = sum(15 for block in thirty_day_blocks)
+                
+                # Calculate work week hours (Monday-Sunday) for this category
+                work_week_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
+                    DailyPlan.user_id == current_user.id,
+                    DailyPlan.date.between(work_week_start, work_week_end),
+                    Task.category_id == category.id
+                ).all()
+                work_week_minutes = sum(15 for block in work_week_blocks)
+                
+                category_stats[cat_name.lower()] = {
+                    'name': cat_name,
+                    'color': category.color,
+                    'seven_day': round(seven_day_minutes / 60, 1),
+                    'thirty_day': round(thirty_day_minutes / 60, 1),
+                    'work_week': round(work_week_minutes / 60, 1)
+                }
+            else:
+                category_stats[cat_name.lower()] = {
+                    'name': cat_name,
+                    'color': '#6c757d',
+                    'seven_day': 0,
+                    'thirty_day': 0,
+                    'work_week': 0
+                }
+        
+        # Add PTO hours to Work category for 7-day and 30-day periods
         seven_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
             DailyPlan.user_id == current_user.id,
             DailyPlan.date.between(seven_days_ago, end_date)
         ).scalar() or 0
         
-        seven_day_work_hours = (seven_day_minutes / 60) + seven_day_pto
-        
-        # Calculate 30-day work hours (only count blocks with Work category tasks)
-        thirty_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date.between(thirty_days_ago, end_date),
-            Task.category_id == work_category.id
-        ).all()
-        
-        thirty_day_minutes = sum(15 for block in thirty_day_blocks)
-        
-        # Add PTO hours for 30-day period
         thirty_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
             DailyPlan.user_id == current_user.id,
             DailyPlan.date.between(thirty_days_ago, end_date)
         ).scalar() or 0
         
-        thirty_day_work_hours = (thirty_day_minutes / 60) + thirty_day_pto
+        work_week_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date.between(work_week_start, work_week_end)
+        ).scalar() or 0
+        
+        # Add PTO to work hours
+        if 'work' in category_stats:
+            category_stats['work']['seven_day'] = round(category_stats['work']['seven_day'] + seven_day_pto, 1)
+            category_stats['work']['thirty_day'] = round(category_stats['work']['thirty_day'] + thirty_day_pto, 1)
+            category_stats['work']['work_week'] = round(category_stats['work']['work_week'] + work_week_pto, 1)
+        
+        # For backward compatibility, also include the old format
+        work_stats = category_stats.get('work', {})
         
         return jsonify({
             'success': True,
-            'seven_day_work': round(seven_day_work_hours, 1),
-            'thirty_day_work': round(thirty_day_work_hours, 1),
+            'seven_day_work': work_stats.get('seven_day', 0),
+            'thirty_day_work': work_stats.get('thirty_day', 0),
             'weekly_goal': current_user.weekly_work_goal or 32,
-            'monthly_goal': current_user.monthly_work_goal or 140
+            'monthly_goal': current_user.monthly_work_goal or 140,
+            'category_stats': category_stats,
+            'work_week_start': work_week_start.strftime('%Y-%m-%d'),
+            'work_week_end': work_week_end.strftime('%Y-%m-%d')
         })
         
     except Exception as e:
