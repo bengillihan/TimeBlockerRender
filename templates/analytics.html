@@ -163,62 +163,6 @@
         </div>
     </div>
 
-    <!-- Todo Management -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="card-title mb-0">Todo Management</h6>
-                    <div>
-                        <button class="btn btn-sm btn-outline-success me-2" onclick="showBatchOperations()">
-                            <i class="fas fa-tasks"></i> Batch Operations
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="showAddTodoModal()">
-                            <i class="fas fa-plus"></i> Add Todo
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for role in all_roles %}
-                        <div class="col-md-4 mb-3">
-                            <div class="border rounded p-3" style="border-color: {{ role.color }}!important;">
-                                <h6 style="color: {{ role.color }}">
-                                    <i class="fas fa-circle me-1" style="color: {{ role.color }}"></i>
-                                    {{ role.name }}
-                                </h6>
-                                <div class="todo-list" id="todo-list-{{ role.id }}">
-                                    {% for todo in all_todos %}
-                                        {% if todo.role_id == role.id %}
-                                        <div class="todo-item mb-2 p-2 border rounded" data-todo-id="{{ todo.id }}">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input todo-checkbox" 
-                                                       data-todo-id="{{ todo.id }}" 
-                                                       onchange="toggleTodoComplete({{ todo.id }}, this.checked)"
-                                                       {{ 'checked' if todo.completed else '' }}>
-                                                <label class="form-check-label">
-                                                    <strong>{{ todo.title }}</strong>
-                                                    <br>
-                                                    <small class="text-muted">
-                                                        Priority: {{ todo.priority|title }}
-                                                        {% if todo.due_date %}
-                                                        | Due: {{ todo.due_date.strftime('%m/%d/%Y') }}
-                                                        {% endif %}
-                                                    </small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
