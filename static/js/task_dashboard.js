@@ -28,6 +28,7 @@ function setupEventListeners() {
     // Modal form handlers
     document.getElementById('save-task-btn').addEventListener('click', saveTask);
     document.getElementById('save-role-btn').addEventListener('click', saveRole);
+    document.getElementById('save-category-btn').addEventListener('click', saveCategory);
     
     // Progress slider
     const progressSlider = document.getElementById('progress-slider');
@@ -258,7 +259,8 @@ async function saveTask() {
             parseFloat(document.getElementById('task-estimated-hours').value) * 60 : null,
         tags: document.getElementById('task-tags').value ? 
             document.getElementById('task-tags').value.split(',').map(tag => tag.trim()) : [],
-        is_recurring: document.getElementById('task-recurring').checked
+        is_recurring: document.getElementById('task-recurring').checked,
+        notes: document.getElementById('task-notes').value || null
     };
     
     if (!formData.title || !formData.category_id) {
@@ -339,6 +341,47 @@ async function saveRole() {
     }
 }
 
+async function saveCategory() {
+    const formData = {
+        name: document.getElementById('category-name').value,
+        color: document.getElementById('category-color').value
+    };
+    
+    if (!formData.name) {
+        showAlert('Please enter a category name', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/categories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            const category = await response.json();
+            showAlert('Category created successfully', 'success');
+            
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+            modal.hide();
+            document.getElementById('category-form').reset();
+            
+            // Reload categories
+            loadCategories();
+        } else {
+            const error = await response.json();
+            showAlert(error.error || 'Failed to create category', 'danger');
+        }
+    } catch (error) {
+        console.error('Error creating category:', error);
+        showAlert('Error creating category', 'danger');
+    }
+}
+
 async function viewTaskDetails(taskId) {
     selectedTaskId = taskId;
     const task = currentTasks.find(t => t.id === taskId);
@@ -384,6 +427,14 @@ async function viewTaskDetails(taskId) {
                 </p>
             </div>
         </div>
+        ${task.notes ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <p><strong>Notes:</strong></p>
+                <div class="p-2 bg-light rounded">${escapeHtml(task.notes)}</div>
+            </div>
+        </div>
+        ` : ''}
     `;
     
     // Update progress slider
