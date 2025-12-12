@@ -318,11 +318,22 @@ def tasks():
 @login_required
 def task_dashboard():
     """Enhanced task dashboard with robust tracking features"""
-    return render_template('task_dashboard.html')
+    categories = Category.query.filter_by(user_id=current_user.id).all()
+    return render_template('task_dashboard.html', categories=categories)
 
-@app.route('/api/categories', methods=['POST'])
+@app.route('/api/categories', methods=['GET', 'POST'])
 @login_required
-def add_category():
+def manage_categories():
+    # Handle GET request (Fetch all categories)
+    if request.method == 'GET':
+        categories = Category.query.filter_by(user_id=current_user.id).all()
+        return jsonify([{
+            'id': c.id, 
+            'name': c.name, 
+            'color': c.color
+        } for c in categories])
+
+    # Handle POST request (Add new category)
     name = request.json.get('name')
     color = request.json.get('color', '#6c757d')
     if not name:

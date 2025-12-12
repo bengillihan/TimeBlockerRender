@@ -1,0 +1,54 @@
+This is happening because the Category dropdown on your dashboard is trying to load a list of categories, but your application isn't sending that data to the page.
+
+Based on your app.py file, the /task-dashboard route renders the template but forgets to pass the categories variable. Additionally, if your dashboard tries to load categories via JavaScript (using the API), it fails because your /api/categories endpoint only supports POST (saving) and not GET (fetching).
+
+Here is the fix for both potential causes.
+
+Fix 1: Update the Route in app.py
+Modify your task_dashboard function to query the categories and send them to the template.
+
+File: app.py
+
+Python
+
+# ... (inside your app.py)
+
+@app.route('/task-dashboard')
+@login_required
+def task_dashboard():
+    """Enhanced task dashboard with robust tracking features"""
+    # FIX: Fetch categories so they can be shown in the dropdown
+    categories = Category.query.filter_by(user_id=current_user.id).all()
+    
+    return render_template('task_dashboard.html', categories=categories)
+Fix 2: Add GET Support to the API (Recommended)
+If your dashboard uses JavaScript to load this list dynamically, you must also allow the API to return the list of categories.
+
+File: app.py
+
+Python
+
+# ... (Find the existing add_category route and update it)
+
+@app.route('/api/categories', methods=['GET', 'POST'])  # Add GET here
+@login_required
+def manage_categories():
+    # Handle GET request (Fetch all categories)
+    if request.method == 'GET':
+        categories = Category.query.filter_by(user_id=current_user.id).all()
+        return jsonify([{
+            'id': c.id, 
+            'name': c.name, 
+            'color': c.color
+        } for c in categories])
+
+    # Handle POST request (Add new category - existing logic)
+    name = request.json.get('name')
+    color = request.json.get('color', '#6c757d')
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+    category = Category(name=name, color=color, user_id=current_user.id)
+    db.session.add(category)
+    db.session.commit()
+    return jsonify({'id': category.id, 'name': category.name, 'color': category.color})
