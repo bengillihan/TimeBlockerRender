@@ -1668,6 +1668,15 @@ def get_work_hour_stats():
         app.logger.error(f"Error getting work hour stats: {str(e)}")
         return jsonify({'success': False, 'message': 'Failed to get work hour statistics'})
 
+@app.route('/admin-dashboard')
+@login_required
+def admin_dashboard():
+    # Security check: ensure only admins can access
+    if not current_user.is_admin:
+        flash('You do not have permission to access the admin dashboard.', 'danger')
+        return redirect(url_for('index'))
+    return render_template('admin_dashboard.html')
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
