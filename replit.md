@@ -139,6 +139,10 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- December 12, 2025: Removed all to-do tracking functionality - application is now purely a time tracker
+- December 12, 2025: Cleaned up templates (index.html, analytics.html, base.html) removing todo modals, buttons, and JavaScript
+- December 12, 2025: Removed admin dashboard link and template
+- December 12, 2025: Simplified navigation menu and removed unused features
 - June 28, 2025: Enhanced work hour tracking with configurable goals - moved PTO display below total time, added 30-day work hour tracking, implemented user-configurable weekly/monthly work hour goals with settings modal
 - June 28, 2025: Successfully completed Railway deployment fixes - resolved SQLAlchemy circular imports, fixed SESSION_SECRET handling, corrected import order in app.py, and optimized Procfile configuration
 - June 28, 2025: Simplified Railway deployment configuration - removed complex startup scripts and used standard Procfile approach

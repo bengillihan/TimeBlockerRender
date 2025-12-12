@@ -32,12 +32,6 @@
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title">Quick Actions</h6>
-                    <button class="btn btn-sm btn-success me-2" onclick="smartScheduleTodos()">
-                        <i class="fas fa-magic"></i> Smart Schedule
-                    </button>
-                    <button class="btn btn-sm btn-info me-2" onclick="getPrioritySuggestions()">
-                        <i class="fas fa-lightbulb"></i> Priority Suggestions
-                    </button>
                     <button class="btn btn-sm btn-warning" onclick="exportAnalytics()">
                         <i class="fas fa-download"></i> Export Data
                     </button>
@@ -307,39 +301,8 @@ function loadProductivityInsights() {
         });
 }
 
-function smartScheduleTodos() {
-    alert('Smart scheduling feature coming soon!');
-}
-
-function getPrioritySuggestions() {
-    alert('Priority suggestions feature coming soon!');
-}
-
 function exportAnalytics() {
     alert('Export feature coming soon!');
-}
-
-function showBatchOperations() {
-    alert('Batch operations feature coming soon!');
-}
-
-function showAddTodoModal() {
-    alert('Add todo feature coming soon!');
-}
-
-function toggleTodoComplete(todoId, completed) {
-    fetch(`/api/todos/${todoId}/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: completed })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error updating todo:', error));
 }
 </script>
 {% endblock %}
