@@ -533,7 +533,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Show work hour settings modal
 function showWorkHourSettings() {
     // Fetch current work hour stats to populate modal with latest values
-    fetch('/api/work-hour-stats')
+    const datePicker = document.getElementById('datePicker');
+    const viewedDate = datePicker ? datePicker.value : '';
+    const url = viewedDate ? `/api/work-hour-stats?date=${viewedDate}` : '/api/work-hour-stats';
+    
+    fetch(url)
     .then(response => response.json())
     .then(data => {
         if (data.success) {
@@ -602,7 +606,12 @@ function updatePTOHours() {
 
 // Update work hour progress bars
 function updateWorkHourProgress() {
-    fetch('/api/work-hour-stats')
+    // Get the currently viewed date from the date picker
+    const datePicker = document.getElementById('datePicker');
+    const viewedDate = datePicker ? datePicker.value : '';
+    const url = viewedDate ? `/api/work-hour-stats?date=${viewedDate}` : '/api/work-hour-stats';
+    
+    fetch(url)
     .then(response => response.json())
     .then(data => {
         if (data.success) {

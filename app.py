@@ -1562,8 +1562,12 @@ def get_work_hour_stats():
     try:
         from datetime import datetime, timedelta
         
-        # Get current date in user's timezone
-        end_date = get_current_pacific_date()
+        # Get the date from the request parameter, or use current date if not provided
+        date_str = request.args.get('date')
+        if date_str:
+            end_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            end_date = get_current_pacific_date()
         
         # Calculate date ranges
         seven_days_ago = end_date - timedelta(days=6)
