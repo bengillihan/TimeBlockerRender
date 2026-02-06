@@ -1,0 +1,38 @@
+Fixing the "Haze" (Visual Filter)
+There are three specific areas in your code that create a semi-transparent overlay (haze) which might be getting stuck on the screen:
+
+The .loading CSS Class: In style.css, there is a .loading::after pseudo-element defined with background-color: rgba(255, 255, 255, 0.5);. This creates a white, 50% opacity "haze" over any element that has the loading class.
+
+The Fix: Ensure that whenever you add the loading class (likely during fetch requests), you have a finally block in your JavaScript that removes this class, even if the request fails. If this class is applied to the body or main container and not removed, the whole app will look hazy.
+
+Manual Modal Backdrops: In index.html, the showRecoveryModal function manually creates a div with background: rgba(0,0,0,0.8). While this is darker, if the "Close" logic fails or if the user navigates away without closing it, this backdrop could persist.
+
+The Fix: Use Bootstrap's native Modal classes consistently rather than manually creating div backdrops in JavaScript, or ensure your removal logic (.remove()) is robust and bound to the Escape key as well.
+
+Drag-and-Drop Artifacts: The CSS defines .time-content.dragging with opacity: 0.5 and .drag-over with a background color. If a drag event is interrupted or throws an error, these classes might remain on the elements, making parts of the interface look washed out.
+
+2. Code Structure Improvements
+The project currently has a significant amount of logic mixed directly into the HTML files. Refactoring this will make the app faster and easier to debug.
+
+Modularize JavaScript: index.html contains over 400 lines of inline JavaScript. This includes critical logic like autoSaveData, restoreBackup, and event listeners.
+
+Improvement: Move this logic into separate files (e.g., static/js/app.js or static/js/api.js). This allows the browser to cache the scripts and makes the HTML cleaner.
+
+Cleanup CSS Conflicts: Your style.css appears to have duplicate or conflicting sections.
+
+Example: .time-block is defined early in the file with background-color: #f8f9ff and then defined again later with background-color: #007bff (blue).
+
+Improvement: Consolidate these styles. The second block seems to be intended for a specific theme or view but is currently at the root level, which might be causing inconsistent coloring (or "hazing" if elements are blue when they should be white).
+
+3. Feature & UX Enhancements
+Dynamic "Add Block" Logic: Currently, you have manual "Add Earlier Blocks" and "Add Later Blocks" buttons.
+
+Improvement: Implement "infinite scroll" or auto-generation. When the user scrolls to the bottom, automatically append the next hour of blocks.
+
+Robust Error Handling: The autoSaveData function in index.html catches errors and shows an indicator (⚠ Save failed), but it relies on a global window.autoSaveData.
+
+Improvement: Implement a retry mechanism (exponential backoff) for failed saves to prevent data loss if the user has a momentary network blip.
+
+Dark Mode Consistency: Your base.html hardcodes data-bs-theme="dark". However, style.css contains a .dark-mode-toggle class.
+
+Improvement: If you want to support both modes, remove the hardcoded attribute and use local storage to remember the user's preference, applying the correct theme class on load.
