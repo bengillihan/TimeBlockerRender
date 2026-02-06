@@ -1,13 +1,13 @@
-Flask==3.1.0
+Flask>=3.1.1
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-WTF==1.2.2
 Flask-Caching==2.3.1
 gunicorn==23.0.0
 psycopg2-binary==2.9.10
-SQLAlchemy==2.0.38
+SQLAlchemy>=2.0.46
 oauthlib==3.2.2
-requests==2.32.3
+requests>=2.32.4
 python-dotenv==1.0.1
 pytz==2025.1
 google-api-python-client==2.162.0
@@ -15,6 +15,6 @@ google-auth-httplib2==0.2.0
 google-auth==2.38.0
 google-auth-oauthlib==1.2.1
 twilio==9.4.6
-nylas==6.8.0
+nylas>=6.13.1
 python-dateutil==2.9.0.post0
 email-validator==2.2.0
