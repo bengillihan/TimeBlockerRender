@@ -1,3 +1,22 @@
+:root {
+    --block-bg: #f8f9ff;
+    --block-hover-bg: #f0f2ff;
+    --block-border: #e0e0e0;
+    --text-primary: #212529;
+    --label-bg: #6c757d;
+    --label-text: #ffffff;
+}
+
+[data-theme="dark"],
+[data-bs-theme="dark"] {
+    --block-bg: #2d2d2d;
+    --block-hover-bg: #3d3d3d;
+    --block-border: #404040;
+    --text-primary: #e0e0e0;
+    --label-bg: #495057;
+    --label-text: #e0e0e0;
+}
+
 /* Adjust time blocks container for two columns */
 .time-blocks {
     display: grid;
@@ -14,28 +33,30 @@
 .time-block {
     display: flex;
     align-items: center;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--block-border);
     padding: 2px;
     min-height: 28px; 
     cursor: move;
     position: relative;
     transition: background-color 0.15s ease-in-out;
-    background-color: #f8f9ff;
+    background-color: var(--block-bg);
+    color: var(--text-primary);
 }
 
 .time-block:hover {
-    background-color: #f0f2ff;
+    background-color: var(--block-hover-bg);
 }
 
 .time-label {
     width: 50px; 
     font-size: 0.8em;
-    color: #ffffff !important;
+    color: var(--label-text) !important;
     font-weight: 700;
-    background-color: inherit;
+    background-color: var(--label-bg);
     padding: 2px 4px;
     border-radius: 3px;
     text-align: center;
+    margin-right: 5px;
 }
 
 .time-content {
@@ -110,10 +131,6 @@
 .time-content.has-task {
     border-left-width: 3px;
     border-left-style: solid;
-}
-
-.time-content.dragging {
-    opacity: 0.5;
 }
 
 .task-controls {
@@ -401,20 +418,16 @@
 }
 
 /* Drag and drop styles */
-.drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
-    border: 2px dashed #007bff;
-    transition: all 0.2s ease;
-}
-
-.time-content.dragging {
-    opacity: 0.5;
-    transition: opacity 0.2s ease;
-}
-
+.time-content.dragging,
 .time-block.dragging {
     opacity: 0.5;
-    transition: opacity 0.2s ease;
+    background-color: #e9ecef;
+    border: 1px dashed #6c757d;
+}
+
+.drag-over {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    border: 2px dashed #0d6efd !important;
 }
 
 /* Loading indicator */
