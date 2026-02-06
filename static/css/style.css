@@ -264,30 +264,6 @@
     position: relative;
 }
 
-.time-label {
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 0.5rem;
-}
-
-.time-block {
-    background-color: #007bff;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    cursor: move;
-    transition: transform 0.2s ease;
-}
-
-.time-block:hover {
-    transform: translateY(-2px);
-}
-
-.time-block.dragging {
-    opacity: 0.5;
-}
-
 /* Task and Todo styles */
 .task-item,
 .todo-item {
@@ -428,11 +404,23 @@
 .drag-over {
     background-color: rgba(0, 123, 255, 0.1);
     border: 2px dashed #007bff;
+    transition: all 0.2s ease;
+}
+
+.time-content.dragging {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.time-block.dragging {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
 }
 
 /* Loading indicator */
 .loading {
     position: relative;
+    pointer-events: none;
 }
 
 .loading::after {
@@ -442,11 +430,17 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: loadingFade 2s ease-in-out;
+}
+
+@keyframes loadingFade {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 /* Toast notifications */

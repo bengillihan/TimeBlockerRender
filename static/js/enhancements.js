@@ -65,6 +65,7 @@ function initDragAndDrop() {
         
         block.addEventListener('dragend', () => {
             block.classList.remove('dragging');
+            cleanupDragArtifacts();
         });
     });
     
@@ -81,6 +82,7 @@ function initDragAndDrop() {
         slot.addEventListener('drop', (e) => {
             e.preventDefault();
             slot.classList.remove('drag-over');
+            cleanupDragArtifacts();
             const blockId = e.dataTransfer.getData('text/plain');
             const block = document.getElementById(blockId);
             const container = slot.querySelector('.time-block-container');
@@ -91,6 +93,15 @@ function initDragAndDrop() {
             }
         });
     });
+    
+    document.addEventListener('dragend', () => {
+        cleanupDragArtifacts();
+    });
+}
+
+function cleanupDragArtifacts() {
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
 
 // Quick add functionality
@@ -150,28 +161,35 @@ function initQuickAdd() {
 
 // Dark mode functionality
 function initDarkMode() {
-    const darkMode = localStorage.getItem('darkMode') === 'true';
-    if (darkMode) {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    } else {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
         document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
     }
-    
-    // Add dark mode toggle button
+
     const toggleBtn = document.createElement('button');
     toggleBtn.id = 'darkModeBtn';
     toggleBtn.className = 'dark-mode-toggle';
-    toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+    const isDark = (localStorage.getItem('theme') || 'dark') === 'dark';
+    toggleBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     toggleBtn.onclick = toggleDarkMode;
     document.body.appendChild(toggleBtn);
 }
 
 function toggleDarkMode() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    localStorage.setItem('darkMode', !isDark);
-    
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-bs-theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+
     const btn = document.getElementById('darkModeBtn');
     if (btn) {
-        btn.innerHTML = isDark ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+        btn.innerHTML = newTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     }
 }
 
@@ -252,15 +270,13 @@ async function saveForm(form) {
 
 // Role-based color coding
 function initRoleColorCoding() {
-    // Add event listeners to all task selects
     document.querySelectorAll('.task-select').forEach(select => {
         select.addEventListener('change', function() {
             updateTimeBlockColor(this);
         });
         
-        // Apply initial colors if tasks are already selected
-        if (this.value) {
-            updateTimeBlockColor(this);
+        if (select.value) {
+            updateTimeBlockColor(select);
         }
     });
 }
