@@ -139,6 +139,11 @@ Time Block Planner is a personal productivity web application that enables users
 
 ## Changelog
 
+- February 6, 2026: Extracted ~1100 lines of inline JavaScript from index.html into static/js/daily-plan.js for better cacheability
+- February 6, 2026: Added exponential backoff retry mechanism (3 retries, 2s base delay) to auto-save functionality
+- February 6, 2026: Fixed dark mode: removed hardcoded data-bs-theme, added localStorage persistence with FOUC prevention
+- February 6, 2026: Resolved CSS conflicts by removing duplicate .time-block and .time-label definitions
+- February 6, 2026: Improved drag-and-drop cleanup and recovery modal to use Bootstrap Modal API
 - December 12, 2025: Removed all to-do tracking functionality - application is now purely a time tracker
 - December 12, 2025: Cleaned up templates (index.html, analytics.html, base.html) removing todo modals, buttons, and JavaScript
 - December 12, 2025: Removed admin dashboard link and template
