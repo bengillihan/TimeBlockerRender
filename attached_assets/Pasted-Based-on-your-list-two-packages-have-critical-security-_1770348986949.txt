@@ -1,0 +1,61 @@
+Based on your list, two packages have critical security vulnerabilities and must be updated immediately. Several others should be updated for best practices or to avoid production warnings.
+
+🚨 Critical Security Updates (Action Required)
+You must update the following packages to patch known vulnerabilities:
+
+Flask (Current: 3.1.0 → Update to 3.1.1 or higher)
+
+Vulnerability: CVE-2025-47278 (Authentication Bypass).
+
+Impact: Flask 3.1.0 has a flaw in how it handles session key rotation (SECRET_KEY_FALLBACKS). It incorrectly uses the oldest fallback key to sign sessions instead of the current active key. This can allow attackers to bypass authentication if they possess an old, compromised key that should have been rotated out.
+
+Fix: Upgrade to Flask 3.1.1+.
+
+requests (Current: 2.32.3 → Update to 2.32.4 or higher)
+
+Vulnerability: CVE-2024-47081 (Sensitive Information Leak).
+
+Impact: The requests library in versions prior to 2.32.4 is vulnerable to leaking sensitive information (like credentials in .netrc) into the URL of a request under specific redirect conditions.
+
+Fix: Upgrade to requests>=2.32.4.
+
+⚠️ Recommended Updates (Best Practices)
+While these are not flagged with "Critical" CVEs, they present operational risks:
+
+psycopg2-binary (Current: 2.9.10)
+
+Risk: The psycopg2-binary package is intended for development and testing only. It bundles its own copies of libssl and libpq, which means it will not use your system's security-patched SSL libraries. This can leave your database connections vulnerable even if you patch your OS.
+
+Recommendation: For production, switch to the psycopg2 package (built from source) or upgrade to the newer psycopg (v3) library if your code permits.
+
+nylas (Current: 6.8.0 → Update to latest)
+
+Risk: This version is outdated. Nylas released Python SDK v6.13.1 in late 2025, and a v7 Node SDK exists, indicating active development. Using an outdated API client risks application failure if API endpoints are deprecated or security protocols change on the server side.
+
+Recommendation: Check the Nylas migration guide and update to the latest supported SDK.
+
+SQLAlchemy (Current: 2.0.38 → Update to 2.0.46)
+
+Risk: Version 2.0.38 is approximately a year old (relative to the current date of early 2026). The latest version is 2.0.46, which contains cumulative bug fixes and performance improvements.
+
+Recommendation: Update to SQLAlchemy>=2.0.46.
+
+✅ Safe (No Immediate Action)
+The following versions in your list appear current or free of known high-severity vulnerabilities:
+
+gunicorn==23.0.0 (Current stable version as of late 2025/2026).
+
+Flask-Login==0.6.3 (Stable, no new CVEs).
+
+Flask-WTF==1.2.2 (Stable, no new CVEs).
+
+email-validator==2.2.0 (Safe, though 2.3.0 is available).
+
+Summary of requirements.txt Changes
+Plaintext
+
+Flask>=3.1.1            # SECURITY FIX
+requests>=2.32.4        # SECURITY FIX
+psycopg2                # Replace 'psycopg2-binary' for production
+SQLAlchemy>=2.0.46      # Bug fixes
+nylas>=6.13.1           # API compatibility
