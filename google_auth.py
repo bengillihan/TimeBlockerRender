@@ -91,6 +91,11 @@ def callback():
             code=code,
         )
 
+        if not token_url.startswith("https://"):
+            logger.error("Token URL must use HTTPS")
+            flash("Authentication configuration error.", "error")
+            return redirect(url_for("index"))
+
         # Ensure auth tuple has proper typing
         auth: Tuple[str, str] = (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
         token_response = requests.post(
