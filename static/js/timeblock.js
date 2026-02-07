@@ -64,12 +64,25 @@ function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
 
-function navigateToDate(dateStr) {
-    window.location.href = `/?date=${dateStr}`;
+function isValidDate(dateStr) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(Date.parse(dateStr));
 }
 
-// Add the confirmAndNavigate function
+function sanitizeLocalUrl(url) {
+    if (typeof url !== 'string') return '/';
+    if (url.startsWith('/') && !url.startsWith('//')) {
+        return url;
+    }
+    return '/';
+}
+
+function navigateToDate(dateStr) {
+    if (!isValidDate(dateStr)) return;
+    window.location.href = `/?date=${encodeURIComponent(dateStr)}`;
+}
+
 async function confirmAndNavigate(url) {
+    const safeUrl = sanitizeLocalUrl(url);
     if (hasUnsavedChanges) {
         if (confirm('You have unsaved changes. Do you want to save before leaving?')) {
             try {
@@ -81,7 +94,7 @@ async function confirmAndNavigate(url) {
             }
         }
     }
-    window.location.href = url;
+    window.location.href = safeUrl;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
