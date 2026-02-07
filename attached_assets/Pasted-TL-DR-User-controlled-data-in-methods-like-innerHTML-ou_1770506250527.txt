@@ -1,0 +1,128 @@
+TL;DR
+
+User controlled data in methods like 'innerHTML', 'outerHTML' or 'document.write' is an anti-pattern that can lead to XSS vulnerabilities.
+
+How do I fix it?
+
+Make sure you do not use user input when you are using these methods and if you do, be sure to sanitize the input.
+
+Subissues
+
+6
+Subissue
+frontend
+TimeBlockerRender
+static/js/daily-plan.js
+
+High
+Line 619 - 624 in daily-plan.js
+
+priorityDiv.innerHTML = `
+    <input type="text" class="form-control priority-input ${priority.completed ? 'completed' : ''}" 
+           value="${priority.content}" placeholder="Priority">
+    <button class="btn btn-outline-success complete-priority" type="button">✓</button>
+    <button class="btn btn-outline-danger remove-priority" type="button">×</button>
+`;
+View code analysis
+static/js/task_dashboard.js
+
+High
+Line 177 - 227 in task_dashboard.js
+
+row.innerHTML = `
+    <td>
+        <div class="d-flex align-items-center">
+            <div>
+                <h6 class="mb-0">${escapeHtml(task.title)}</h6>
+                <small class="text-muted">${escapeHtml(task.description || '')}</small>
+                ${task.tags && task.tags.length > 0 ? 
+                    '<div class="mt-1">' + task.tags.map(tag => 
+                        `<span class="badge bg-secondary me-1">${escapeHtml(tag)}</span>`
+                    ).join('') + '</div>' : ''}
+            </div>
+        </div>
+    </td>
+    <td>
+        <span class="badge" style="background-color: ${task.category_color}; color: white;">
+            ${escapeHtml(task.category_name)}
+        </span>
+    </td>
+    <td>
+        ${task.role_name ? 
+            `<span class="badge bg-info">${escapeHtml(task.role_name)}</span>` : 
+            '<span class="text-muted">-</span>'}
+    </td>
+    <td>
+        <span class="badge bg-${task.priority_color}">
+            ${task.priority.toUpperCa
+View code analysis
+static/js/task_dashboard.js
+
+High
+Line 399 - 438 in task_dashboard.js
+
+taskInfoContent.innerHTML = `
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>Description:</strong> ${escapeHtml(task.description || 'No description')}</p>
+            <p><strong>Category:</strong> 
+                <span class="badge" style="background-color: ${task.category_color}; color: white;">
+                    ${escapeHtml(task.category_name)}
+                </span>
+            </p>
+            <p><strong>Priority:</strong> 
+                <span class="badge bg-${task.priority_color}">
+                    ${task.priority.toUpperCase()}
+                </span>
+            </p>
+            <p><strong>Status:</strong> 
+                <span class="badge bg-${task.status_color}">
+                    ${task.status.replace('_', ' ').toUpperCase()}
+                </span>
+            </p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Role:</strong> ${task.role_name || 'None assigned'}</p>
+            <p><strong>Due Date:</strong> ${
+View code analysis
+static/js/task_dashboard.js
+
+High
+Line 600 - 603 in task_dashboard.js
+
+alertDiv.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+`;
+View code analysis
+static/js/timeblock.js
+
+High
+Line 511 - 522 in timeblock.js
+
+categoryDiv.innerHTML = `
+    <h6 class="mb-2" style="color: ${stat.color}">
+        <i class="fas fa-square me-1" style="color: ${stat.color}"></i>
+        ${stat.name}
+    </h6>
+    <div class="ps-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small>Total Time</small>
+            <small>${(stat.minutes / 60).toFixed(1)} hrs</small>
+        </div>
+    </div>
+`;
+View code analysis
+static/js/daily-plan.js
+
+Medium
+Line 598 - 601 in daily-plan.js
+
+document.getElementById('recoveryModalBody').innerHTML = `
+    <p>Select a backup to restore:</p>
+    <div class="list-group">${recoveryOptions}</div>
+`;
+View code analysis
+Downgraded: AI assessed finding as somewhat hard to exploit
+
+1 ignored item
