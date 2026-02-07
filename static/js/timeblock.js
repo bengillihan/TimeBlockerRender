@@ -508,18 +508,30 @@ document.addEventListener('DOMContentLoaded', function () {
             Object.values(categoryStats).forEach(stat => {
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = 'mb-3';
-                categoryDiv.innerHTML = `
-                    <h6 class="mb-2" style="color: ${stat.color}">
-                        <i class="fas fa-square me-1" style="color: ${stat.color}"></i>
-                        ${stat.name}
-                    </h6>
-                    <div class="ps-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small>Total Time</small>
-                            <small>${(stat.minutes / 60).toFixed(1)} hrs</small>
-                        </div>
-                    </div>
-                `;
+
+                const h6 = document.createElement('h6');
+                h6.className = 'mb-2';
+                h6.style.color = stat.color;
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-square me-1';
+                icon.style.color = stat.color;
+                h6.appendChild(icon);
+                h6.appendChild(document.createTextNode(stat.name));
+                categoryDiv.appendChild(h6);
+
+                const psDiv = document.createElement('div');
+                psDiv.className = 'ps-3';
+                const flexDiv = document.createElement('div');
+                flexDiv.className = 'd-flex justify-content-between align-items-center mb-1';
+                const labelSmall = document.createElement('small');
+                labelSmall.textContent = 'Total Time';
+                const valueSmall = document.createElement('small');
+                valueSmall.textContent = `${(stat.minutes / 60).toFixed(1)} hrs`;
+                flexDiv.appendChild(labelSmall);
+                flexDiv.appendChild(valueSmall);
+                psDiv.appendChild(flexDiv);
+                categoryDiv.appendChild(psDiv);
+
                 statsBody.appendChild(categoryDiv);
             });
             

@@ -574,31 +574,61 @@ function initRecoveryButtons() {
     });
 }
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function showRecoveryModal(backupData) {
     window.recoveryBackupData = backupData;
 
-    let recoveryOptions = '';
+    const modalBody = document.getElementById('recoveryModalBody');
+    modalBody.innerHTML = '';
+
+    const p = document.createElement('p');
+    p.textContent = 'Select a backup to restore:';
+    modalBody.appendChild(p);
+
+    const listGroup = document.createElement('div');
+    listGroup.className = 'list-group';
+
     backupData.forEach((backup, index) => {
         const date = new Date(backup.updated_at).toLocaleString();
         const priorityCount = backup.priorities.length;
         const blockCount = backup.time_blocks.filter(b => b.task_id).length;
 
-        recoveryOptions += `
-            <div class="list-group-item list-group-item-action" style="cursor: pointer;" onclick="restoreBackup(${index})">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${backup.date}</h6>
-                    <small>${date}</small>
-                </div>
-                <p class="mb-1">${priorityCount} priorities, ${blockCount} scheduled blocks</p>
-                ${backup.brain_dump ? `<small>Brain dump: ${backup.brain_dump.substring(0, 50)}...</small>` : ''}
-            </div>
-        `;
+        const item = document.createElement('div');
+        item.className = 'list-group-item list-group-item-action';
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => restoreBackup(index));
+
+        const flexDiv = document.createElement('div');
+        flexDiv.className = 'd-flex w-100 justify-content-between';
+        const h6 = document.createElement('h6');
+        h6.className = 'mb-1';
+        h6.textContent = backup.date;
+        const small = document.createElement('small');
+        small.textContent = date;
+        flexDiv.appendChild(h6);
+        flexDiv.appendChild(small);
+        item.appendChild(flexDiv);
+
+        const pInfo = document.createElement('p');
+        pInfo.className = 'mb-1';
+        pInfo.textContent = `${priorityCount} priorities, ${blockCount} scheduled blocks`;
+        item.appendChild(pInfo);
+
+        if (backup.brain_dump) {
+            const brainDump = document.createElement('small');
+            brainDump.textContent = `Brain dump: ${backup.brain_dump.substring(0, 50)}...`;
+            item.appendChild(brainDump);
+        }
+
+        listGroup.appendChild(item);
     });
 
-    document.getElementById('recoveryModalBody').innerHTML = `
-        <p>Select a backup to restore:</p>
-        <div class="list-group">${recoveryOptions}</div>
-    `;
+    modalBody.appendChild(listGroup);
 
     const modal = new bootstrap.Modal(document.getElementById('recoveryModal'));
     modal.show();
@@ -616,12 +646,26 @@ async function restoreBackup(backupIndex) {
                 backup.priorities.forEach(priority => {
                     const priorityDiv = document.createElement('div');
                     priorityDiv.className = 'input-group mb-2';
-                    priorityDiv.innerHTML = `
-                        <input type="text" class="form-control priority-input ${priority.completed ? 'completed' : ''}" 
-                               value="${priority.content}" placeholder="Priority">
-                        <button class="btn btn-outline-success complete-priority" type="button">✓</button>
-                        <button class="btn btn-outline-danger remove-priority" type="button">×</button>
-                    `;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = `form-control priority-input ${priority.completed ? 'completed' : ''}`;
+                    input.value = priority.content;
+                    input.placeholder = 'Priority';
+
+                    const completeBtn = document.createElement('button');
+                    completeBtn.className = 'btn btn-outline-success complete-priority';
+                    completeBtn.type = 'button';
+                    completeBtn.textContent = '✓';
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'btn btn-outline-danger remove-priority';
+                    removeBtn.type = 'button';
+                    removeBtn.textContent = '×';
+
+                    priorityDiv.appendChild(input);
+                    priorityDiv.appendChild(completeBtn);
+                    priorityDiv.appendChild(removeBtn);
                     priorityContainer.appendChild(priorityDiv);
                 });
             }

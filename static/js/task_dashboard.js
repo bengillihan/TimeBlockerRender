@@ -188,7 +188,7 @@ function createTaskRow(task) {
             </div>
         </td>
         <td>
-            <span class="badge" style="background-color: ${task.category_color}; color: white;">
+            <span class="badge" style="background-color: ${sanitizeColor(task.category_color)}; color: white;">
                 ${escapeHtml(task.category_name)}
             </span>
         </td>
@@ -198,13 +198,13 @@ function createTaskRow(task) {
                 '<span class="text-muted">-</span>'}
         </td>
         <td>
-            <span class="badge bg-${task.priority_color}">
-                ${task.priority.toUpperCase()}
+            <span class="badge bg-${sanitizeCssClass(task.priority_color)}">
+                ${escapeHtml(task.priority.toUpperCase())}
             </span>
         </td>
         <td>
-            <span class="badge bg-${task.status_color}">
-                ${task.status.replace('_', ' ').toUpperCase()}
+            <span class="badge bg-${sanitizeCssClass(task.status_color)}">
+                ${escapeHtml(task.status.replace('_', ' ').toUpperCase())}
             </span>
         </td>
         <td style="width: 120px;">
@@ -401,23 +401,23 @@ async function viewTaskDetails(taskId) {
             <div class="col-md-6">
                 <p><strong>Description:</strong> ${escapeHtml(task.description || 'No description')}</p>
                 <p><strong>Category:</strong> 
-                    <span class="badge" style="background-color: ${task.category_color}; color: white;">
+                    <span class="badge" style="background-color: ${sanitizeColor(task.category_color)}; color: white;">
                         ${escapeHtml(task.category_name)}
                     </span>
                 </p>
                 <p><strong>Priority:</strong> 
-                    <span class="badge bg-${task.priority_color}">
-                        ${task.priority.toUpperCase()}
+                    <span class="badge bg-${sanitizeCssClass(task.priority_color)}">
+                        ${escapeHtml(task.priority.toUpperCase())}
                     </span>
                 </p>
                 <p><strong>Status:</strong> 
-                    <span class="badge bg-${task.status_color}">
-                        ${task.status.replace('_', ' ').toUpperCase()}
+                    <span class="badge bg-${sanitizeCssClass(task.status_color)}">
+                        ${escapeHtml(task.status.replace('_', ' ').toUpperCase())}
                     </span>
                 </p>
             </div>
             <div class="col-md-6">
-                <p><strong>Role:</strong> ${task.role_name || 'None assigned'}</p>
+                <p><strong>Role:</strong> ${escapeHtml(task.role_name || 'None assigned')}</p>
                 <p><strong>Due Date:</strong> ${task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}</p>
                 <p><strong>Created:</strong> ${new Date(task.created_at).toLocaleDateString()}</p>
                 <p><strong>Tags:</strong> 
@@ -597,10 +597,14 @@ function showAlert(message, type) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
     alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    alertDiv.appendChild(messageSpan);
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close';
+    closeBtn.setAttribute('data-bs-dismiss', 'alert');
+    alertDiv.appendChild(closeBtn);
     
     document.body.appendChild(alertDiv);
     
@@ -616,4 +620,18 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function sanitizeColor(color) {
+    if (/^[a-zA-Z0-9#(),.\s%-]+$/.test(color)) {
+        return color;
+    }
+    return '#6c757d';
+}
+
+function sanitizeCssClass(cls) {
+    if (/^[a-zA-Z0-9_-]+$/.test(cls)) {
+        return cls;
+    }
+    return 'secondary';
 }
