@@ -20,3 +20,4 @@ python-dateutil==2.9.0.post0
 email-validator==2.2.0
 Jinja2>=3.1.6
 pyasn1>=0.6.2
+protobuf>=5.29.6
