@@ -22,3 +22,4 @@ Jinja2>=3.1.6
 pyasn1>=0.6.2
 protobuf>=5.29.6
 aiohttp>=3.13.3
+urllib3>=2.6.3
