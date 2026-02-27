@@ -37,6 +37,12 @@
                             <h6 class="mb-0">Total Time</h6>
                             <span class="h6 mb-0">{{ (total_minutes / 60)|round(1) }} hrs</span>
                         </div>
+                        {% if total_pto_minutes > 0 %}
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">includes PTO</small>
+                            <small class="text-muted">{{ (total_pto_minutes / 60)|round(1) }} hrs</small>
+                        </div>
+                        {% endif %}
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <small class="text-muted">Avg per Week</small>
                             <small class="text-muted">{{ (avg_weekly_total / 60)|round(1) }} hrs</small>

@@ -938,12 +938,55 @@ def summary():
         all_dates.append(current_date)
         current_date += timedelta(days=1)
 
+    # Find Work category for PTO attribution
+    work_category = Category.query.filter(
+        Category.user_id == current_user.id,
+        db.func.lower(Category.name).in_(['work', 'aps'])
+    ).first()
+
+    # Track total PTO minutes for display
+    total_pto_minutes = 0
+
     # Calculate statistics
     for plan in daily_plans:
         plan_date = plan.date
         if plan_date not in daily_category_breakdown:
             daily_category_breakdown[plan_date] = {}
-            
+
+        # Add PTO hours to Work category if any exist
+        if plan.pto_hours and plan.pto_hours > 0 and work_category:
+            pto_minutes = plan.pto_hours * 60
+            total_minutes += pto_minutes
+            total_pto_minutes += pto_minutes
+
+            if 'pto' not in task_stats:
+                task_stats['pto'] = {
+                    'title': 'PTO',
+                    'minutes': 0,
+                    'category_id': work_category.id,
+                    'category_name': work_category.name,
+                    'category_color': work_category.color
+                }
+            task_stats['pto']['minutes'] += pto_minutes
+
+            if work_category.id not in category_stats:
+                category_stats[work_category.id] = {
+                    'name': work_category.name,
+                    'color': work_category.color,
+                    'minutes': 0,
+                    'days_used': set()
+                }
+            category_stats[work_category.id]['minutes'] += pto_minutes
+            category_stats[work_category.id]['days_used'].add(plan.date)
+
+            if work_category.id not in daily_category_breakdown[plan_date]:
+                daily_category_breakdown[plan_date][work_category.id] = {
+                    'name': work_category.name,
+                    'color': work_category.color,
+                    'minutes': 0
+                }
+            daily_category_breakdown[plan_date][work_category.id]['minutes'] += pto_minutes
+
         for block in plan.time_blocks:
             if block.task_id:
                 task = Task.query.get(block.task_id)
@@ -1041,6 +1084,7 @@ def summary():
                          category_stats=category_stats,
                          task_stats=task_stats,
                          total_minutes=total_minutes,
+                         total_pto_minutes=total_pto_minutes,
                          avg_weekly_total=avg_weekly_total,
                          avg_monthly_total=avg_monthly_total,
                          daily_breakdown=daily_breakdown_list,
