@@ -983,11 +983,18 @@ def summary():
                         }
                     daily_category_breakdown[plan_date][task.category_id]['minutes'] += minutes
 
-    # Calculate average daily hours for categories
+    # Calculate average daily/weekly/monthly hours for categories
+    num_weeks = max(days / 7, 1)
+    num_months = max(days / 30, 1)
     for cat_stats in category_stats.values():
         days_used = len(cat_stats['days_used'])
         cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
+        cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
+        cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
         del cat_stats['days_used']  # Remove set before passing to template
+
+    avg_weekly_total = total_minutes / num_weeks
+    avg_monthly_total = total_minutes / num_months
 
     # Prepare daily breakdown for template (convert to list format)
     daily_breakdown_list = []
@@ -999,6 +1006,34 @@ def summary():
         }
         daily_breakdown_list.append(day_data)
 
+    # For longer periods, aggregate by week
+    weekly_breakdown_list = []
+    if days > 30:
+        from collections import OrderedDict
+        weekly_data = OrderedDict()
+        for date in sorted(all_dates):
+            week_start = date - timedelta(days=date.weekday())
+            if week_start not in weekly_data:
+                weekly_data[week_start] = {'categories': {}, 'total_minutes': 0}
+            day_cats = daily_category_breakdown.get(date, {})
+            for cat_id, cat_info in day_cats.items():
+                if cat_id not in weekly_data[week_start]['categories']:
+                    weekly_data[week_start]['categories'][cat_id] = {
+                        'name': cat_info['name'],
+                        'color': cat_info['color'],
+                        'minutes': 0
+                    }
+                weekly_data[week_start]['categories'][cat_id]['minutes'] += cat_info['minutes']
+                weekly_data[week_start]['total_minutes'] += cat_info['minutes']
+        for week_start in sorted(weekly_data.keys(), reverse=True):
+            week_end = week_start + timedelta(days=6)
+            weekly_breakdown_list.append({
+                'week_start': week_start,
+                'week_end': week_end,
+                'categories': weekly_data[week_start]['categories'],
+                'total_minutes': weekly_data[week_start]['total_minutes']
+            })
+
     return render_template('summary.html',
                          days=days,
                          start_date=start_date,
@@ -1006,7 +1041,10 @@ def summary():
                          category_stats=category_stats,
                          task_stats=task_stats,
                          total_minutes=total_minutes,
-                         daily_breakdown=daily_breakdown_list)
+                         avg_weekly_total=avg_weekly_total,
+                         avg_monthly_total=avg_monthly_total,
+                         daily_breakdown=daily_breakdown_list,
+                         weekly_breakdown=weekly_breakdown_list)
 
 
 
