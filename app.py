@@ -921,16 +921,22 @@ def summary():
     from sqlalchemy.orm import joinedload
     from cache_utils import cache
 
-    period = request.args.get('period', '7')
-    days = int(period)
+    try:
+        period = request.args.get('period', '7')
+        days = int(period)
+    except (ValueError, TypeError):
+        days = 7
     end_date = datetime.now(pacific_tz).date()
     start_date = end_date - timedelta(days=days-1)
 
     if days > 30:
         cache_key = f"user_{current_user.id}_summary_{days}_{end_date}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            return cached_result
+        try:
+            cached_result = cache.get(cache_key)
+            if cached_result is not None:
+                return cached_result
+        except Exception:
+            pass
 
     work_category = Category.query.filter(
         Category.user_id == current_user.id,
@@ -1172,7 +1178,10 @@ def summary():
                          daily_breakdown=daily_breakdown_list)
 
     if days > 30:
-        cache.set(cache_key, result, timeout=3600)
+        try:
+            cache.set(cache_key, result, timeout=3600)
+        except Exception:
+            pass
 
     return result
 
