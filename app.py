@@ -43,7 +43,10 @@ try:
     
     logger.info(f"Database URL configured: {database_url[:50]}...")
     
-    if database_url and database_url.startswith("postgresql://"):
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+        logger.info("Converted postgres:// to postgresql+psycopg2://")
+    elif database_url and database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
         logger.info("Converted postgresql:// to postgresql+psycopg2://")
 
