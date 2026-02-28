@@ -1,0 +1,91 @@
+```python
+import os
+
+# Check for app.py and Procfile in the latest branch folder
+repo_path = 'bengillihan/timeblockerrender/TimeBlockerRender-9a263626d3e35b76a6d261467748f0b4175d312d/'
+
+def check_files(path):
+    files_to_check = ['app.py', 'Procfile', 'railway.json', 'config.py']
+    results = {}
+    for f in files_to_check:
+        full_path = os.path.join(path, f)
+        results[f] = os.path.exists(full_path)
+    return results
+
+print(f"Checking files in: {repo_path}")
+print(check_files(repo_path))
+
+# If config.py or app.py exists, let's look at the database initialization
+app_path = os.path.join(repo_path, 'app.py')
+if os.path.exists(app_path):
+    with open(app_path, 'r') as f:
+        print("\n--- app.py snippet ---")
+        lines = f.readlines()
+        # Look for DB config and app setup
+        for i, line in enumerate(lines[:200]):
+            if 'SQLALCHEMY_DATABASE_URI' in line or 'app =' in line or 'port' in line:
+                print(f"{i+1}: {line.strip()}")
+
+proc_path = os.path.join(repo_path, 'Procfile')
+if os.path.exists(proc_path):
+    with open(proc_path, 'r') as f:
+        print("\n--- Procfile content ---")
+        print(f.read())
+
+
+
+```
+
+```text
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+NotADirectoryError: [Errno 20] Not a directory: 'bengillihan/timeblockerrender'
+
+
+```
+
+The build logs show that your application is **building successfully**, but you are getting **502 Bad Gateway** errors at runtime. This typically means the Flask application is crashing immediately after startup or failing to bind to the port Railway expects.
+
+Based on your configuration and logs, here are the three most likely culprits and how to fix them:
+
+### 1. The "postgres://" vs "postgresql://" Issue
+
+SQLAlchemy 1.4+ and 2.0 (which you are using) **do not support** the `postgres://` prefix that Railway automatically provides in the `DATABASE_URL`. It must be `postgresql://`.
+
+**The Fix:** Update your database initialization in `app.py` or `config.py`:
+
+```python
+import os
+
+database_url = os.getenv("DATABASE_URL")
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+```
+
+### 2. Port Binding
+
+Gunicorn is configured to bind to `0.0.0.0:$PORT`. Ensure your code is not hardcoding `app.run(port=5000)` anywhere, as Railway assigns a dynamic port that Gunicorn handles through the environment variable.
+
+### 3. Missing Dependencies or Environment Variables
+
+A 502 often occurs when a worker dies because a required Environment Variable is missing (like `SECRET_KEY`, `GOOGLE_CLIENT_ID`, or `GOOGLE_CLIENT_SECRET`).
+
+* Go to your Railway **Variables** tab.
+* Ensure all necessary keys from your `config.py` are present.
+* Check the **Deploy Logs** (not just the Build logs) for a Python `Traceback`.
+
+### 4. Gunicorn Startup Timeout
+
+Your start command uses `--preload`. While preloading saves memory, if your application performs a heavy operation on startup (like `db.create_all()` with a slow connection), the worker might be killed before it even starts.
+
+**The Fix:** Add a `GUNICORN_CMD_ARGS` variable in Railway or update your start command to increase the worker timeout:
+
+* Set a Railway variable: `GUNICORN_TIMEOUT=120` (You currently have 120 in the command, but ensure the database is responding within that window).
+
+---
+
+**Next Step to Debug:**
+Please check the **Deploy Logs** in your Railway dashboard. Look for lines starting with `Traceback (most recent call last):`. If you paste those here, I can tell you exactly which line of code is causing the crash.
