@@ -129,71 +129,7 @@
         </div>
     </div>
 
-    {% if weekly_breakdown %}
-    <div class="row mt-4">
-        <div class="col">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Weekly Category Breakdown</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Week</th>
-                                    {% set all_categories = {} %}
-                                    {% for week in weekly_breakdown %}
-                                        {% for cat_id, cat_data in week.categories.items() %}
-                                            {% if cat_id not in all_categories %}
-                                                {% set _ = all_categories.update({cat_id: cat_data}) %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endfor %}
-                                    {% for cat_id, cat_data in all_categories.items() %}
-                                    <th style="color: {{ cat_data.color }}">
-                                        <i class="fas fa-square me-1"></i>
-                                        {{ cat_data.name }}
-                                    </th>
-                                    {% endfor %}
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for week in weekly_breakdown %}
-                                <tr>
-                                    <td class="fw-bold">{{ week.week_start.strftime('%m/%d') }} - {{ week.week_end.strftime('%m/%d') }}</td>
-                                    {% for cat_id, cat_data in all_categories.items() %}
-                                    <td>
-                                        {% if cat_id in week.categories %}
-                                            {% set minutes = week.categories[cat_id].minutes %}
-                                            <span class="badge" style="background-color: {{ cat_data.color }}">
-                                                {{ (minutes / 60)|round(1) }}h
-                                            </span>
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                    <td>
-                                        {% if week.total_minutes > 0 %}
-                                            <strong>{{ (week.total_minutes / 60)|round(1) }}h</strong>
-                                        {% else %}
-                                            <span class="text-muted">0h</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if not weekly_breakdown %}
+    {% if days <= 30 %}
     <div class="row mt-4">
         <div class="col">
             <div class="card">
@@ -261,6 +197,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     {% endif %}
 
     {% else %}
