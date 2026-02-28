@@ -14,7 +14,7 @@ from dateutil.rrule import rrule, rrulestr
 # Configure logging with Railway-specific settings
 if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
     logging.basicConfig(
-        level=logging.WARNING,
+        level=logging.INFO,
         format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
@@ -43,10 +43,7 @@ try:
     
     logger.info(f"Database URL configured: {database_url[:50]}...")
     
-    if database_url and database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
-        logger.info("Converted postgres:// to postgresql+psycopg2://")
-    elif database_url and database_url.startswith("postgresql://"):
+    if database_url and database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
         logger.info("Converted postgresql:// to postgresql+psycopg2://")
 
@@ -116,12 +113,6 @@ app.register_blueprint(google_auth)
 @app.before_request
 def make_session_permanent():
     session.permanent = True
-
-@app.after_request
-def add_cache_headers(response):
-    if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=604800'
-    return response
 
 @app.errorhandler(404)
 def not_found(error):
@@ -878,68 +869,35 @@ def save_daily_plan():
                 )
                 db.session.add(priority)
 
-    # Handle time blocks - upsert by start_time to reduce database churn
+    # Handle time blocks - only update if explicitly provided with data
     if data.get('time_blocks'):
-        existing_blocks = {b.start_time: b for b in TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).all()}
-        incoming_start_times = set()
-        tasks_to_update_usage = set()
-
+        TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
         for block_data in data.get('time_blocks', []):
+            # Validate that both start_time and end_time exist
             if not block_data.get('start_time') or not block_data.get('end_time'):
                 logger.warning(f"Skipping time block with missing time data: {block_data}")
                 continue
-
+                
             try:
-                start_t = datetime.strptime(block_data['start_time'], '%H:%M').time()
-                end_t = datetime.strptime(block_data['end_time'], '%H:%M').time()
-                task_id = block_data.get('task_id')
-                completed = block_data.get('completed', False)
-                notes = block_data.get('notes', '')[:15]
-                incoming_start_times.add(start_t)
-
-                if start_t in existing_blocks:
-                    block = existing_blocks[start_t]
-                    changed = False
-                    if block.end_time != end_t:
-                        block.end_time = end_t
-                        changed = True
-                    if block.task_id != task_id:
-                        if task_id:
-                            tasks_to_update_usage.add(task_id)
-                        block.task_id = task_id
-                        changed = True
-                    if block.completed != completed:
-                        block.completed = completed
-                        changed = True
-                    if block.notes != notes:
-                        block.notes = notes
-                        changed = True
-                else:
-                    time_block = TimeBlock(
-                        daily_plan_id=daily_plan.id,
-                        start_time=start_t,
-                        end_time=end_t,
-                        task_id=task_id,
-                        completed=completed,
-                        notes=notes
-                    )
-                    db.session.add(time_block)
-                    if task_id:
-                        tasks_to_update_usage.add(task_id)
+                time_block = TimeBlock(
+                    daily_plan_id=daily_plan.id,
+                    start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
+                    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
+                    task_id=block_data.get('task_id'),
+                    completed=block_data.get('completed', False),
+                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
+                )
+                db.session.add(time_block)
+                
+                # Update task usage statistics when a task is assigned to a time block
+                if block_data.get('task_id'):
+                    task = Task.query.get(block_data['task_id'])
+                    if task:
+                        task.usage_count = (task.usage_count or 0) + 1
+                        task.last_used = datetime.utcnow()
             except (ValueError, KeyError) as e:
                 logger.error(f"Error processing time block {block_data}: {str(e)}")
                 continue
-
-        for start_t, block in existing_blocks.items():
-            if start_t not in incoming_start_times:
-                db.session.delete(block)
-
-        if tasks_to_update_usage:
-            for tid in tasks_to_update_usage:
-                task = Task.query.get(tid)
-                if task:
-                    task.usage_count = (task.usage_count or 0) + 1
-                    task.last_used = datetime.utcnow()
 
 
     try:
@@ -954,206 +912,47 @@ def save_daily_plan():
 @app.route('/summary')
 @login_required
 def summary():
-    from sqlalchemy.orm import joinedload
-    from cache_utils import cache
-
-    try:
-        period = request.args.get('period', '7')
-        days = int(period)
-    except (ValueError, TypeError):
-        days = 7
+    # Get the date range parameters
+    period = request.args.get('period', '7')  # Default to 7 days
+    days = int(period)
     end_date = datetime.now(pacific_tz).date()
     start_date = end_date - timedelta(days=days-1)
 
-    if days > 30:
-        cache_key = f"user_{current_user.id}_summary_{days}_{end_date}"
-        try:
-            cached_result = cache.get(cache_key)
-            if cached_result is not None:
-                return cached_result
-        except Exception:
-            pass
+    # Query for all daily plans in the date range
+    daily_plans = DailyPlan.query.filter(
+        DailyPlan.user_id == current_user.id,
+        DailyPlan.date >= start_date,
+        DailyPlan.date <= end_date
+    ).all()
 
-    work_category = Category.query.filter(
-        Category.user_id == current_user.id,
-        db.func.lower(Category.name).in_(['work', 'aps'])
-    ).first()
+    # Initialize statistics dictionaries
+    category_stats = {}
+    task_stats = {}
+    daily_category_breakdown = {}
+    total_minutes = 0
 
-    num_weeks = max(days / 7, 1)
-    num_months = max(days / 30, 1)
+    # Get all dates in range for consistent daily breakdown
+    all_dates = []
+    current_date = start_date
+    while current_date <= end_date:
+        all_dates.append(current_date)
+        current_date += timedelta(days=1)
 
-    if days > 30:
-        category_block_stats = db.session.query(
-            Category.id,
-            Category.name,
-            Category.color,
-            func.count(TimeBlock.id).label('block_count'),
-            func.count(func.distinct(DailyPlan.date)).label('days_used')
-        ).join(Task, Task.category_id == Category.id)\
-         .join(TimeBlock, TimeBlock.task_id == Task.id)\
-         .join(DailyPlan, TimeBlock.daily_plan_id == DailyPlan.id)\
-         .filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date
-        ).group_by(Category.id).all()
-
-        task_block_stats = db.session.query(
-            Task.id,
-            Task.title,
-            Task.category_id,
-            Category.name.label('category_name'),
-            Category.color.label('category_color'),
-            func.count(TimeBlock.id).label('block_count')
-        ).join(TimeBlock, TimeBlock.task_id == Task.id)\
-         .join(DailyPlan, TimeBlock.daily_plan_id == DailyPlan.id)\
-         .join(Category, Task.category_id == Category.id)\
-         .filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date
-        ).group_by(Task.id, Task.title, Task.category_id, Category.name, Category.color).all()
-
-        pto_result = db.session.query(
-            func.coalesce(func.sum(DailyPlan.pto_hours), 0)
-        ).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date,
-            DailyPlan.pto_hours > 0
-        ).scalar()
-        total_pto_minutes = float(pto_result) * 60
-
-        pto_days_count = db.session.query(
-            func.count(func.distinct(DailyPlan.date))
-        ).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date,
-            DailyPlan.pto_hours > 0
-        ).scalar() or 0
-
-        category_stats = {}
-        total_minutes = 0
-        for row in category_block_stats:
-            minutes = row.block_count * 15
-            total_minutes += minutes
-            category_stats[row.id] = {
-                'name': row.name,
-                'color': row.color,
-                'minutes': minutes,
-                'days_used_count': row.days_used
-            }
-
-        task_stats = {}
-        for row in task_block_stats:
-            minutes = row.block_count * 15
-            task_stats[row.id] = {
-                'title': row.title,
-                'minutes': minutes,
-                'category_id': row.category_id,
-                'category_name': row.category_name,
-                'category_color': row.category_color
-            }
-
-        if total_pto_minutes > 0 and work_category:
-            total_minutes += total_pto_minutes
-            if work_category.id in category_stats:
-                category_stats[work_category.id]['minutes'] += total_pto_minutes
-                category_stats[work_category.id]['days_used_count'] = max(
-                    category_stats[work_category.id]['days_used_count'],
-                    category_stats[work_category.id]['days_used_count'] + pto_days_count
-                )
-            else:
-                category_stats[work_category.id] = {
-                    'name': work_category.name,
-                    'color': work_category.color,
-                    'minutes': total_pto_minutes,
-                    'days_used_count': pto_days_count
-                }
-            task_stats['pto'] = {
-                'title': 'PTO',
-                'minutes': total_pto_minutes,
-                'category_id': work_category.id,
-                'category_name': work_category.name,
-                'category_color': work_category.color
-            }
-
-        for cat_stats in category_stats.values():
-            days_used = cat_stats.pop('days_used_count', 1)
-            cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
-            cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
-            cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
-
-        avg_weekly_total = total_minutes / num_weeks
-        avg_monthly_total = total_minutes / num_months
-        daily_breakdown_list = []
-
-    else:
-        daily_plans = DailyPlan.query.filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date
-        ).options(
-            joinedload(DailyPlan.time_blocks).joinedload(TimeBlock.task).joinedload(Task.category)
-        ).all()
-
-        category_stats = {}
-        task_stats = {}
-        daily_category_breakdown = {}
-        total_minutes = 0
-        total_pto_minutes = 0
-
-        all_dates = []
-        current_date = start_date
-        while current_date <= end_date:
-            all_dates.append(current_date)
-            current_date += timedelta(days=1)
-
-        for plan in daily_plans:
-            plan_date = plan.date
-            if plan_date not in daily_category_breakdown:
-                daily_category_breakdown[plan_date] = {}
-
-            if plan.pto_hours and plan.pto_hours > 0 and work_category:
-                pto_minutes = plan.pto_hours * 60
-                total_minutes += pto_minutes
-                total_pto_minutes += pto_minutes
-
-                if 'pto' not in task_stats:
-                    task_stats['pto'] = {
-                        'title': 'PTO',
-                        'minutes': 0,
-                        'category_id': work_category.id,
-                        'category_name': work_category.name,
-                        'category_color': work_category.color
-                    }
-                task_stats['pto']['minutes'] += pto_minutes
-
-                if work_category.id not in category_stats:
-                    category_stats[work_category.id] = {
-                        'name': work_category.name,
-                        'color': work_category.color,
-                        'minutes': 0,
-                        'days_used': set()
-                    }
-                category_stats[work_category.id]['minutes'] += pto_minutes
-                category_stats[work_category.id]['days_used'].add(plan.date)
-
-                if work_category.id not in daily_category_breakdown[plan_date]:
-                    daily_category_breakdown[plan_date][work_category.id] = {
-                        'name': work_category.name,
-                        'color': work_category.color,
-                        'minutes': 0
-                    }
-                daily_category_breakdown[plan_date][work_category.id]['minutes'] += pto_minutes
-
-            for block in plan.time_blocks:
-                if block.task_id and block.task:
-                    task = block.task
+    # Calculate statistics
+    for plan in daily_plans:
+        plan_date = plan.date
+        if plan_date not in daily_category_breakdown:
+            daily_category_breakdown[plan_date] = {}
+            
+        for block in plan.time_blocks:
+            if block.task_id:
+                task = Task.query.get(block.task_id)
+                if task:
+                    # Each block is 15 minutes
                     minutes = 15
                     total_minutes += minutes
 
+                    # Update task statistics
                     if task.id not in task_stats:
                         task_stats[task.id] = {
                             'title': task.title,
@@ -1164,6 +963,7 @@ def summary():
                         }
                     task_stats[task.id]['minutes'] += minutes
 
+                    # Update category statistics
                     if task.category_id not in category_stats:
                         category_stats[task.category_id] = {
                             'name': task.category.name,
@@ -1174,6 +974,7 @@ def summary():
                     category_stats[task.category_id]['minutes'] += minutes
                     category_stats[task.category_id]['days_used'].add(plan.date)
 
+                    # Update daily category breakdown
                     if task.category_id not in daily_category_breakdown[plan_date]:
                         daily_category_breakdown[plan_date][task.category_id] = {
                             'name': task.category.name,
@@ -1182,44 +983,68 @@ def summary():
                         }
                     daily_category_breakdown[plan_date][task.category_id]['minutes'] += minutes
 
-        for cat_stats in category_stats.values():
-            days_used = len(cat_stats['days_used'])
-            cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
-            cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
-            cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
-            del cat_stats['days_used']
+    # Calculate average daily/weekly/monthly hours for categories
+    num_weeks = max(days / 7, 1)
+    num_months = max(days / 30, 1)
+    for cat_stats in category_stats.values():
+        days_used = len(cat_stats['days_used'])
+        cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
+        cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
+        cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
+        del cat_stats['days_used']  # Remove set before passing to template
 
-        avg_weekly_total = total_minutes / num_weeks
-        avg_monthly_total = total_minutes / num_months
+    avg_weekly_total = total_minutes / num_weeks
+    avg_monthly_total = total_minutes / num_months
 
-        daily_breakdown_list = []
-        for date in sorted(all_dates, reverse=True):
-            day_data = {
-                'date': date,
-                'categories': daily_category_breakdown.get(date, {}),
-                'total_minutes': sum(cat['minutes'] for cat in daily_category_breakdown.get(date, {}).values())
-            }
-            daily_breakdown_list.append(day_data)
+    # Prepare daily breakdown for template (convert to list format)
+    daily_breakdown_list = []
+    for date in sorted(all_dates, reverse=True):  # Most recent first
+        day_data = {
+            'date': date,
+            'categories': daily_category_breakdown.get(date, {}),
+            'total_minutes': sum(cat['minutes'] for cat in daily_category_breakdown.get(date, {}).values())
+        }
+        daily_breakdown_list.append(day_data)
 
-    result = render_template('summary.html',
+    # For longer periods, aggregate by week
+    weekly_breakdown_list = []
+    if days > 30:
+        from collections import OrderedDict
+        weekly_data = OrderedDict()
+        for date in sorted(all_dates):
+            week_start = date - timedelta(days=date.weekday())
+            if week_start not in weekly_data:
+                weekly_data[week_start] = {'categories': {}, 'total_minutes': 0}
+            day_cats = daily_category_breakdown.get(date, {})
+            for cat_id, cat_info in day_cats.items():
+                if cat_id not in weekly_data[week_start]['categories']:
+                    weekly_data[week_start]['categories'][cat_id] = {
+                        'name': cat_info['name'],
+                        'color': cat_info['color'],
+                        'minutes': 0
+                    }
+                weekly_data[week_start]['categories'][cat_id]['minutes'] += cat_info['minutes']
+                weekly_data[week_start]['total_minutes'] += cat_info['minutes']
+        for week_start in sorted(weekly_data.keys(), reverse=True):
+            week_end = week_start + timedelta(days=6)
+            weekly_breakdown_list.append({
+                'week_start': week_start,
+                'week_end': week_end,
+                'categories': weekly_data[week_start]['categories'],
+                'total_minutes': weekly_data[week_start]['total_minutes']
+            })
+
+    return render_template('summary.html',
                          days=days,
                          start_date=start_date,
                          end_date=end_date,
                          category_stats=category_stats,
                          task_stats=task_stats,
                          total_minutes=total_minutes,
-                         total_pto_minutes=total_pto_minutes,
                          avg_weekly_total=avg_weekly_total,
                          avg_monthly_total=avg_monthly_total,
-                         daily_breakdown=daily_breakdown_list)
-
-    if days > 30:
-        try:
-            cache.set(cache_key, result, timeout=3600)
-        except Exception:
-            pass
-
-    return result
+                         daily_breakdown=daily_breakdown_list,
+                         weekly_breakdown=weekly_breakdown_list)
 
 
 
