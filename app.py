@@ -912,90 +912,193 @@ def save_daily_plan():
 @app.route('/summary')
 @login_required
 def summary():
-    # Get the date range parameters
-    period = request.args.get('period', '7')  # Default to 7 days
+    from sqlalchemy.orm import joinedload
+
+    period = request.args.get('period', '7')
     days = int(period)
     end_date = datetime.now(pacific_tz).date()
     start_date = end_date - timedelta(days=days-1)
 
-    # Query for all daily plans in the date range
-    daily_plans = DailyPlan.query.filter(
-        DailyPlan.user_id == current_user.id,
-        DailyPlan.date >= start_date,
-        DailyPlan.date <= end_date
-    ).all()
-
-    # Initialize statistics dictionaries
-    category_stats = {}
-    task_stats = {}
-    daily_category_breakdown = {}
-    total_minutes = 0
-
-    # Get all dates in range for consistent daily breakdown
-    all_dates = []
-    current_date = start_date
-    while current_date <= end_date:
-        all_dates.append(current_date)
-        current_date += timedelta(days=1)
-
-    # Find Work category for PTO attribution
     work_category = Category.query.filter(
         Category.user_id == current_user.id,
         db.func.lower(Category.name).in_(['work', 'aps'])
     ).first()
 
-    # Track total PTO minutes for display
-    total_pto_minutes = 0
+    num_weeks = max(days / 7, 1)
+    num_months = max(days / 30, 1)
 
-    # Calculate statistics
-    for plan in daily_plans:
-        plan_date = plan.date
-        if plan_date not in daily_category_breakdown:
-            daily_category_breakdown[plan_date] = {}
+    if days > 30:
+        category_block_stats = db.session.query(
+            Category.id,
+            Category.name,
+            Category.color,
+            func.count(TimeBlock.id).label('block_count'),
+            func.count(func.distinct(DailyPlan.date)).label('days_used')
+        ).join(Task, Task.category_id == Category.id)\
+         .join(TimeBlock, TimeBlock.task_id == Task.id)\
+         .join(DailyPlan, TimeBlock.daily_plan_id == DailyPlan.id)\
+         .filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).group_by(Category.id).all()
 
-        # Add PTO hours to Work category if any exist
-        if plan.pto_hours and plan.pto_hours > 0 and work_category:
-            pto_minutes = plan.pto_hours * 60
-            total_minutes += pto_minutes
-            total_pto_minutes += pto_minutes
+        task_block_stats = db.session.query(
+            Task.id,
+            Task.title,
+            Task.category_id,
+            Category.name.label('category_name'),
+            Category.color.label('category_color'),
+            func.count(TimeBlock.id).label('block_count')
+        ).join(TimeBlock, TimeBlock.task_id == Task.id)\
+         .join(DailyPlan, TimeBlock.daily_plan_id == DailyPlan.id)\
+         .join(Category, Task.category_id == Category.id)\
+         .filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).group_by(Task.id, Task.title, Task.category_id, Category.name, Category.color).all()
 
-            if 'pto' not in task_stats:
-                task_stats['pto'] = {
-                    'title': 'PTO',
-                    'minutes': 0,
-                    'category_id': work_category.id,
-                    'category_name': work_category.name,
-                    'category_color': work_category.color
-                }
-            task_stats['pto']['minutes'] += pto_minutes
+        pto_result = db.session.query(
+            func.coalesce(func.sum(DailyPlan.pto_hours), 0)
+        ).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date,
+            DailyPlan.pto_hours > 0
+        ).scalar()
+        total_pto_minutes = float(pto_result) * 60
 
-            if work_category.id not in category_stats:
+        pto_days_count = db.session.query(
+            func.count(func.distinct(DailyPlan.date))
+        ).filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date,
+            DailyPlan.pto_hours > 0
+        ).scalar() or 0
+
+        category_stats = {}
+        total_minutes = 0
+        for row in category_block_stats:
+            minutes = row.block_count * 15
+            total_minutes += minutes
+            category_stats[row.id] = {
+                'name': row.name,
+                'color': row.color,
+                'minutes': minutes,
+                'days_used_count': row.days_used
+            }
+
+        task_stats = {}
+        for row in task_block_stats:
+            minutes = row.block_count * 15
+            task_stats[row.id] = {
+                'title': row.title,
+                'minutes': minutes,
+                'category_id': row.category_id,
+                'category_name': row.category_name,
+                'category_color': row.category_color
+            }
+
+        if total_pto_minutes > 0 and work_category:
+            total_minutes += total_pto_minutes
+            if work_category.id in category_stats:
+                category_stats[work_category.id]['minutes'] += total_pto_minutes
+                category_stats[work_category.id]['days_used_count'] = max(
+                    category_stats[work_category.id]['days_used_count'],
+                    category_stats[work_category.id]['days_used_count'] + pto_days_count
+                )
+            else:
                 category_stats[work_category.id] = {
                     'name': work_category.name,
                     'color': work_category.color,
-                    'minutes': 0,
-                    'days_used': set()
+                    'minutes': total_pto_minutes,
+                    'days_used_count': pto_days_count
                 }
-            category_stats[work_category.id]['minutes'] += pto_minutes
-            category_stats[work_category.id]['days_used'].add(plan.date)
+            task_stats['pto'] = {
+                'title': 'PTO',
+                'minutes': total_pto_minutes,
+                'category_id': work_category.id,
+                'category_name': work_category.name,
+                'category_color': work_category.color
+            }
 
-            if work_category.id not in daily_category_breakdown[plan_date]:
-                daily_category_breakdown[plan_date][work_category.id] = {
-                    'name': work_category.name,
-                    'color': work_category.color,
-                    'minutes': 0
-                }
-            daily_category_breakdown[plan_date][work_category.id]['minutes'] += pto_minutes
+        for cat_stats in category_stats.values():
+            days_used = cat_stats.pop('days_used_count', 1)
+            cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
+            cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
+            cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
 
-        for block in plan.time_blocks:
-            if block.task_id:
-                task = Task.query.get(block.task_id)
-                if task:
-                    # Each block is 15 minutes
+        avg_weekly_total = total_minutes / num_weeks
+        avg_monthly_total = total_minutes / num_months
+        daily_breakdown_list = []
+
+    else:
+        daily_plans = DailyPlan.query.filter(
+            DailyPlan.user_id == current_user.id,
+            DailyPlan.date >= start_date,
+            DailyPlan.date <= end_date
+        ).options(
+            joinedload(DailyPlan.time_blocks).joinedload(TimeBlock.task).joinedload(Task.category)
+        ).all()
+
+        category_stats = {}
+        task_stats = {}
+        daily_category_breakdown = {}
+        total_minutes = 0
+        total_pto_minutes = 0
+
+        all_dates = []
+        current_date = start_date
+        while current_date <= end_date:
+            all_dates.append(current_date)
+            current_date += timedelta(days=1)
+
+        for plan in daily_plans:
+            plan_date = plan.date
+            if plan_date not in daily_category_breakdown:
+                daily_category_breakdown[plan_date] = {}
+
+            if plan.pto_hours and plan.pto_hours > 0 and work_category:
+                pto_minutes = plan.pto_hours * 60
+                total_minutes += pto_minutes
+                total_pto_minutes += pto_minutes
+
+                if 'pto' not in task_stats:
+                    task_stats['pto'] = {
+                        'title': 'PTO',
+                        'minutes': 0,
+                        'category_id': work_category.id,
+                        'category_name': work_category.name,
+                        'category_color': work_category.color
+                    }
+                task_stats['pto']['minutes'] += pto_minutes
+
+                if work_category.id not in category_stats:
+                    category_stats[work_category.id] = {
+                        'name': work_category.name,
+                        'color': work_category.color,
+                        'minutes': 0,
+                        'days_used': set()
+                    }
+                category_stats[work_category.id]['minutes'] += pto_minutes
+                category_stats[work_category.id]['days_used'].add(plan.date)
+
+                if work_category.id not in daily_category_breakdown[plan_date]:
+                    daily_category_breakdown[plan_date][work_category.id] = {
+                        'name': work_category.name,
+                        'color': work_category.color,
+                        'minutes': 0
+                    }
+                daily_category_breakdown[plan_date][work_category.id]['minutes'] += pto_minutes
+
+            for block in plan.time_blocks:
+                if block.task_id and block.task:
+                    task = block.task
                     minutes = 15
                     total_minutes += minutes
 
-                    # Update task statistics
                     if task.id not in task_stats:
                         task_stats[task.id] = {
                             'title': task.title,
@@ -1006,7 +1109,6 @@ def summary():
                         }
                     task_stats[task.id]['minutes'] += minutes
 
-                    # Update category statistics
                     if task.category_id not in category_stats:
                         category_stats[task.category_id] = {
                             'name': task.category.name,
@@ -1017,7 +1119,6 @@ def summary():
                     category_stats[task.category_id]['minutes'] += minutes
                     category_stats[task.category_id]['days_used'].add(plan.date)
 
-                    # Update daily category breakdown
                     if task.category_id not in daily_category_breakdown[plan_date]:
                         daily_category_breakdown[plan_date][task.category_id] = {
                             'name': task.category.name,
@@ -1026,23 +1127,18 @@ def summary():
                         }
                     daily_category_breakdown[plan_date][task.category_id]['minutes'] += minutes
 
-    # Calculate average daily/weekly/monthly hours for categories
-    num_weeks = max(days / 7, 1)
-    num_months = max(days / 30, 1)
-    for cat_stats in category_stats.values():
-        days_used = len(cat_stats['days_used'])
-        cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
-        cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
-        cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
-        del cat_stats['days_used']  # Remove set before passing to template
+        for cat_stats in category_stats.values():
+            days_used = len(cat_stats['days_used'])
+            cat_stats['avg_daily_minutes'] = cat_stats['minutes'] / (days_used if days_used > 0 else 1)
+            cat_stats['avg_weekly_minutes'] = cat_stats['minutes'] / num_weeks
+            cat_stats['avg_monthly_minutes'] = cat_stats['minutes'] / num_months
+            del cat_stats['days_used']
 
-    avg_weekly_total = total_minutes / num_weeks
-    avg_monthly_total = total_minutes / num_months
+        avg_weekly_total = total_minutes / num_weeks
+        avg_monthly_total = total_minutes / num_months
 
-    # Prepare daily breakdown for template (only for shorter periods)
-    daily_breakdown_list = []
-    if days <= 30:
-        for date in sorted(all_dates, reverse=True):  # Most recent first
+        daily_breakdown_list = []
+        for date in sorted(all_dates, reverse=True):
             day_data = {
                 'date': date,
                 'categories': daily_category_breakdown.get(date, {}),

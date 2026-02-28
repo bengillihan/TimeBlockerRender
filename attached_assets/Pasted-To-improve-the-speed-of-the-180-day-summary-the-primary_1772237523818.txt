@@ -1,0 +1,86 @@
+To improve the speed of the 180-day summary, the primary focus should be on eliminating the **N+1 query problem** and shifting heavy calculations from Python memory to the database engine.
+
+Based on the provided code, here are the most effective improvements:
+
+### 1. Eliminate the N+1 Query Problem
+
+In the current `/summary` route, for every `TimeBlock` in every `DailyPlan`, the code executes `Task.query.get(block.task_id)`. Over 180 days, if you have 30 blocks per day, this can result in over 5,000 individual database queries.
+
+**Improvement:** Use **Eager Loading** with `joinedload` to fetch the plans, blocks, and tasks in a single query.
+
+```python
+# In app.py /summary route
+from sqlalchemy.orm import joinedload
+
+daily_plans = DailyPlan.query.filter(
+    DailyPlan.user_id == current_user.id,
+    DailyPlan.date >= start_date,
+    DailyPlan.date <= end_date
+).options(
+    joinedload(DailyPlan.time_blocks).joinedload(TimeBlock.task).joinedload(Task.category)
+).all()
+
+```
+
+By pre-fetching this data, the loop `task = Task.query.get(block.task_id)` will pull from memory instead of hitting the database again.
+
+### 2. Use Database Aggregations
+
+Instead of looping through thousands of objects in Python to calculate `total_minutes`, let PostgreSQL handle the math. This is significantly faster for long periods like 180 days.
+
+**Improvement:** Use a `GROUP BY` query to get category totals directly.
+
+```python
+stats = db.session.query(
+    Category.name,
+    Category.color,
+    func.count(TimeBlock.id).label('block_count')
+).join(Task, Task.category_id == Category.id)\
+ .join(TimeBlock, TimeBlock.task_id == Task.id)\
+ .join(DailyPlan, TimeBlock.daily_plan_id == DailyPlan.id)\
+ .filter(DailyPlan.user_id == current_user.id, DailyPlan.date.between(start_date, end_date))\
+ .group_by(Category.id).all()
+
+```
+
+### 3. Implement Caching for Historical Data
+
+The application already has a `cache_utils` module. Since historical data (e.g., a plan from 3 months ago) rarely changes, you should cache the summary results.
+
+**Improvement:** Add the `@cached` decorator to the summary logic, using a key that includes the `user_id`, `start_date`, and `end_date`.
+
+```python
+@app.route('/summary')
+@login_required
+@cached(timeout=3600, key_prefix='user_summary_{current_user.id}_{period}')
+def summary():
+    # ... existing logic ...
+
+```
+
+### 4. Optimize Database Indexes
+
+While `models.py` includes several indexes, such as `idx_daily_plan_user_date`, you can further optimize the performance of the summary by adding a composite index on `TimeBlock`.
+
+**Improvement:** Add an index in `models.py` that covers the foreign keys used in the summary joins:
+
+```python
+# Add to models.py
+Index('idx_timeblock_task_plan', TimeBlock.task_id, TimeBlock.daily_plan_id)
+
+```
+
+### 5. Reduce Data Processing for Long Ranges
+
+Currently, the code calculates a `daily_breakdown_list` but only adds it to the template if the period is 30 days or less. However, the data calculation for `daily_category_breakdown` still happens for all 180 days.
+
+**Improvement:** Wrap the breakdown calculation in a conditional check so that if `days > 30`, the app skips the expensive per-day dictionary building and only calculates the high-level totals.
+
+### Summary of Impact
+
+| Improvement | Expected Speed Gain |
+| --- | --- |
+| **Eager Loading** | High (Reduces query count from 5000+ to 1) |
+| **SQL Aggregates** | High (Moves math from Python to optimized C/SQL) |
+| **Caching** | Extreme (Subsequent loads become near-instant) |
+| **Conditional Logic** | Medium (Reduces memory pressure for 180-day views) |
