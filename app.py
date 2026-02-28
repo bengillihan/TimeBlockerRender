@@ -14,7 +14,7 @@ from dateutil.rrule import rrule, rrulestr
 # Configure logging with Railway-specific settings
 if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
@@ -875,35 +875,68 @@ def save_daily_plan():
                 )
                 db.session.add(priority)
 
-    # Handle time blocks - only update if explicitly provided with data
+    # Handle time blocks - upsert by start_time to reduce database churn
     if data.get('time_blocks'):
-        TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        existing_blocks = {b.start_time: b for b in TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).all()}
+        incoming_start_times = set()
+        tasks_to_update_usage = set()
+
         for block_data in data.get('time_blocks', []):
-            # Validate that both start_time and end_time exist
             if not block_data.get('start_time') or not block_data.get('end_time'):
                 logger.warning(f"Skipping time block with missing time data: {block_data}")
                 continue
-                
+
             try:
-                time_block = TimeBlock(
-                    daily_plan_id=daily_plan.id,
-                    start_time=datetime.strptime(block_data['start_time'], '%H:%M').time(),
-                    end_time=datetime.strptime(block_data['end_time'], '%H:%M').time(),
-                    task_id=block_data.get('task_id'),
-                    completed=block_data.get('completed', False),
-                    notes=block_data.get('notes', '')[:15]  # Ensure notes don't exceed 15 chars
-                )
-                db.session.add(time_block)
-                
-                # Update task usage statistics when a task is assigned to a time block
-                if block_data.get('task_id'):
-                    task = Task.query.get(block_data['task_id'])
-                    if task:
-                        task.usage_count = (task.usage_count or 0) + 1
-                        task.last_used = datetime.utcnow()
+                start_t = datetime.strptime(block_data['start_time'], '%H:%M').time()
+                end_t = datetime.strptime(block_data['end_time'], '%H:%M').time()
+                task_id = block_data.get('task_id')
+                completed = block_data.get('completed', False)
+                notes = block_data.get('notes', '')[:15]
+                incoming_start_times.add(start_t)
+
+                if start_t in existing_blocks:
+                    block = existing_blocks[start_t]
+                    changed = False
+                    if block.end_time != end_t:
+                        block.end_time = end_t
+                        changed = True
+                    if block.task_id != task_id:
+                        if task_id:
+                            tasks_to_update_usage.add(task_id)
+                        block.task_id = task_id
+                        changed = True
+                    if block.completed != completed:
+                        block.completed = completed
+                        changed = True
+                    if block.notes != notes:
+                        block.notes = notes
+                        changed = True
+                else:
+                    time_block = TimeBlock(
+                        daily_plan_id=daily_plan.id,
+                        start_time=start_t,
+                        end_time=end_t,
+                        task_id=task_id,
+                        completed=completed,
+                        notes=notes
+                    )
+                    db.session.add(time_block)
+                    if task_id:
+                        tasks_to_update_usage.add(task_id)
             except (ValueError, KeyError) as e:
                 logger.error(f"Error processing time block {block_data}: {str(e)}")
                 continue
+
+        for start_t, block in existing_blocks.items():
+            if start_t not in incoming_start_times:
+                db.session.delete(block)
+
+        if tasks_to_update_usage:
+            for tid in tasks_to_update_usage:
+                task = Task.query.get(tid)
+                if task:
+                    task.usage_count = (task.usage_count or 0) + 1
+                    task.last_used = datetime.utcnow()
 
 
     try:
