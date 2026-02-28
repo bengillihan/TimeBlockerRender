@@ -114,6 +114,12 @@ app.register_blueprint(google_auth)
 def make_session_permanent():
     session.permanent = True
 
+@app.after_request
+def add_cache_headers(response):
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=604800'
+    return response
+
 @app.errorhandler(404)
 def not_found(error):
     logger.error(f"404 error - Resource not found: {request.url}")
@@ -913,11 +919,18 @@ def save_daily_plan():
 @login_required
 def summary():
     from sqlalchemy.orm import joinedload
+    from cache_utils import cache
 
     period = request.args.get('period', '7')
     days = int(period)
     end_date = datetime.now(pacific_tz).date()
     start_date = end_date - timedelta(days=days-1)
+
+    if days > 30:
+        cache_key = f"user_{current_user.id}_summary_{days}_{end_date}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
 
     work_category = Category.query.filter(
         Category.user_id == current_user.id,
@@ -1146,7 +1159,7 @@ def summary():
             }
             daily_breakdown_list.append(day_data)
 
-    return render_template('summary.html',
+    result = render_template('summary.html',
                          days=days,
                          start_date=start_date,
                          end_date=end_date,
@@ -1157,6 +1170,11 @@ def summary():
                          avg_weekly_total=avg_weekly_total,
                          avg_monthly_total=avg_monthly_total,
                          daily_breakdown=daily_breakdown_list)
+
+    if days > 30:
+        cache.set(cache_key, result, timeout=3600)
+
+    return result
 
 
 
