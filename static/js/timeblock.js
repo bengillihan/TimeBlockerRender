@@ -1,6 +1,7 @@
 let hasUnsavedChanges = false;
 let autoSaveTimeout;
 const AUTO_SAVE_DELAY = 10000; // 10-second delay after last change
+window.hasUnsavedChanges = hasUnsavedChanges;
 
 // Update current time display
 function updateCurrentTime() {
@@ -44,6 +45,7 @@ function triggerAutoSave() {
     clearTimeout(autoSaveTimeout);
     if (!hasUnsavedChanges) {
         hasUnsavedChanges = true;
+        window.hasUnsavedChanges = true;
         toggleSaveButton(true);
         showSavingIndicator();
     }
@@ -52,12 +54,14 @@ function triggerAutoSave() {
             await saveData();
             hideSavingIndicator();
             hasUnsavedChanges = false;
+            window.hasUnsavedChanges = false;
             toggleSaveButton(false);
         } catch (error) {
             console.error('Auto-save failed:', error);
         }
     }, AUTO_SAVE_DELAY);
 }
+window.triggerAutoSave = triggerAutoSave;
 
 // Date navigation functions
 function formatDate(date) {
@@ -300,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     notesInput.value = '';
                 }
 
-                saveData(); // Save changes
+                triggerAutoSave();
             });
         });
 
@@ -309,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
             checkbox.addEventListener('change', function () {
                 const input = this.closest('.input-group').querySelector('.priority-input');
                 input.classList.toggle('completed', this.checked);
-                saveData();
+                triggerAutoSave();
             });
         });
 
@@ -365,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
 
                     // Save the updated time block data
-                    saveData();
+                    triggerAutoSave();
                 });
         });
 
@@ -638,6 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (result.status === 'success') {
                     updateLastSavedTime();
                     hasUnsavedChanges = false;
+                    window.hasUnsavedChanges = false;
                     toggleSaveButton(false);
                     updateTimeTotals(); // Call updateTimeTotals after successful save
                 }
@@ -673,15 +678,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return event.returnValue;
             }
         });
-
-        // Backup auto-save every 5 minutes to reduce conflicts
-        setInterval(async () => {
-            try {
-                await saveData();
-            } catch (error) {
-                console.error('Periodic auto-save failed:', error);
-            }
-        }, 300000);
 
         // Load existing templates
         async function loadTemplates() {

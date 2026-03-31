@@ -72,7 +72,10 @@ function saveWorkHourSettings() {
 function updatePTOHours() {
     const ptoHours = document.getElementById('ptoHours').value;
     document.getElementById('ptoHoursDisplay').textContent = ptoHours + ' hrs';
-    if (window.autoSaveData) {
+    if (window.triggerAutoSave) {
+        window.triggerAutoSave();
+    } else if (window.autoSaveData) {
+        window.hasUnsavedChanges = true;
         window.autoSaveData();
     }
 }
@@ -293,22 +296,19 @@ function initRefreshTotals() {
     });
 }
 
-let autoSaveInterval;
 let lastUpdateCheck = new Date().toISOString();
 
 function setupAutoSave() {
-    autoSaveInterval = setInterval(() => {
-        autoSaveData();
-    }, 120000);
-
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
+        if (document.hidden && window.hasUnsavedChanges) {
             autoSaveData();
         }
     });
 
     window.addEventListener('beforeunload', () => {
-        autoSaveData();
+        if (window.hasUnsavedChanges) {
+            autoSaveData();
+        }
     });
 }
 
@@ -331,6 +331,10 @@ const MAX_RETRIES = 3;
 const BASE_RETRY_DELAY = 2000;
 
 async function autoSaveData() {
+    if (!window.hasUnsavedChanges) {
+        return;
+    }
+
     let retries = 0;
 
     while (retries <= MAX_RETRIES) {
@@ -381,6 +385,7 @@ async function autoSaveData() {
             if (result.success) {
                 lastUpdateCheck = new Date().toISOString();
                 showAutoSaveIndicator('✓ Auto-saved');
+                window.hasUnsavedChanges = false;
                 return;
             } else if (result.conflict) {
                 showConflictWarning();

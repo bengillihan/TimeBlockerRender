@@ -2,9 +2,10 @@ import os
 import logging
 import pytz
 import secrets
+from pathlib import Path
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from sqlalchemy import text, func
@@ -106,6 +107,65 @@ init_cache(app)
 # Set session lifetime (8 hours) for better user experience
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 
+COMMON_PROBE_PREFIXES = (
+    '/wp-',
+    '/wp/',
+    '/wp-admin',
+    '/wp-content',
+    '/wp-includes',
+    '/.well-known/',
+    '/plugins/',
+    '/Assets/',
+    '/public/',
+    '/.vscode/',
+)
+
+COMMON_PROBE_EXACT_PATHS = {
+    '/about.php',
+    '/admin-footer.php',
+    '/ajax.php',
+    '/callback.php',
+    '/edit.php',
+    '/file.php',
+    '/filemanager.php',
+    '/install.php',
+    '/lock.php',
+    '/plugin.php',
+    '/readme.php',
+    '/robots.txt',
+    '/sftp-config.json',
+    '/user.php',
+}
+
+
+def wants_json_response():
+    if request.path.startswith('/api/'):
+        return True
+
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    return best == 'application/json' and (
+        request.accept_mimetypes['application/json'] >= request.accept_mimetypes['text/html']
+    )
+
+
+def is_noise_404(path, user_agent=''):
+    normalized_path = (path or '').lower()
+    normalized_agent = (user_agent or '').lower()
+
+    if normalized_path == '/favicon.ico':
+        return False
+
+    if normalized_path.endswith('.php'):
+        return True
+
+    if normalized_path in COMMON_PROBE_EXACT_PATHS:
+        return True
+
+    if any(normalized_path.startswith(prefix.lower()) for prefix in COMMON_PROBE_PREFIXES):
+        return True
+
+    return 'bot' in normalized_agent and normalized_path in {'/robots.txt'}
+
 from google_auth import google_auth
 app.register_blueprint(google_auth)
 
@@ -116,13 +176,28 @@ def make_session_permanent():
 
 @app.errorhandler(404)
 def not_found(error):
-    logger.error(f"404 error - Resource not found: {request.url}")
-    return jsonify({
-        'error': 'Resource not found',
-        'message': 'The requested resource was not found',
-        'url': request.url,
-        'timestamp': datetime.now(pacific_tz).isoformat()
-    }), 404
+    path = request.path
+    user_agent = request.headers.get('User-Agent', '')
+
+    if is_noise_404(path, user_agent):
+        logger.info("Ignoring noisy 404 probe for path=%s", path)
+    else:
+        logger.warning("404 not found for path=%s", path)
+
+    if wants_json_response():
+        return jsonify({
+            'error': 'Resource not found',
+            'message': 'The requested resource was not found',
+            'url': request.url,
+            'timestamp': datetime.now(pacific_tz).isoformat()
+        }), 404
+
+    return (
+        "<!doctype html><html><head><title>404 Not Found</title></head>"
+        "<body><h1>404 Not Found</h1><p>The requested page could not be found.</p></body></html>",
+        404,
+        {'Content-Type': 'text/html; charset=utf-8'}
+    )
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -169,6 +244,18 @@ def cleanup_request(exception=None):
     if exception:
         db.session.rollback()
         logger.error(f"Request exception: {str(exception)}")
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    content = "User-agent: *\nDisallow:\n"
+    return app.response_class(content, mimetype='text/plain')
+
+
+@app.route('/favicon.ico')
+def favicon():
+    favicon_dir = Path(app.root_path) / 'static' / 'favicon'
+    return send_from_directory(favicon_dir, 'favicon.png', mimetype='image/png')
 
 @login_manager.user_loader
 def load_user(user_id):
