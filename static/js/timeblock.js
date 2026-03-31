@@ -2,6 +2,7 @@ let hasUnsavedChanges = false;
 let autoSaveTimeout;
 const AUTO_SAVE_DELAY = 3000; // 3-second delay after last change
 window.hasUnsavedChanges = hasUnsavedChanges;
+window.saveTimeblockData = null;
 
 // Update current time display
 function updateCurrentTime() {
@@ -57,7 +58,10 @@ function triggerAutoSave() {
     }
     autoSaveTimeout = setTimeout(async () => {
         try {
-            await saveData();
+            if (typeof window.saveTimeblockData !== 'function') {
+                throw new Error('Save function is not available');
+            }
+            await window.saveTimeblockData();
             hideSavingIndicator();
             hasUnsavedChanges = false;
             window.hasUnsavedChanges = false;
@@ -96,7 +100,9 @@ async function confirmAndNavigate(url) {
     if (hasUnsavedChanges) {
         if (confirm('You have unsaved changes. Do you want to save before leaving?')) {
             try {
-                await saveData();
+                if (typeof window.saveTimeblockData === 'function') {
+                    await window.saveTimeblockData();
+                }
             } catch (error) {
                 if (!confirm('Save failed. Do you still want to leave?')) {
                     return;
@@ -662,6 +668,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw error;
             }
         }
+        window.saveTimeblockData = saveData;
 
         function updateLastSavedTime() {
             const now = new Date();
