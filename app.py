@@ -1148,22 +1148,29 @@ def summary():
 @app.route('/health')
 @app.route('/health-check')
 def health_check():
-    """Health check endpoint to verify server status."""
+    """Lightweight liveness probe for Railway startup and routing."""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now(pacific_tz).isoformat()
+    })
+
+
+@app.route('/ready')
+def readiness_check():
+    """Deeper readiness probe that verifies database connectivity."""
     try:
-        # Check if we can access the database
         db.session.execute(text('SELECT 1'))
-        # Check if environment variables are set
         nylas_configured = bool(os.environ.get('NYLAS_CLIENT_ID') and os.environ.get('NYLAS_CLIENT_SECRET'))
         return jsonify({
-            'status': 'healthy',
+            'status': 'ready',
             'database': 'connected',
             'nylas_configured': nylas_configured,
             'timestamp': datetime.now(pacific_tz).isoformat()
         })
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Readiness check failed: {str(e)}")
         return jsonify({
-            'status': 'unhealthy',
+            'status': 'unready',
             'error': str(e),
             'timestamp': datetime.now(pacific_tz).isoformat()
         }), 500
