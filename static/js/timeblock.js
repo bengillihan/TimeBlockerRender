@@ -1,6 +1,6 @@
 let hasUnsavedChanges = false;
 let autoSaveTimeout;
-const AUTO_SAVE_DELAY = 10000; // 10-second delay after last change
+const AUTO_SAVE_DELAY = 3000; // 3-second delay after last change
 window.hasUnsavedChanges = hasUnsavedChanges;
 
 // Update current time display
@@ -28,6 +28,12 @@ function toggleSaveButton(state) {
     document.getElementById('saveButton').disabled = !state;
 }
 
+function showPendingSaveIndicator() {
+    const lastSaved = document.getElementById('lastSaved');
+    lastSaved.innerHTML = 'Unsaved changes';
+    lastSaved.style.opacity = 1;
+}
+
 function showSavingIndicator() {
     const lastSaved = document.getElementById('lastSaved');
     lastSaved.innerHTML = 'Saving...';
@@ -47,7 +53,7 @@ function triggerAutoSave() {
         hasUnsavedChanges = true;
         window.hasUnsavedChanges = true;
         toggleSaveButton(true);
-        showSavingIndicator();
+        showPendingSaveIndicator();
     }
     autoSaveTimeout = setTimeout(async () => {
         try {
@@ -563,6 +569,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Update the existing saveData function to properly call updateTimeTotals
         async function saveData() {
+            showSavingIndicator();
+
             const date = document.getElementById('datePicker').value;
             const priorities = [...document.querySelectorAll('.priority-input')].map(input => ({
                 content: input.value,

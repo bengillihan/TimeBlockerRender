@@ -959,6 +959,16 @@ def save_daily_plan():
     # Handle time blocks - only update if explicitly provided with data
     if data.get('time_blocks'):
         TimeBlock.query.filter_by(daily_plan_id=daily_plan.id).delete()
+        assigned_task_ids = {
+            block_data.get('task_id')
+            for block_data in data.get('time_blocks', [])
+            if block_data.get('task_id')
+        }
+        tasks_by_id = {}
+        if assigned_task_ids:
+            tasks = Task.query.filter(Task.id.in_(assigned_task_ids)).all()
+            tasks_by_id = {task.id: task for task in tasks}
+
         for block_data in data.get('time_blocks', []):
             # Validate that both start_time and end_time exist
             if not block_data.get('start_time') or not block_data.get('end_time'):
@@ -978,7 +988,7 @@ def save_daily_plan():
                 
                 # Update task usage statistics when a task is assigned to a time block
                 if block_data.get('task_id'):
-                    task = Task.query.get(block_data['task_id'])
+                    task = tasks_by_id.get(block_data['task_id'])
                     if task:
                         task.usage_count = (task.usage_count or 0) + 1
                         task.last_used = datetime.utcnow()
