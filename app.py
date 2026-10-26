@@ -8,12 +8,19 @@ from functools import wraps
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
-from sqlalchemy import text, func
+from sqlalchemy import text, func, case
+from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import set_committed_value
 from cache_utils import init_cache, cached, invalidate_cache, get_paginated_results
 from dateutil.rrule import rrule, rrulestr
 
-# Configure logging with Railway-specific settings
-if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+# Detect hosted environments: Railway sets RAILWAY_ENVIRONMENT_NAME, Render sets RENDER
+IS_RAILWAY = bool(os.environ.get('RAILWAY_ENVIRONMENT_NAME'))
+IS_RENDER = bool(os.environ.get('RENDER'))
+IS_PRODUCTION = IS_RAILWAY or IS_RENDER
+
+# Configure logging with production-specific settings
+if IS_PRODUCTION:
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
@@ -30,7 +37,7 @@ pacific_tz = pytz.timezone('America/Los_Angeles')
 app = Flask(__name__)
 session_secret = os.environ.get("SESSION_SECRET")
 if not session_secret:
-    if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
+    if IS_PRODUCTION:
         raise ValueError("SESSION_SECRET environment variable is required in production")
     session_secret = "dev-secret-key"
 app.secret_key = session_secret
@@ -42,7 +49,8 @@ try:
         logger.error("DATABASE_URL environment variable not set")
         raise ValueError("DATABASE_URL is required")
     
-    logger.info(f"Database URL configured: {database_url[:50]}...")
+    # Log only the host so credentials never reach the logs
+    logger.info(f"Database URL configured for host: {database_url.rsplit('@', 1)[-1].split('/', 1)[0]}")
     
     if database_url and database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
@@ -54,9 +62,9 @@ try:
 except Exception as e:
     logger.error(f"Database configuration failed: {str(e)}")
     raise
-# Optimize for Railway free tier constraints
-if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
-    # Railway-specific optimizations
+# Optimize for hosted free tier constraints
+if IS_PRODUCTION:
+    # Production optimizations (single sync worker needs one connection)
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_recycle": 180,  # More aggressive connection recycling
         "pool_pre_ping": True,
@@ -65,7 +73,7 @@ if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
         "pool_timeout": 10,  # Shorter timeout
         "connect_args": {
             "client_encoding": "utf8",
-            "application_name": "timeblocker_railway",
+            "application_name": "timeblocker_railway" if IS_RAILWAY else "timeblocker_render",
             "connect_timeout": 5
         },
         "echo": False,
@@ -266,6 +274,20 @@ def create_default_categories(user):
 def get_current_pacific_date():
     return datetime.now(pacific_tz).date()
 
+def with_blocks_and_tasks(query):
+    """Eager-load time blocks with their tasks and categories, avoiding a query per block."""
+    return query.options(
+        selectinload(DailyPlan.time_blocks).selectinload(TimeBlock.task).selectinload(Task.category)
+    )
+
+def get_daily_plans_in_range(start_date, end_date):
+    """Load the current user's daily plans in a date range with blocks, tasks and categories."""
+    return with_blocks_and_tasks(DailyPlan.query.filter(
+        DailyPlan.user_id == current_user.id,
+        DailyPlan.date >= start_date,
+        DailyPlan.date <= end_date
+    )).all()
+
 @app.route('/')
 def index():
     if not current_user.is_authenticated:
@@ -278,10 +300,10 @@ def index():
     else:
         date = get_current_pacific_date()
 
-    daily_plan = DailyPlan.query.filter_by(
+    daily_plan = with_blocks_and_tasks(DailyPlan.query.filter_by(
         user_id=current_user.id,
         date=date
-    ).first()
+    )).first()
 
     # Get user's preferred start and end times, or use defaults
     day_start = current_user.day_start_time or datetime.strptime('09:00', '%H:%M').time()
@@ -289,23 +311,23 @@ def index():
 
     # Get categories and their tasks for the time block selector
     # Order categories to prioritize Work category first, then by name
-    from sqlalchemy import case
     categories = Category.query.filter_by(user_id=current_user.id).order_by(
         case((Category.name == 'Work', 0), else_=1),
         Category.name
     ).all()
     
-    # For each category, order tasks by usage frequency (most used first), then by title
+    # Order each category's tasks by usage frequency (most used first), then by title,
+    # loading all of them in one query instead of one per category
+    user_tasks = Task.query.filter_by(user_id=current_user.id).order_by(
+        Task.usage_count.desc().nullslast(),
+        Task.title
+    ).all()
+    tasks_by_category = {}
+    for task in user_tasks:
+        tasks_by_category.setdefault(task.category_id, []).append(task)
     for category in categories:
-        # Get tasks for this category and sort by usage frequency
-        category_tasks = Task.query.filter_by(
-            category_id=category.id,
-            user_id=current_user.id
-        ).order_by(
-            Task.usage_count.desc().nullslast(),
-            Task.title
-        ).all()
-        category.tasks = category_tasks
+        # Set without change tracking so the session doesn't treat this as an edit
+        set_committed_value(category, 'tasks', tasks_by_category.get(category.id, []))
     
 
     
@@ -353,7 +375,7 @@ def index():
             })
 
             if block.task_id:
-                task = Task.query.get(block.task_id)
+                task = block.task
                 if task:
                     # Calculate minutes (each block is 15 minutes)
                     minutes = 15
@@ -1014,11 +1036,7 @@ def summary():
     start_date = end_date - timedelta(days=days-1)
 
     # Query for all daily plans in the date range
-    daily_plans = DailyPlan.query.filter(
-        DailyPlan.user_id == current_user.id,
-        DailyPlan.date >= start_date,
-        DailyPlan.date <= end_date
-    ).all()
+    daily_plans = get_daily_plans_in_range(start_date, end_date)
 
     # Initialize statistics dictionaries
     category_stats = {}
@@ -1041,7 +1059,7 @@ def summary():
             
         for block in plan.time_blocks:
             if block.task_id:
-                task = Task.query.get(block.task_id)
+                task = block.task
                 if task:
                     # Each block is 15 minutes
                     minutes = 15
@@ -1401,11 +1419,7 @@ def get_seven_day_stats():
         start_date = end_date - timedelta(days=6)
         
         # Query for all daily plans in the date range
-        daily_plans = DailyPlan.query.filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date >= start_date,
-            DailyPlan.date <= end_date
-        ).all()
+        daily_plans = get_daily_plans_in_range(start_date, end_date)
         
         # Initialize statistics
         total_minutes = 0
@@ -1431,7 +1445,7 @@ def get_seven_day_stats():
             
             for block in plan.time_blocks:
                 if block.task_id:
-                    task = Task.query.get(block.task_id)
+                    task = block.task
                     if task and task.category:
                         # Each block is 15 minutes
                         minutes = 15
@@ -1525,11 +1539,7 @@ def get_time_analytics():
     start_date = end_date - timedelta(days=days)
     
     # Query daily plans in range
-    daily_plans = DailyPlan.query.filter(
-        DailyPlan.user_id == current_user.id,
-        DailyPlan.date >= start_date,
-        DailyPlan.date <= end_date
-    ).all()
+    daily_plans = get_daily_plans_in_range(start_date, end_date)
     
     analytics = {
         'total_hours': 0,
@@ -1552,7 +1562,7 @@ def get_time_analytics():
                 day_total += minutes / 60
                 
                 # Get task and category info
-                task = Task.query.get(block.task_id)
+                task = block.task
                 if task:
                     category_name = task.category.name
                     
@@ -1726,42 +1736,36 @@ def get_work_hour_stats():
         user_categories = Category.query.filter_by(user_id=current_user.id).all()
         category_map = {cat.name: cat for cat in user_categories}
         
+        # Count 15-minute blocks per category for all three ranges in one query.
+        # The 30-day range contains both the 7-day range and the work week.
+        tracked_ids = [category_map[name].id for name in tracked_categories if name in category_map]
+        block_counts = {}
+        if tracked_ids:
+            rows = db.session.query(
+                Task.category_id,
+                func.count(case((DailyPlan.date >= seven_days_ago, 1))),
+                func.count(TimeBlock.id),
+                func.count(case((DailyPlan.date >= work_week_start, 1)))
+            ).select_from(TimeBlock).join(DailyPlan).join(Task).filter(
+                DailyPlan.user_id == current_user.id,
+                DailyPlan.date.between(thirty_days_ago, end_date),
+                Task.category_id.in_(tracked_ids)
+            ).group_by(Task.category_id).all()
+            block_counts = {row[0]: row[1:] for row in rows}
+        
         # Initialize stats structure
         category_stats = {}
         
         for cat_name in tracked_categories:
             category = category_map.get(cat_name)
             if category:
-                # Calculate 7-day hours for this category
-                seven_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
-                    DailyPlan.user_id == current_user.id,
-                    DailyPlan.date.between(seven_days_ago, end_date),
-                    Task.category_id == category.id
-                ).all()
-                seven_day_minutes = sum(15 for block in seven_day_blocks)
-                
-                # Calculate 30-day hours for this category
-                thirty_day_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
-                    DailyPlan.user_id == current_user.id,
-                    DailyPlan.date.between(thirty_days_ago, end_date),
-                    Task.category_id == category.id
-                ).all()
-                thirty_day_minutes = sum(15 for block in thirty_day_blocks)
-                
-                # Calculate work week hours (Monday-Sunday) for this category
-                work_week_blocks = TimeBlock.query.join(DailyPlan).join(Task).filter(
-                    DailyPlan.user_id == current_user.id,
-                    DailyPlan.date.between(work_week_start, work_week_end),
-                    Task.category_id == category.id
-                ).all()
-                work_week_minutes = sum(15 for block in work_week_blocks)
-                
+                seven_day_blocks, thirty_day_blocks, work_week_blocks = block_counts.get(category.id, (0, 0, 0))
                 category_stats[cat_name.lower()] = {
                     'name': cat_name,
                     'color': category.color,
-                    'seven_day': round(seven_day_minutes / 60, 1),
-                    'thirty_day': round(thirty_day_minutes / 60, 1),
-                    'work_week': round(work_week_minutes / 60, 1)
+                    'seven_day': round(seven_day_blocks * 15 / 60, 1),
+                    'thirty_day': round(thirty_day_blocks * 15 / 60, 1),
+                    'work_week': round(work_week_blocks * 15 / 60, 1)
                 }
             else:
                 category_stats[cat_name.lower()] = {
@@ -1772,21 +1776,15 @@ def get_work_hour_stats():
                     'work_week': 0
                 }
         
-        # Add PTO hours to Work category for 7-day and 30-day periods
-        seven_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date.between(seven_days_ago, end_date)
-        ).scalar() or 0
-        
-        thirty_day_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
+        # Add PTO hours to Work category for all three periods in one query
+        seven_day_pto, thirty_day_pto, work_week_pto = (value or 0 for value in db.session.query(
+            func.sum(case((DailyPlan.date >= seven_days_ago, DailyPlan.pto_hours))),
+            func.sum(DailyPlan.pto_hours),
+            func.sum(case((DailyPlan.date >= work_week_start, DailyPlan.pto_hours)))
+        ).filter(
             DailyPlan.user_id == current_user.id,
             DailyPlan.date.between(thirty_days_ago, end_date)
-        ).scalar() or 0
-        
-        work_week_pto = db.session.query(db.func.sum(DailyPlan.pto_hours)).filter(
-            DailyPlan.user_id == current_user.id,
-            DailyPlan.date.between(work_week_start, work_week_end)
-        ).scalar() or 0
+        ).one())
         
         # Add PTO to work hours
         if 'work' in category_stats:

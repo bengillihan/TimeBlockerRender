@@ -1,8 +1,9 @@
 import json
 import os
+import time
 import requests
 import logging
-from typing import Optional, Tuple
+from typing import Tuple
 from app import db
 from flask import Blueprint, redirect, request, url_for, flash, current_app
 from flask_login import login_required, login_user, logout_user
@@ -15,11 +16,28 @@ logger = logging.getLogger(__name__)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+GOOGLE_REQUEST_TIMEOUT = 10  # seconds; keeps a slow Google response from tying up a worker
+DISCOVERY_CACHE_TTL = 3600  # Google's endpoints rarely change
+
+_discovery_cache = {"config": None, "fetched_at": 0.0}
 
 logger.info("Initializing Google OAuth configuration")
 
-client: Optional[WebApplicationClient] = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
 google_auth = Blueprint("google_auth", __name__)
+
+def get_oauth_client() -> WebApplicationClient:
+    """Create a fresh client per request; the client stores tokens, so it must not be shared between users."""
+    return WebApplicationClient(GOOGLE_CLIENT_ID)
+
+def get_google_provider_cfg() -> dict:
+    """Return Google's OpenID configuration, cached for an hour."""
+    now = time.monotonic()
+    if _discovery_cache["config"] is None or now - _discovery_cache["fetched_at"] > DISCOVERY_CACHE_TTL:
+        response = requests.get(GOOGLE_DISCOVERY_URL, timeout=GOOGLE_REQUEST_TIMEOUT)
+        response.raise_for_status()
+        _discovery_cache["config"] = response.json()
+        _discovery_cache["fetched_at"] = now
+    return _discovery_cache["config"]
 
 def get_callback_url():
     """Get the appropriate callback URL based on the current request."""
@@ -31,13 +49,13 @@ def get_callback_url():
 
 @google_auth.route("/google_login")
 def login():
-    if not GOOGLE_CLIENT_ID or not client:
+    if not GOOGLE_CLIENT_ID:
         logger.error("Google OAuth credentials not configured")
         flash("Google OAuth is not configured. Please set up your credentials.", "warning")
         return redirect(url_for("index"))
 
     try:
-        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        google_provider_cfg = get_google_provider_cfg()
         authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
         # Get the callback URL for the current environment
@@ -45,7 +63,7 @@ def login():
         logger.info(f"Starting OAuth flow with callback URL: {callback_url}")
 
         # Prepare OAuth request with basic scopes only (no calendar access)
-        request_uri = client.prepare_request_uri(
+        request_uri = get_oauth_client().prepare_request_uri(
             authorization_endpoint,
             redirect_uri=callback_url,
             scope=[
@@ -64,7 +82,7 @@ def login():
 
 @google_auth.route("/google_login/callback")
 def callback():
-    if not GOOGLE_CLIENT_ID or not client:
+    if not GOOGLE_CLIENT_ID:
         return redirect(url_for("index"))
 
     try:
@@ -74,7 +92,7 @@ def callback():
             flash("Authentication failed - no code received.", "error")
             return redirect(url_for("index"))
 
-        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        google_provider_cfg = get_google_provider_cfg()
         token_endpoint = google_provider_cfg["token_endpoint"]
 
         callback_url = get_callback_url()
@@ -84,6 +102,7 @@ def callback():
         current_url = request.url.replace('http://', 'https://')
 
         # Exchange code for token
+        client = get_oauth_client()
         token_url, headers, body = client.prepare_token_request(
             token_endpoint,
             authorization_response=current_url,
@@ -103,6 +122,7 @@ def callback():
             headers=headers,
             data=body,
             auth=auth,
+            timeout=GOOGLE_REQUEST_TIMEOUT,
         )
 
         # Check token response
@@ -115,7 +135,7 @@ def callback():
 
         userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
         uri, headers, body = client.add_token(userinfo_endpoint)
-        userinfo_response = requests.get(uri, headers=headers, data=body)
+        userinfo_response = requests.get(uri, headers=headers, data=body, timeout=GOOGLE_REQUEST_TIMEOUT)
 
         userinfo = userinfo_response.json()
         if userinfo.get("email_verified"):
