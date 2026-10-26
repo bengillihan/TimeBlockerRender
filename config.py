@@ -12,8 +12,7 @@ class Config:
         "max_overflow": 2,
         "pool_timeout": 30,
         "connect_args": {
-            "client_encoding": "utf8",
-            "options": "-c default_transaction_isolation=read_committed"
+            "client_encoding": "utf8"
         },
         "echo": False,
     }
@@ -24,7 +23,7 @@ class Config:
     GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')
     
     # Cache configuration
-    CACHE_TYPE = "simple"
+    CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
 
 class DevelopmentConfig(Config):
@@ -32,7 +31,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     # Use SQLite for Replit development since external DB connections are blocked
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///timeblock_dev.db'
-    CACHE_TYPE = "simple"
+    CACHE_TYPE = "SimpleCache"
     
     # Override engine options for SQLite
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -45,7 +44,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    CACHE_TYPE = "simple"  # For Render, simple cache is sufficient
+    CACHE_TYPE = "SimpleCache"  # For Render, simple cache is sufficient
     
     # Additional production settings
     SQLALCHEMY_ENGINE_OPTIONS = {

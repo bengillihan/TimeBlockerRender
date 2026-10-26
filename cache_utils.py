@@ -9,7 +9,7 @@ cache = Cache()
 def init_cache(app):
     """Initialize cache with Redis or simple memory cache"""
     cache_config = {
-        'CACHE_TYPE': 'redis' if app.config.get('REDIS_URL') else 'simple',
+        'CACHE_TYPE': 'RedisCache' if app.config.get('REDIS_URL') else 'SimpleCache',
         'CACHE_DEFAULT_TIMEOUT': 300,  # 5 minutes default timeout
         'CACHE_KEY_PREFIX': 'timeblocker_'
     }

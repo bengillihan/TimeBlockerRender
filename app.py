@@ -66,8 +66,7 @@ if os.environ.get('RAILWAY_ENVIRONMENT_NAME'):
         "connect_args": {
             "client_encoding": "utf8",
             "application_name": "timeblocker_railway",
-            "connect_timeout": 5,
-            "options": "-c default_transaction_isolation=read_committed"
+            "connect_timeout": 5
         },
         "echo": False,
     }
@@ -82,8 +81,7 @@ else:
         "connect_args": {
             "client_encoding": "utf8",
             "application_name": "timeblocker_replit",
-            "connect_timeout": 10,
-            "options": "-c default_transaction_isolation=read_committed"
+            "connect_timeout": 10
         },
         "echo": False,
     }
